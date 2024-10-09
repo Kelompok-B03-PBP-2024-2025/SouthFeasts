@@ -48,47 +48,51 @@ Berikut aksi yang dapat dilakukan masing-masing role:
 ## 3. 📝 Review dan Rating Makanan
 Dikerjakan oleh Gnade Yuka
 
-Pengguna dapat memberikan ulasan dan rating untuk makanan yang telah mereka coba. Informasi ini ditampilkan di bawah katalog makanan dan juga pada halaman detail makanan.
+Fitur ini memungkinkan pengguna untuk memberikan ulasan dan rating terhadap makanan yang telah mereka coba. Ulasan ini mencakup komentar tentang rasa, kualitas, porsi, harga, dan pengalaman secara keseluruhan. Rating biasanya diberikan dalam bentuk bintang atau angka untuk membantu pengguna lain dalam menentukan pilihan makanan. Semua ulasan dan rating akan ditampilkan di halaman katalog makanan, sehingga pengunjung dapat melihat rekomendasi makanan terbaik.
 
 Berikut aksi yang dapat dilakukan masing-masing role:
 
-| Guest | Pengunjung (Traveler / Pembeli) | Admin |
+| Guest | Admin | Pengunjung (Traveler / Pembeli) |
 |-------|--------------------------------|-------|
-| - Dapat melihat review dan rating | - Dapat memberikan review dan rating<br>- Dapat mengedit atau menghapus review miliknya sendiri | - Memiliki semua akses Pengunjung<br>- Dapat memoderasi review (menghapus review yang tidak pantas)<br>- Dapat melihat statistik rating |
-
-Contoh aksi:
-- Guest: Membaca review tentang "Soto Betawi H. Mamat" untuk menilai kualitasnya.
-- Pengunjung: Memberikan rating 4 bintang dan menulis review positif untuk "Nasi Uduk Kebon Kacang".
-- Admin: Menghapus review yang mengandung kata-kata kasar pada "Mie Aceh Bang Jali".
+| - Dapat melihat review dan rating makanan | - Dapat melihat review dan rating makanang<br>- Dapat menghapus review yang tidak sesuai atau menyesatkan | - Dapat mengedit, menghapus, dan membuat review makanan yang mereka edit sendiri |
 
 ## 4. 📰 Artikel Blog / QnA
 Dikerjakan oleh Annisa Dwiyanti Ismael
 
-Halaman khusus yang berisi artikel-artikel informatif tentang kuliner Jakarta Selatan serta fitur tanya jawab untuk pengguna.
+Halaman khusus yang berisi artikel-artikel informatif tentang kuliner Jakarta Selatan serta fitur tanya jawab untuk pengguna, memungkinkan pengguna untuk membuat dan berpartisipasi dalam diskusi terkait makanan atau restoran yang relevan.
 
 Berikut aksi yang dapat dilakukan masing-masing role:
 
-| Guest | Pengunjung (Traveler / Pembeli) | Admin |
+| Guest | Admin | Pengunjung (Traveler / Pembeli) |
 |-------|--------------------------------|-------|
-| - Dapat membaca artikel dan QnA | - Dapat membaca artikel dan QnA<br>- Dapat mengajukan pertanyaan di QnA<br>- Dapat memberikan komentar pada artikel | - Memiliki semua akses Pengunjung<br>- Dapat menulis dan mempublikasikan artikel baru<br>- Dapat menjawab pertanyaan di QnA<br>- Dapat mengelola (edit/hapus) konten artikel dan QnA |
-
-Contoh aksi:
-- Guest: Membaca artikel "5 Warung Sate Terenak di Tebet".
-- Pengunjung: Mengajukan pertanyaan "Dimana bisa menemukan gudeg enak di Jakarta Selatan?" di forum QnA.
-- Admin: Menulis dan mempublikasikan artikel baru berjudul "Panduan Kuliner Vegan di Jakarta Selatan".
+| - Dapat melihat artikel blog dan tanya jawab | - Dapat melihat artikel blog dan tanya jawab<br>- Dapat menghapus artikel-artikel dan tanya jawab yang tidak sesuai | - Dapat melihat artikel blog dan tanya jawab<br>- Dapat membuat artikel dan tanya jawab<br>- Dapat menghapus, dan mengedit artikel ataupun tanya jawab yang dibuat |
 
 ## 5. 🏠 Halaman Restoran, Katalog Makanan, dan Filter
 Dikerjakan oleh Nabila Maharani Putri
 
-Ketika nama restoran diklik, pengguna akan diarahkan ke halaman khusus restoran tersebut yang menampilkan menu-menu yang tersedia (terbatas pada data yang ada dalam database). Fitur ini juga mencakup katalog makanan dan filter yang terintegrasi dengan modul Katalog Makanan dan Filter.
+Katalog Makanan menampilkan card item makanan dan atribut atributnya. Ketika nama restoran pada card item makanan diklik, pengguna akan diarahkan ke halaman restoran. Halaman restoran adalah halaman yang menampilkan info dari restoran tersebut yang meliputi, alamat dan menu makanan yang tersedia pada restoran tersebut. Filter adalah fitur yang dapat menyaring item makanan berdasarkan harga, lokasi, dan rating.
 
 Berikut aksi yang dapat dilakukan masing-masing role:
 
-| Guest | Pengunjung (Traveler / Pembeli) | Admin |
+| Guest | Admin | Pengunjung (Traveler / Pembeli) |
 |-------|--------------------------------|-------|
-| - Dapat melihat halaman restoran dan menu<br>- Dapat menggunakan filter pencarian | - Memiliki semua akses Guest<br>- Dapat memberikan rating dan review untuk restoran<br>- Dapat menambahkan menu ke wishlist | - Memiliki semua akses Pengunjung<br>- Dapat melakukan CRUD pada informasi restoran dan menu<br>- Dapat mengelola kategori restoran |
+| - Dapat melihat katalog makanan dan mengakses halaman restoran<br>- Dapat melakukan filter item yang ingin ditampilkan | - Dapat mengedit, menghapus, dan membuat item makanan dan restoran | - Dapat melihat katalog makanan dan mengakses halaman restoran<br>- Dapat melakukan filter item yang ingin ditampilkan |
 
-Contoh aksi:
-- Guest: Melihat menu dan harga di halaman restoran "Sate Senayan".
-- Pengunjung: Memberikan rating 5 bintang untuk restoran "Bakmi GM" setelah mencoba makannya.
-- Admin: Menambahkan kategori baru "Restoran Ramah Anak" dan menambahkan beberapa restoran ke dalamnya.
+## Jenis Pengguna (Role)
+
+Pada aplikasi kami, terdapat tiga jenis pengguna:
+1. Guest
+2. Admin
+3. Pengunjung (Traveler / Pembeli)
+
+Penjelasan lebih spesifik mengenai wewenang masing-masing jenis pengguna terdapat pada penjelasan masing-masing modul.
+
+## Dataset
+
+SouthFeasts akan menggunakan dataset makanan dan restoran di Jakarta Selatan. Dataset ini akan mencakup informasi seperti nama makanan, jenis makanan, harga, lokasi, dan gambar makanan.
+
+---
+
+Selamat menjelajahi kelezatan Jakarta Selatan bersama SouthFeasts! 🍽️🌆
+
+
