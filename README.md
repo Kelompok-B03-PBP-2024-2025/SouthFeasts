@@ -1,8 +1,8 @@
 # SouthFeasts
 
-##South Jakarta Flavors, SouthFeasts Delivers! 🍜🍖
+## South Jakarta Flavors, SouthFeasts Delivers! 🍜🍖
 
-Anggota Kelompok B03
+### Anggota Kelompok B03
 - Gnade Yuka (https://github.com/yukaagnd) - 2306165704
 - Nabila Maharani Putri (https://github.com/nabsskrrtt) - 2306275191
 - Annisa Dwiyanti Ismael (https://github.com/annisadwiyanti) - 2306240111
