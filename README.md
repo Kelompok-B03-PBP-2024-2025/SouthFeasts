@@ -91,6 +91,8 @@ Penjelasan lebih spesifik mengenai wewenang masing-masing jenis pengguna terdapa
 
 SouthFeasts akan menggunakan dataset makanan dan restoran di Jakarta Selatan. Dataset ini akan mencakup informasi seperti nama makanan, jenis makanan, harga, lokasi, dan gambar makanan.
 
+[Dataset Makanan](./dataset/dataset_makanan.csv)
+
 ---
 
 Selamat menjelajahi kelezatan Jakarta Selatan bersama SouthFeasts! 🍽️🌆
