@@ -1,22 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
+from product.models import MenuItem
 
 # Create your models here.
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='auth_user')
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_type = models.CharField(max_length=100)
     username = models.CharField(max_length=255)
     fullname= models.CharField(max_length=255)
-    country = models.CharField(max_length=255, blank=True)
-    age = models.PositiveIntegerField(blank=True, null=True)
-    profile_picture = models.TextField( blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True) 
 
-    class Role(models.TextChoices):
-        ADMIN = 'ADMIN', 'Admin'
-        USER = 'USER', 'User'
-
-    role = models.CharField(
-        max_length=5,
-        choices=Role.choices,
-        default=Role.USER,
-    )
-    
+    def __str__(self):
+        return self.user.username
