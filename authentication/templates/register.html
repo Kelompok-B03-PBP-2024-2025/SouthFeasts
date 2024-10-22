@@ -1,50 +1,84 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div class="container mx-auto mt-8">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-        <div class="md:flex">
-            <div class="p-8 w-full">
-                <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold mb-1">Register</div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Join Today</h2>
-                <form method="POST" class="space-y-6">
-                    {% csrf_token %}
-                    {% for field in user_form %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                    {% for field in profile_form %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                    <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Sign Up
-                        </button>
-                    </div>
-                </form>
-                
+<div class="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <!-- Left side - Featured dish -->
+    <div class="lg:w-1/2 bg-blue-900 p-6 flex items-center justify-center">
+        <div class="relative w-full max-w-md aspect-square rounded-lg overflow-hidden">
+            <!-- Featured Dish Label -->
+            <div class="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-1 rounded-md">
+                <p class="text-sm">Featured dish</p>
             </div>
+            <img src="https://source.unsplash.com/random/600x600/?food"
+                 alt="Featured dish"
+                 class="object-cover w-full h-full rounded-lg"/>
+        </div>
+    </div>
+
+    <!-- Right side - Form -->
+    <div class="lg:w-1/2 p-6 flex items-center justify-center">
+        <div class="w-full max-w-md">
+            <!-- Title -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-serif">Create your account</h1>
+            </div>
+
+            <form method="POST" class="space-y-6" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- User Form Fields -->
+                {% for field in user_form %}
+                <div class="space-y-2">
+                    <label for="{{ field.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <!-- Profile Form Fields -->
+                {% for field in profile_form %}
+                <div class="space-y-2">
+                    <label for="{{ field.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <p class="text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors">
+                    Create Account
+                </button>
+
+                <!-- Separator -->
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-gray-50 text-gray-500">or</span>
+                    </div>
+                </div>
+
+                <!-- Sign In Link -->
+                <p class="mt-8 text-center text-sm text-gray-600">
+                    Already have an account?
+                    <a href="{% url 'authentication:login' %}" class="font-medium text-black hover:text-gray-800">
+                        Sign in
+                    </a>
+                </p>
+            </form>
         </div>
     </div>
 </div>
