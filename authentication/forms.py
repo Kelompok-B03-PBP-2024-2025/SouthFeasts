@@ -7,6 +7,7 @@ class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField()
     
     password1 = forms.CharField(
+        label='Password',  # Mengubah label password1
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent',
             'placeholder': 'Enter your password'
@@ -14,6 +15,7 @@ class UserRegistrationForm(UserCreationForm):
         help_text=''
     )
     password2 = forms.CharField(
+        label='Confirm Password',  # Mengubah label password2
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent',
             'placeholder': 'Confirm password'
@@ -47,7 +49,7 @@ class ProfileForm(forms.ModelForm):
         
         placeholders = {
             'fullname': 'Enter your full name',
-            'country': 'Select your country',
+            'country': 'Which country are you from?',
             'profile_picture': 'Upload profile picture'
         }
         

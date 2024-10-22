@@ -4,16 +4,12 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
     <!-- Left side - Featured dish -->
-    <div class="lg:w-1/2 bg-blue-900 p-6 flex items-center justify-center">
-        <div class="relative w-full max-w-md aspect-square rounded-lg overflow-hidden">
-            <!-- Featured Dish Label -->
-            <div class="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-1 rounded-md">
-                <p class="text-sm">Featured dish</p>
-            </div>
-            <img src="https://source.unsplash.com/random/600x600/?food"
-                 alt="Featured dish"
-                 class="object-cover w-full h-full rounded-lg"/>
-        </div>
+    <div class="lg:w-1/2 relative min-h-screen">
+        <!-- Dark overlay -->
+        <div class="absolute inset-0 bg-black bg-opacity-40"></div> <!-- Menambahkan layer gelap -->
+        <img src="https://manual.co.id/wp-content/uploads/2023/12/34_kurasu_kissaten_web-980x719.jpg"
+            alt="Featured dish"
+            class="absolute inset-0 w-full h-full object-cover"/>
     </div>
 
     <!-- Right side - Form -->
