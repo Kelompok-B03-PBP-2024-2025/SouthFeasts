@@ -1,46 +1,52 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate
 from django.contrib import messages
-from django.db import transaction
-from .models import Profile
-from .forms import CustomAuthenticationForm, UserRegistrationForm, ProfileForm
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from .forms import UserRegistrationForm
+from .models import UserProfile
 
 def register(request):
-    if request.method == 'POST':
-        user_form = UserRegistrationForm(request.POST)
-        profile_form = ProfileForm(request.POST)
-        if user_form.is_valid() and profile_form.is_valid():
-            with transaction.atomic():
-                user = user_form.save()
-                profile = profile_form.save(commit=False)
-                profile.user = user
-                profile.username = user.username
-                profile.save()
-            messages.success(request, f"Akun berhasil dibuat untuk {user.username}.")
-            return redirect('authentication:login')  # Redirect to login page after successful registration
-    else:
-        user_form = UserRegistrationForm()
-        profile_form = ProfileForm()
-    return render(request, 'register.html', {'user_form': user_form, 'profile_form': profile_form})
-
-def login_view(request):
-    if request.method == 'POST':
-        form = CustomAuthenticationForm(request, data=request.POST)
+    if request.user.is_authenticated:
+        return redirect('main:show_main')
+    
+    form = UserRegistrationForm()
+    
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Anda telah berhasil masuk sebagai {username}.")
-                return redirect('home')  # Ganti 'home' dengan nama URL halaman utama Anda
-            else:
-                messages.error(request, "Username atau password tidak valid.")
-        else:
-            messages.error(request, "Username atau password tidak valid.")
-    else:
-        form = CustomAuthenticationForm()
-    return render(request, 'login.html', {'form': form})
+            user = form.save()
+            messages.success(request, 'Your account has been successfully created!')
+            return redirect('authentication:login')
+    
+    context = {"form": form}
+    return render(request, "register.html", context)
 
-# tes
+def login_user(request):
+    if request.user.is_authenticated:
+        return redirect('main:show_main')
+    
+    context = {}
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            next_page = request.GET.get("next")
+            response = redirect(next_page) if next_page else redirect("main:show_main")
+            response.set_cookie("user_logged_in", user.username)
+            return response
+        else:
+            messages.error(request, "Sorry, incorrect username or password. Please try again.")
+    
+    return render(request, "login.html", context)
+
+@login_required
+def logout_user(request):
+    logout(request)
+    response = redirect('authentication:login')
+    response.delete_cookie('user_logged_in')
+    messages.info(request, 'You have been logged out.')
+    return response

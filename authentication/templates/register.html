@@ -1,75 +1,97 @@
 {% extends "base.html" %}
-{% load static %}
-
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
     <!-- Left side - Featured dish -->
-    <div class="lg:w-1/2 bg-blue-900 p-6 flex items-center justify-center">
-        <div class="relative w-full max-w-md aspect-square rounded-lg overflow-hidden">
-            <!-- Featured Dish Label -->
-            <div class="absolute top-4 left-4 bg-black bg-opacity-75 text-white px-3 py-1 rounded-md">
-                <p class="text-sm">Featured dish</p>
-            </div>
-            <img src="https://source.unsplash.com/random/600x600/?food"
-                 alt="Featured dish"
-                 class="object-cover w-full h-full rounded-lg"/>
-        </div>
+    <div class="lg:w-1/2 relative min-h-screen">
+        <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+        <img src="https://manual.co.id/wp-content/uploads/2023/12/34_kurasu_kissaten_web-980x719.jpg"
+             alt="Featured dish"
+             class="absolute inset-0 w-full h-full object-cover"/>
     </div>
-
+    
     <!-- Right side - Form -->
     <div class="lg:w-1/2 p-6 flex items-center justify-center">
         <div class="w-full max-w-md">
-            <!-- Title -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-serif">Create your account</h1>
             </div>
 
-            <form method="POST" class="space-y-6" enctype="multipart/form-data">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" class="space-y-6">
                 {% csrf_token %}
-
-                <!-- User Form Fields -->
-                {% for field in user_form %}
+                
+                <!-- Username -->
                 <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700">
-                        {{ field.label }}
+                    <label class="block text-sm font-medium text-gray-700">
+                        Username
                     </label>
-                    {{ field }}
-                    {% for error in field.errors %}
-                    <p class="text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
+                    <input type="text" name="username" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your username">
                 </div>
-                {% endfor %}
 
-                <!-- Profile Form Fields -->
-                {% for field in profile_form %}
+                <!-- Email -->
                 <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700">
-                        {{ field.label }}
+                    <label class="block text-sm font-medium text-gray-700">
+                        Email
                     </label>
-                    {{ field }}
-                    {% for error in field.errors %}
-                    <p class="text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
+                    <input type="email" name="email" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your email">
                 </div>
-                {% endfor %}
+
+                <!-- Password -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                        Password
+                    </label>
+                    <input type="password" name="password1" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your password">
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                        Confirm Password
+                    </label>
+                    <input type="password" name="password2" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Confirm your password">
+                </div>
+
+                <!-- Full Name -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                        Full Name
+                    </label>
+                    <input type="text" name="fullname" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your full name">
+                </div>
+
+                <!-- Country -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                        Country
+                    </label>
+                    <input type="text" name="country"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your country">
+                </div>
 
                 <!-- Submit Button -->
                 <button type="submit"
                         class="w-full bg-black text-white py-3 rounded-md hover:bg-gray-800 transition-colors">
                     Create Account
                 </button>
-
-                <!-- Separator -->
-                <div class="relative my-8">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-gray-50 text-gray-500">or</span>
-                    </div>
-                </div>
 
                 <!-- Sign In Link -->
                 <p class="mt-8 text-center text-sm text-gray-600">
