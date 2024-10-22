@@ -23,10 +23,10 @@
       <a href="/forum" class="hover:text-gray-300">CULINARY INSIGHTS</a>
       {% if user.is_authenticated %}
         <!-- Logout Button -->
-        <a href="{% url 'auth:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>
+        <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>
       {% else %}
         <!-- Login Button -->
-        <a href="{% url 'auth:login' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGIN</a>
+        <a href="{% url 'authentication:login' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGIN</a>
       {% endif %}
     </div>
     <!-- Mobile Menu Button (burger icon) -->
@@ -48,10 +48,10 @@
     <a href="/forum" class="hover:text-gray-300">CULINARY INSIGHTS</a>
     {% if user.is_authenticated %}
       <!-- Logout Button for mobile -->
-      <a href="{% url 'auth:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>
+      <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>
     {% else %}
       <!-- Login Button for mobile -->
-      <a href="{% url 'auth:login' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGIN</a>
+      <a href="{% url 'authentication:login' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGIN</a>
     {% endif %}
   </div>
 </nav>
