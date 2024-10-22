@@ -1,16 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% include "head.html" %}
     {% block meta %}
     {% endblock meta %}
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts - Untuk font serif yang bagus -->
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles */
+        .font-serif {
+            font-family: 'Libre Baskerville', serif;
+        }
+        
+        /* Custom focus styles */
+        input:focus, select:focus {
+            outline: none;
+            border-color: black;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom file input styling */
+        input[type="file"] {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+        
+        /* Custom select styling */
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            appearance: none;
+        }
+        
+        /* Custom button hover effect */
+        button:hover {
+            transform: translateY(-1px);
+            transition: transform 0.2s;
+        }
+    </style>
 </head>
-
-<body>
+<body class="min-h-screen bg-gray-50">
     {% include "navbar.html" %}
-    {% block content %}
-    {% endblock content %}
+    <main class="flex-grow">
+        {% block content %}
+        {% endblock content %}
+    </main>
     {% include "footer.html" %}
 </body>
 </html>
