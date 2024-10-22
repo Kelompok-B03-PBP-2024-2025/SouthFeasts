@@ -6,8 +6,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='auth_user')
     username = models.CharField(max_length=255)
     fullname= models.CharField(max_length=255)
-    country = models.CharField(max_length=255, blank=True)
-    age = models.PositiveIntegerField(blank=True, null=True)
+    country = models.CharField(max_length=255, blank=True) 
     profile_picture = models.TextField( blank=True, null=True)
 
     class Role(models.TextChoices):

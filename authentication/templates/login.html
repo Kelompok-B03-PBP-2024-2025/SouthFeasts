@@ -1,43 +1,48 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="container mx-auto mt-8">
-    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-        <div class="md:flex">
-            <div class="p-8 w-full">
-                <div class="uppercase tracking-wide text-sm text-indigo-500 font-semibold mb-1">Login</div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Welcome Back</h2>
-                <form method="POST" class="space-y-6">
-                    {% csrf_token %}
-                    {% for field in form %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                    <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Sign In
-                        </button>
-                    </div>
-                </form>
-                <div class="mt-6 text-center">
-                    <p class="text-sm text-gray-600">
-                        Don't have an account? 
-                        <a href="{% url 'authentication:register' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
-                            Sign Up
-                        </a>
-                    </p>
-                </div>
+<div class="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
+    <!-- Left side - Image -->
+    <div class="lg:w-1/2 bg-blue-900 p-6 flex items-center justify-center">
+        <div class="relative w-full max-w-md aspect-square rounded-lg overflow-hidden">
+            <img src="https://source.unsplash.com/random/600x600/?food" 
+                 alt="Featured dish" 
+                 class="object-cover w-full h-full rounded-lg"/>
+        </div>
+    </div>
+
+    <!-- Right side - Form -->
+    <div class="lg:w-1/2 p-6 flex items-center justify-center">
+        <div class="w-full max-w-md bg-white rounded-lg shadow p-6">
+            <div class="mb-8">
+                <img src="https://your-logo-url.com/logo.png" 
+                     alt="Logo" 
+                     class="h-8 mb-6"/>
+                <h1 class="text-2xl font-serif mb-2">Welcome Back</h1>
             </div>
+
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" 
+                           class="block text-sm font-medium mb-1">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" 
+                        class="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800">
+                    Sign In
+                </button>
         </div>
     </div>
 </div>
