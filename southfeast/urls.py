@@ -22,3 +22,5 @@ urlpatterns = [
     path('dashboard/', include('main.urls')),
     path('auth/', include ('authentication.urls')),
 ]
+
+
