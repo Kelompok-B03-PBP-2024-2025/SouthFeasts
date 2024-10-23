@@ -1,97 +1,74 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ article.title }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
+{% extends 'base.html' %}
 
-        h1 {
-            font-size: 28px;
-        }
+{% block title %}{{ article.title }}{% endblock %}
 
-        p {
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-
-        a {
-            margin-right: 10px;
-            text-decoration: none;
-            color: white;
-            background-color: #007BFF;
-            padding: 10px 15px;
-            border-radius: 5px;
-        }
-
-        a:hover {
-            background-color: #0056b3;
-        }
-
-        .comment-box {
-            margin-top: 20px;
-        }
-
-        .comment {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-
-        form {
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 15px;
-            background-color: #000000;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #333;
-        }
-    </style>
-</head>
-<body>
-    <h1>{{ article.title }}</h1>
-    <p>{{ article.content }}</p>
+{% block content %}
+    <h1 class="text-3xl font-semibold mb-4">{{ article.title }}</h1>
+    <p class="text-lg mb-6">{{ article.content }}</p>
 
     <!-- Jika user yang sedang login adalah pemilik artikel, tampilkan tombol edit dan delete -->
     {% if request.user == article.user %}
-        <a href="{% url 'forum:edit_article' article.id %}">Edit</a>
-        <a href="{% url 'forum:delete_article' article.id %}" onclick="return confirm('Are you sure you want to delete this article?');">Delete</a>
+        <div class="mb-4 flex space-x-2">
+            <button class="bg-black text-white font-semibold py-2 px-6 rounded hover:bg-gray-700" onclick="openModal()">
+                Edit
+            </button>
+            <a href="{% url 'forum:delete_article' article.id %}" onclick="return confirm('Are you sure you want to delete this article?');" class="bg-black text-white font-semibold py-2 px-6 rounded hover:bg-gray-700">
+                Delete
+            </a>
+        </div>
     {% endif %}
 
-    <h3>Comments</h3>
+    <h3 class="text-2xl font-semibold mb-4">Comments</h3>
     <div class="comment-box">
         <!-- Jika ada komentar, tampilkan -->
         {% if comments %}
             {% for comment in comments %}
-                <div class="comment">
+                <div class="border border-gray-300 rounded p-4 mb-4">
                     <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
                 </div>
             {% endfor %}
         {% else %}
-            <p>No comments yet.</p>
+            <p class="text-gray-500">No comments yet.</p>
         {% endif %}
     </div>
 
     <!-- Form untuk menambah komentar baru -->
-    <form method="POST">
+    <form method="POST" class="mt-6">
         {% csrf_token %}
         {{ comment_form.as_p }}
-        <button type="submit">Submit Comment</button>
+        <button type="submit" class="bg-black text-white py-2 px-6 rounded hover:bg-gray-700">Submit Comment</button>
     </form>
 
     <!-- Tombol untuk kembali ke halaman utama -->
-    <a href="{% url 'forum:show_main' %}">Back to Articles</a>
-</body>
-</html>
+    <a href="{% url 'forum:show_main' %}" class="mt-6 inline-block bg-gray-700 text-white py-2 px-6 rounded hover:bg-black">Back to Articles</a>
+
+    <!-- Modal untuk Edit Article -->
+    <div id="editModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
+            <h2 class="text-xl font-semibold mb-4">Edit Article</h2>
+            <form method="POST" id="editArticleForm" action="{% url 'forum:edit_article' article.id %}">
+                {% csrf_token %}
+                <label for="title" class="font-semibold">Title</label>
+                <input type="text" name="title" id="title" value="{{ article.title }}" class="border border-gray-300 p-2 w-full rounded mb-4">
+                
+                <label for="content" class="font-semibold">Content</label>
+                <textarea name="content" id="content" class="border border-gray-300 p-2 w-full rounded mb-4" style="height: 200px;">{{ article.content }}</textarea>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-black text-white px-6 py-2 rounded hover:bg-gray-700">Save</button>
+                    <button type="button" class="ml-2 bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-700" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+    </script>
+{% endblock %}
