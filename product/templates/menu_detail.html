@@ -1,4 +1,3 @@
-<!-- templates/product/menu_detail.html -->
 {% extends 'base.html' %}
 
 {% block title %}{{ menu_item.name }} - SouthFeast{% endblock %}
@@ -55,8 +54,35 @@
                         <p class="text-gray-600"><strong>City:</strong> {{ menu_item.restaurant.city }}</p>
                     </div>
                 </div>
+
+                <!-- Add Review Button -->
+                <div class="mt-6">
+                    <a href="{% url 'review:create_review' menu_item.id %}" 
+                       class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                        Add Review
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
+    <!-- Display Reviews Section -->
+    <div class="mt-10">
+        <h2 class="text-2xl font-bold mb-4">Reviews</h2>
+
+        {% if reviews %}
+            <div class="space-y-6">
+                {% for review in reviews %}
+                    <div class="border p-4 rounded-lg shadow-md">
+                        <p class="text-lg font-semibold">{{ review.user.username }}</p>
+                        <p class="text-gray-600">{{ review.review_text }}</p>
+                        <p class="mt-2">Rating: <span class="font-bold">{{ review.rating }}</span>/5</p>
+                        <p class="text-sm text-gray-400">Posted on {{ review.created_at|date:"F j, Y, g:i a" }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">No reviews yet. Be the first to review this product!</p>
+        {% endif %}
+    </div>
+    </div>
 {% endblock %}
