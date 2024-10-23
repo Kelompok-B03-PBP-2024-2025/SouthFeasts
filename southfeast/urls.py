@@ -29,3 +29,4 @@ urlpatterns = [
     path('forum/', include('forum.urls')),
 ]
 
+

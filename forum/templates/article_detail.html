@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ article.title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 28px;
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            margin-right: 10px;
+            text-decoration: none;
+            color: white;
+            background-color: #007BFF;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+
+        a:hover {
+            background-color: #0056b3;
+        }
+
+        .comment-box {
+            margin-top: 20px;
+        }
+
+        .comment {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #000000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ article.title }}</h1>
+    <p>{{ article.content }}</p>
+
+    <!-- Jika user yang sedang login adalah pemilik artikel, tampilkan tombol edit dan delete -->
+    {% if request.user == article.user %}
+        <a href="{% url 'forum:edit_article' article.id %}">Edit</a>
+        <a href="{% url 'forum:delete_article' article.id %}" onclick="return confirm('Are you sure you want to delete this article?');">Delete</a>
+    {% endif %}
+
+    <h3>Comments</h3>
+    <div class="comment-box">
+        <!-- Jika ada komentar, tampilkan -->
+        {% if comments %}
+            {% for comment in comments %}
+                <div class="comment">
+                    <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No comments yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Form untuk menambah komentar baru -->
+    <form method="POST">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <button type="submit">Submit Comment</button>
+    </form>
+
+    <!-- Tombol untuk kembali ke halaman utama -->
+    <a href="{% url 'forum:show_main' %}">Back to Articles</a>
+</body>
+</html>
