@@ -1,0 +1,11 @@
+<h1>All Reviews</h1>
+
+{% for review in reviews %}
+    <div>
+        <strong>{{ review.user.username }} reviewed {{ review.product.name }}:</strong>
+        <p>{{ review.review_text }}</p>
+        <p>Rating: {{ review.rating }}</p>
+    </div>
+{% empty %}
+    <p>No reviews yet.</p>
+{% endfor %}
