@@ -1,16 +1,14 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponseNotFound, HttpResponseForbidden
+from django.http import HttpResponseNotFound, HttpResponseForbidden, JsonResponse
 from django.contrib.auth.decorators import login_required
 from forum.models import Article, Comment, Question, Answer
 from forum.forms import ArticleForm, CommentForm, QuestionForm, AnswerForm
-from django.core.exceptions import PermissionDenied
 
 # View untuk menampilkan halaman utama (Culinary Insights)
 def show_main(request):
     articles = Article.objects.all().order_by('-created_at')
     questions = Question.objects.all().order_by('-created_at')
 
-    # Membuat form untuk add article dan question di modal
     article_form = ArticleForm()
     question_form = QuestionForm()
 
@@ -31,8 +29,11 @@ def article_detail(request, article_id):
 
     comments = Comment.objects.filter(article=article)
 
-    # Handle the form submission for adding a new comment
+    # Jika user belum login dan mencoba menambahkan komentar, arahkan ke login
     if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('auth:login')  # Redirect ke halaman login jika belum login
+
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
             comment = comment_form.save(commit=False)
@@ -52,7 +53,7 @@ def article_detail(request, article_id):
     return render(request, 'article_detail.html', context)
 
 # View untuk menambah artikel
-@login_required
+@login_required(login_url='/auth/login/')
 def add_article(request):
     if request.method == 'POST':
         form = ArticleForm(request.POST)
@@ -72,8 +73,11 @@ def question_detail(request, question_id):
 
     answers = Answer.objects.filter(question=question)
 
-    # Handle the form submission for adding a new answer
+    # Jika user belum login dan mencoba menambahkan jawaban, arahkan ke login
     if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('auth:login')  # Redirect ke halaman login jika belum login
+
         answer_form = AnswerForm(request.POST)
         if answer_form.is_valid():
             answer = answer_form.save(commit=False)
@@ -93,7 +97,7 @@ def question_detail(request, question_id):
     return render(request, 'qna_detail.html', context)
 
 # View untuk menambah pertanyaan (QnA)
-@login_required
+@login_required(login_url='/auth/login/')
 def add_question(request):
     if request.method == 'POST':
         form = QuestionForm(request.POST)
@@ -105,7 +109,7 @@ def add_question(request):
     return redirect('forum:show_main')
 
 # View untuk mengedit artikel
-@login_required
+@login_required(login_url='/auth/login/')
 def edit_article(request, article_id):
     try:
         article = Article.objects.get(id=article_id)
@@ -113,41 +117,45 @@ def edit_article(request, article_id):
         return HttpResponseNotFound("Article not found.")
 
     if request.user != article.user:
-        return HttpResponseForbidden("You are not authorized to edit this article.")
+        return JsonResponse({"success": False}, status=403)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ArticleForm(request.POST, instance=article)
         if form.is_valid():
             form.save()
-            return redirect('forum:article_detail', article_id=article.id)
-    else:
-        form = ArticleForm(instance=article)
+            return JsonResponse({
+                "success": True,
+                "title": article.title,
+                "content": article.content,
+            })
+        else:
+            return JsonResponse({"success": False, "errors": form.errors}, status=400)
 
-    return render(request, 'edit_article.html', {'form': form, 'article': article})
+    return JsonResponse({"success": False}, status=405)
 
 # View untuk mengedit pertanyaan (QnA)
-@login_required
+@login_required(login_url='/auth/login/')
 def edit_question(request, question_id):
     try:
         question = Question.objects.get(id=question_id)
     except Question.DoesNotExist:
-        return HttpResponseNotFound("Question not found.")
+        return JsonResponse({'success': False, 'message': 'Question not found'}, status=404)
 
     if request.user != question.user:
-        return HttpResponseForbidden("You are not authorized to edit this question.")
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
 
     if request.method == 'POST':
         form = QuestionForm(request.POST, instance=question)
         if form.is_valid():
             form.save()
-            return redirect('forum:question_detail', question_id=question.id)
-    else:
-        form = QuestionForm(instance=question)
-
-    return render(request, 'edit_question.html', {'form': form, 'question': question})
+            return JsonResponse({'success': True, 'title': question.title, 'question': question.question})
+        else:
+            return JsonResponse({'success': False, 'message': 'Form is invalid'}, status=400)
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
 
 # View untuk menghapus artikel
-@login_required
+@login_required(login_url='/auth/login/')
 def delete_article(request, article_id):
     try:
         article = Article.objects.get(id=article_id)
@@ -161,7 +169,7 @@ def delete_article(request, article_id):
     return redirect('forum:show_main')
 
 # View untuk menghapus pertanyaan (QnA)
-@login_required
+@login_required(login_url='/auth/login/')
 def delete_question(request, question_id):
     try:
         question = Question.objects.get(id=question_id)
