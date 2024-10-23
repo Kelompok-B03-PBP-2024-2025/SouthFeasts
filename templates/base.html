@@ -50,12 +50,16 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body class="min-h-screen flex flex-col">
     {% include "navbar.html" %}
+    
+    <!-- Main content -->
     <main class="flex-grow">
         {% block content %}
         {% endblock content %}
     </main>
+    
+    <!-- Footer -->
     {% include "footer.html" %}
 </body>
 </html>

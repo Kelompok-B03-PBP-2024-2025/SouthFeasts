@@ -1,12 +1,3 @@
-<!-- {% load static %}
-<nav class="header bg-white border-b">
-    <div class="container mx-auto flex justify-between items-center md:py-6 py-3 px-4 md:px-0">
-        <p>
-            User
-        </p>
-    </div>
-</nav> -->
-
 {% load static %}
 <nav class="bg-black shadow-lg w-full">
   <div class="container mx-auto flex justify-between items-center py-6 px-6">
@@ -20,7 +11,7 @@
       <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
       <a href="/review" class="hover:text-gray-300">REVIEW</a>
       <a href="/wishlist" class="hover:text-gray-300">WISHLIST</a>
-      <a href="/forum" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+      <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
       {% if user.is_authenticated %}
         <!-- Logout Button -->
         <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>
@@ -45,7 +36,7 @@
     <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
     <a href="review" class="hover:text-gray-300">REVIEW</a>
     <a href="wishlist" class="hover:text-gray-300">WISHLIST</a>
-    <a href="/forum" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+    <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
     {% if user.is_authenticated %}
       <!-- Logout Button for mobile -->
       <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>

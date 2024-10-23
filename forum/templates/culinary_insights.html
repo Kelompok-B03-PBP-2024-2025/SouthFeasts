@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}Culinary Insights{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start mb-8">
+            <!-- Articles Section -->
+            <div class="w-full lg:w-1/2">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Articles</h2>
+                    {% if user.is_authenticated %}
+                        <button class="bg-black text-white py-2 px-4" id="add-article-btn">Add Article</button>
+                    {% endif %}
+                </div>
+
+                <!-- Displaying articles -->
+                {% if articles %}
+                    {% for article in articles %}
+                        <div class="border border-gray-300 rounded p-4 mb-4">
+                            <p><strong>{{ article.title }}</strong></p>
+                            <p>{{ article.description }}</p>
+                            <a href="{% if user.is_authenticated %}{% url 'forum:article_detail' article.id %}{% else %}{% url 'authentication:login' %}?next={% url 'forum:article_detail' article.id %}{% endif %}" class="bg-black text-white py-2 px-4 inline-block mt-2">
+                                View More
+                            </a>                          
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No articles available yet.</p>
+                {% endif %}
+            </div>
+
+            <!-- Divider for desktop -->
+            <div class="hidden lg:block w-0.5 bg-gray-300 mx-8"></div>
+
+            <!-- QnA Section -->
+            <div class="w-full lg:w-1/2 mt-8 lg:mt-0">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">QnA</h2>
+                    {% if user.is_authenticated %}
+                        <button class="bg-black text-white py-2 px-4" id="add-qna-btn">Add Question</button>
+                    {% endif %}
+                </div>
+
+                <!-- Displaying questions -->
+                {% if questions %}
+                    {% for question in questions %}
+                        <div class="border border-gray-300 rounded p-4 mb-4">
+                            <p><strong>{{ question.title }}</strong></p>
+                            <p>{{ question.description }}</p>
+                            <a href="{% if user.is_authenticated %}{% url 'forum:question_detail' question.id %}{% else %}{% url 'authentication:login' %}?next={% url 'forum:question_detail' question.id %}{% endif %}" class="bg-black text-white py-2 px-4 inline-block mt-2">
+                                View More
+                            </a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No questions available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Add Article -->
+    <div id="addArticleModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white p-6 rounded-lg w-1/3">
+            <span class="close text-gray-500 float-right text-2xl cursor-pointer" id="close-article-modal">&times;</span>
+            <h3 class="text-xl font-bold mb-4">Add Article</h3>
+            <form method="POST" action="{% url 'forum:add_article' %}">
+                {% csrf_token %}
+                {{ article_form.as_p }}
+                <button type="submit" class="bg-black text-white py-2 px-4 mt-4">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Add Question -->
+    <div id="addQnaModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
+        <div class="bg-white p-6 rounded-lg w-1/3">
+            <span class="close text-gray-500 float-right text-2xl cursor-pointer" id="close-qna-modal">&times;</span>
+            <h3 class="text-xl font-bold mb-4">Add Question</h3>
+            <form method="POST" action="{% url 'forum:add_question' %}">
+                {% csrf_token %}
+                {{ question_form.as_p }}
+                <button type="submit" class="bg-black text-white py-2 px-4 mt-4">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Modal functionality
+        var addArticleBtn = document.getElementById("add-article-btn");
+        var addQnaBtn = document.getElementById("add-qna-btn");
+
+        var addArticleModal = document.getElementById("addArticleModal");
+        var addQnaModal = document.getElementById("addQnaModal");
+
+        var closeArticleModal = document.getElementById("close-article-modal");
+        var closeQnaModal = document.getElementById("close-qna-modal");
+
+        // Open modal
+        addArticleBtn && (addArticleBtn.onclick = function() {
+            addArticleModal.style.display = "flex";
+        });
+
+        addQnaBtn && (addQnaBtn.onclick = function() {
+            addQnaModal.style.display = "flex";
+        });
+
+        // Close modal
+        closeArticleModal.onclick = function() {
+            addArticleModal.style.display = "none";
+        }
+
+        closeQnaModal.onclick = function() {
+            addQnaModal.style.display = "none";
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            if (event.target == addArticleModal) {
+                addArticleModal.style.display = "none";
+            }
+            if (event.target == addQnaModal) {
+                addQnaModal.style.display = "none";
+            }
+        }
+    </script>
+{% endblock %}

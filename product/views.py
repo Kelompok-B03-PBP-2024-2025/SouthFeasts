@@ -1,5 +1,5 @@
 # product/views.py
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
 from .models import MenuItem
 from restaurant.models import Restaurant
@@ -10,6 +10,10 @@ from restaurant.models import Restaurant
 import csv
 import pandas as pd
 from decimal import Decimal
+from django.shortcuts import render, get_object_or_404
+from product.models import MenuItem
+from review.models import ReviewEntry
+from review.forms import ReviewForm
 
 def menu_catalog(request):
     """View untuk menampilkan katalog menu dengan fitur filter dan search"""
@@ -65,16 +69,39 @@ def menu_catalog(request):
     
     return render(request, 'menu_catalog.html', context)
 
-def menu_detail(request, item_id):
-    """View untuk menampilkan detail menu item"""
-    menu_item = get_object_or_404(MenuItem, pk=item_id)
+# def menu_detail(request, item_id):
+#     """View untuk menampilkan detail menu item"""
+#     menu_item = get_object_or_404(MenuItem, pk=item_id)
+
+#     context = {
+#         'menu_item': menu_item,
+#         'restaurant': menu_item.restaurant,
+#     }
     
+#     return render(request, 'menu_detail.html', context)
+
+def menu_detail(request, id):
+    """View untuk menampilkan detail menu item"""
+    menu_item = get_object_or_404(MenuItem, pk=id)
+    reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
+    form = ReviewForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        review = form.save(commit=False)
+        review.user = request.user
+        review.product = menu_item
+        review.save()
+        return redirect('product:menu_detail', id=menu_item.id)
+
     context = {
         'menu_item': menu_item,
         'restaurant': menu_item.restaurant,
+        'reviews' : reviews,
+        'form': form,
     }
     
     return render(request, 'menu_detail.html', context)
+
 
 def restaurant_menu(request, restaurant_id):
     """View untuk menampilkan semua menu dari restoran tertentu"""
