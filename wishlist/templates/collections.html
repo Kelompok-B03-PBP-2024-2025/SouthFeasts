@@ -1,58 +1,75 @@
 {% extends 'base.html' %}
 
-{% block meta %}
-<title>My Collections</title>
-{% endblock meta %}
-
 {% block content %}
 <div class="container mx-auto px-4 py-8">
-  <div class="mb-8 flex justify-between items-center">
-    <h1 class="text-2xl font-serif font-bold">My Collections</h1>
-    <a href="{% url 'wishlist:collection-add' %}" 
-       class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-all">
-      New Collection
-    </a>
-  </div>
+    <div class="mb-8 flex justify-between items-center">
+        <h1 class="text-2xl font-serif font-bold">My Collections</h1>
+        <a href="{% url 'wishlist:collection-add' %}" class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-all">New Collection</a>
+    </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for collection in collections %}
-    <div class="border rounded-lg p-4 bg-white shadow-sm hover:shadow transition-all">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h2 class="text-xl font-serif">
-            <a href="{% url 'wishlist:collection-detail' collection.id %}" class="hover:text-gray-600">
-              {{ collection.name }}
-            </a>
-          </h2>
-          {% if collection.is_default %}
-          <span class="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mt-1 inline-block">Default</span>
-          {% endif %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for collection in collections %}
+        <div class="border rounded-lg p-4 bg-white shadow-sm hover:shadow transition-all">
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                {% for item in collection.items.all|slice:":4" %}
+                <div class="aspect-square overflow-hidden rounded">
+                    {% if item.menu_item.image %}
+                        <img src="{{ item.menu_item.image }}" alt="{{ item.menu_item.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% with items_count=collection.items.count %}
+                    {% if items_count < 4 %}
+                        {% with remaining=4|add:"-items_count" %}
+                            {% for i in remaining|make_list %}
+                            <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
+                                <div class="w-full h-full flex items-center justify-center">
+                                    <span class="text-gray-300 text-sm">No item yet</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-xl font-serif">
+                        <a href="{% url 'wishlist:collection-detail' collection.id %}" class="hover:text-gray-600">
+                            {{ collection.name }}
+                        </a>
+                    </h2>
+                    {% if collection.is_default %}
+                        <span class="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mt-1 inline-block">Default</span>
+                    {% endif %}
+                </div>
+
+                {% if not collection.is_default %}
+                <div class="flex gap-2">
+                    <a href="{% url 'wishlist:collection-edit' collection.id %}" class="text-gray-600 hover:text-black">Edit</a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if not collection.is_default %}
+            <p class="text-gray-600">{{ collection.description|default:"" }}</p>
+            {% endif %}
+
+            <div class="text-sm text-gray-500 mt-2">
+                {{ collection.items.count }} items saved
+            </div>
         </div>
-        <div class="flex gap-2">
-          <a href="{% url 'wishlist:collection-edit' collection.id %}" 
-             class="text-gray-600 hover:text-black">
-            Edit
-          </a>
-          {% if not collection.is_default %}
-          <form method="post" action="{% url 'wishlist:collection-set-default' collection.id %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="text-gray-600 hover:text-black">
-              Set Default
-            </button>
-          </form>
-          {% endif %}
+        {% empty %}
+        <div class="col-span-full text-center py-8 text-gray-500 font-serif">
+            You don't have any collections yet.
         </div>
-      </div>
-      <p class="text-gray-600 mb-4 text-sm">{{ collection.description|default:"No description" }}</p>
-      <div class="text-sm text-gray-500">
-        {{ collection.items.count }} items saved
-      </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-8 text-gray-500 font-serif">
-      You don't have any collections yet.
-    </div>
-    {% endfor %}
-  </div>
 </div>
 {% endblock %}

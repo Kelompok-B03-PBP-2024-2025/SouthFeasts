@@ -30,6 +30,7 @@ urlpatterns = [
     path('wishlist/', include('wishlist.urls')),
     path('forum/', include('forum.urls')),
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 =======
     path('dashboard/', include('dashboard.urls')),
@@ -37,3 +38,7 @@ urlpatterns = [
 >>>>>>> 69004f5daaaa2b72bbc0ca83b4739df8968c818e
 
 
+=======
+    path('dashboard/', include('dashboard.urls')),
+]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+>>>>>>> f453a6ce70aa1a086973e2e372dddfaff10d8a0d
