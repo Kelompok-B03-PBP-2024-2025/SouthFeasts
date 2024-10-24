@@ -15,6 +15,7 @@ class ReviewEntry(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='reviews')
     rating = models.IntegerField(choices=RATING_CHOICES)
     review_text = models.TextField()
+    review_image = models.ImageField(upload_to='reviews/', null=True, blank=True)  # Folder 'reviews/' to store images
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -22,4 +23,4 @@ class ReviewEntry(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Review by {self.user} on {self.product.name}"
+        return f"Review by {self.user} on {self.menu_item.name}"

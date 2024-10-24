@@ -1,11 +1,20 @@
-<h1>All Reviews</h1>
+{% extends "base.html" %}
 
-{% for review in reviews %}
-    <div>
-        <strong>{{ review.user.username }} reviewed {{ review.product.name }}:</strong>
-        <p>{{ review.review_text }}</p>
-        <p>Rating: {{ review.rating }}</p>
-    </div>
-{% empty %}
-    <p>No reviews yet.</p>
-{% endfor %}
+{% block content %}
+    <h1>All Reviews</h1>
+
+    {% for review in reviews %}
+        <div>
+            <strong>{{ review.user.username }} reviewed {{ review.product.name }}:</strong>
+            <p>{{ review.review_text }}</p>
+            <p>Rating: {{ review.rating }}</p>
+            
+            <!-- Display the image if it exists -->
+            {% if review.review_image %}
+                <p><img src="{{ review.review_image.url }}" alt="Review image for {{ review.product.name }}" style="max-width:300px;"></p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No reviews yet.</p>
+    {% endfor %}
+{% endblock %}

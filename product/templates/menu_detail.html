@@ -77,6 +77,13 @@
                         <p class="text-gray-600">{{ review.review_text }}</p>
                         <p class="mt-2">Rating: <span class="font-bold">{{ review.rating }}</span>/5</p>
                         <p class="text-sm text-gray-400">Posted on {{ review.created_at|date:"F j, Y, g:i a" }}</p>
+                        
+                        <!-- Display the image if uploaded -->
+                        {% if review.review_image %}
+                            <div class="mt-4">
+                                <img src="{{ review.review_image.url }}" alt="Review Image" class="max-w-full h-auto rounded-lg">
+                            </div>
+                        {% endif %}
                     </div>
                 {% endfor %}
             </div>
