@@ -16,7 +16,7 @@ def all_reviews(request):
 def create_review(request, item_id):
     """View to handle creating a review for a menu item."""
     menu_item = get_object_or_404(MenuItem, pk=item_id)
-    form = ReviewForm(request.POST or None)
+    form = ReviewForm(request.POST or None, request.FILES or None)  # Add request.FILES for handling image uploads
 
     if request.method == 'POST' and form.is_valid():
         review = form.save(commit=False)
@@ -26,4 +26,3 @@ def create_review(request, item_id):
         return redirect('product:menu_detail', id=menu_item.id)
 
     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
-

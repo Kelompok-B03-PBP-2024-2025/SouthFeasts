@@ -1,11 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add a Review</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
     <div class="container">
         <h1>Add a Review for {{ menu_item.name }}</h1>
         
@@ -24,14 +19,13 @@
         {% endif %}
         
         <!-- Form for submitting a review -->
-        <form method="post">
+        <form method="post" enctype="multipart/form-data"> <!-- Add enctype here -->
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ form.as_p }}  <!-- This automatically includes all fields, including the image field -->
 
             <button type="submit">Submit Review</button>
         </form>
 
         <a href="{% url 'product:menu_detail' menu_item.id %}">Back to Menu Item</a>
     </div>
-</body>
-</html>
+{% endblock %}
