@@ -29,6 +29,11 @@ urlpatterns = [
     path('review/', include('review.urls')),
     path('wishlist/', include('wishlist.urls')),
     path('forum/', include('forum.urls')),
+<<<<<<< HEAD
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+=======
+    path('dashboard/', include('dashboard.urls')),
+]
+>>>>>>> 69004f5daaaa2b72bbc0ca83b4739df8968c818e
 
 

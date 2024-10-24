@@ -1,0 +1,86 @@
+<!-- makanan_list.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Back to Makanan Views Button -->
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'dashboard:restaurant_list' %}" 
+           class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Go to Restaurant Views
+        </a>
+    </div>
+
+    <!-- Filter Form -->
+    {% include 'filter.html' %}
+
+    <!-- Tambah makanan button -->
+    <div class="flex justify-end mb-4">
+        <a href="{% url 'dashboard:makanan_create' %}" 
+           class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Tambah Makanan
+        </a>
+    </div>
+
+    <!-- Results Display -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for makanan in makanans %}
+            {% include 'card_makanan.html' with makanan=makanan %}
+        {% empty %}
+        <div class="col-span-full text-center py-8">
+            <p class="text-gray-500">No items found matching your criteria.</p>
+        </div>
+        {% endfor %}
+    </div>
+    {# makanan_list.html #}
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="flex justify-center mt-8">
+        <div class="flex gap-2">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Previous
+                </a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Next
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+function toggleDescription(button) {
+    const card = button.closest('.relative');
+    const shortDesc = card.querySelector('.description-short');
+    const fullDesc = card.querySelector('.description-full');
+    
+    if (shortDesc.classList.contains('hidden')) {
+        shortDesc.classList.remove('hidden');
+        fullDesc.classList.add('hidden');
+        button.textContent = 'Show More';
+    } else {
+        shortDesc.classList.add('hidden');
+        fullDesc.classList.remove('hidden');
+        button.textContent = 'Show Less';
+    }
+}
+</script>
+{% endblock %}
