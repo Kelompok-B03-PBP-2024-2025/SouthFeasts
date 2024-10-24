@@ -29,6 +29,5 @@ urlpatterns = [
     path('review/', include('review.urls')),
     path('wishlist/', include('wishlist.urls')),
     path('forum/', include('forum.urls')),
+    path('dashboard/', include('dashboard.urls')),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-

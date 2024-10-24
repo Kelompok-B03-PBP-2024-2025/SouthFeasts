@@ -33,7 +33,8 @@
                 <div class="mt-4 flex justify-between items-center">
                     <span class="text-lg font-bold text-green-600">Rp {{ item.price }}</span>
                     <div class="flex space-x-2">
-                        <a href="/wishlist/create?menu_item={{ item.id }}" 
+                        <!-- ini aku ganti buat path ke wishlist nya -->
+                        <a href="{% url 'wishlist:create' %}?menu_item={{ item.id }}&next={{ request.path }}" 
                            class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition duration-200">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" 
                                  stroke="currentColor" class="w-6 h-6">
