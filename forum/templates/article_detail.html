@@ -1,74 +1,201 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ article.title }}{% endblock %}
 
 {% block content %}
-    <h1 class="text-3xl font-semibold mb-4">{{ article.title }}</h1>
-    <p class="text-lg mb-6">{{ article.content }}</p>
-
-    <!-- Jika user yang sedang login adalah pemilik artikel, tampilkan tombol edit dan delete -->
-    {% if request.user == article.user %}
-        <div class="mb-4 flex space-x-2">
-            <button class="bg-black text-white font-semibold py-2 px-6 rounded hover:bg-gray-700" onclick="openModal()">
-                Edit
-            </button>
-            <a href="{% url 'forum:delete_article' article.id %}" onclick="return confirm('Are you sure you want to delete this article?');" class="bg-black text-white font-semibold py-2 px-6 rounded hover:bg-gray-700">
-                Delete
-            </a>
-        </div>
-    {% endif %}
-
-    <h3 class="text-2xl font-semibold mb-4">Comments</h3>
-    <div class="comment-box">
-        <!-- Jika ada komentar, tampilkan -->
-        {% if comments %}
-            {% for comment in comments %}
-                <div class="border border-gray-300 rounded p-4 mb-4">
-                    <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
-                </div>
-            {% endfor %}
+<div class="w-full">
+    <div class="relative">
+        {% if article.get_thumbnail %}
+            <img src="{{ article.get_thumbnail }}" alt="{{ article.title }}" class="w-full h-96 object-cover">
         {% else %}
-            <p class="text-gray-500">No comments yet.</p>
+            <img src="{% static 'image/default-thumbnail.jpg' %}" alt="Default Thumbnail" class="w-full h-96 object-cover">
         {% endif %}
-    </div>
 
-    <!-- Form untuk menambah komentar baru -->
-    <form method="POST" class="mt-6">
-        {% csrf_token %}
-        {{ comment_form.as_p }}
-        <button type="submit" class="bg-black text-white py-2 px-6 rounded hover:bg-gray-700">Submit Comment</button>
-    </form>
-
-    <!-- Tombol untuk kembali ke halaman utama -->
-    <a href="{% url 'forum:show_main' %}" class="mt-6 inline-block bg-gray-700 text-white py-2 px-6 rounded hover:bg-black">Back to Articles</a>
-
-    <!-- Modal untuk Edit Article -->
-    <div id="editModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-xl">
-            <h2 class="text-xl font-semibold mb-4">Edit Article</h2>
-            <form method="POST" id="editArticleForm" action="{% url 'forum:edit_article' article.id %}">
-                {% csrf_token %}
-                <label for="title" class="font-semibold">Title</label>
-                <input type="text" name="title" id="title" value="{{ article.title }}" class="border border-gray-300 p-2 w-full rounded mb-4">
-                
-                <label for="content" class="font-semibold">Content</label>
-                <textarea name="content" id="content" class="border border-gray-300 p-2 w-full rounded mb-4" style="height: 200px;">{{ article.content }}</textarea>
-
-                <div class="flex justify-end">
-                    <button type="submit" class="bg-black text-white px-6 py-2 rounded hover:bg-gray-700">Save</button>
-                    <button type="button" class="ml-2 bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-700" onclick="closeModal()">Cancel</button>
+        <!-- Article Metadata (Date, Creator) -->
+        <div class="absolute bottom-0 left-0 bg-opacity-75 bg-black text-white py-2 px-4 w-full">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm">{{ article.created_at|date:"M d, Y" }}</p>
+                    <p class="text-lg">by {{ article.user.username }}</p>
                 </div>
-            </form>
+
+                <!-- Edit/Delete buttons for the owner of the article -->
+                {% if request.user == article.user %}
+                <div class="flex space-x-2">
+                    <button onclick="openEditModal()" class="w-full py-2 px-6 bg-white text-black border border-black rounded-md hover:bg-gray-100 focus:outline-none">Edit</button>
+                    <!-- Tombol Delete diganti menjadi form agar menggunakan POST request -->
+                    <form action="{% url 'forum:delete_article' article.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full py-2 px-6 bg-red-600 text-white border border-red-600 rounded-md hover:bg-red-700 focus:outline-none">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
-    <script>
-        function openModal() {
-            document.getElementById('editModal').classList.remove('hidden');
-        }
+    <!-- Article Content -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-4">{{ article.title }}</h1>
+        <div class="space-y-4">
+            <p class="text-lg text-justify">{{ article.content|linebreaks }}</p>
+        </div>
+    </div>
 
-        function closeModal() {
-            document.getElementById('editModal').classList.add('hidden');
+    <!-- Comments Section -->
+    <div class="container mx-auto px-4 py-8">
+        <h3 class="text-2xl font-bold mb-4">Comments</h3>
+        <div class="mb-8">
+            {% if article.comments.all %}
+                {% for comment in article.comments.all %}
+                    <div class="border-b border-gray-300 py-4 flex justify-between items-center">
+                        <div>
+                            <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
+                            <p class="text-sm text-gray-500">{{ comment.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        {% if request.user == comment.user %}
+                        <button 
+                            class="ml-4 text-gray-500 hover:text-red-600 focus:outline-none"
+                            title="Delete comment"
+                            data-comment-id="{{ comment.id }}"
+                            onclick="deleteComment(this)"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No comments yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Comment Form -->
+    <div class="bg-white rounded-lg shadow-md p-4 mt-8">
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <textarea id="comment-content" name="content" rows="3" placeholder="What are your thoughts?" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"></textarea>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button type="button" class="py-2 px-6 bg-white text-black border border-black rounded-md hover:bg-gray-100 focus:outline-none" onclick="cancelComment()">Cancel</button>
+                <button type="submit" class="py-2 px-6 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none">Comment</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Back to Articles Button -->
+    <div class="container mx-auto px-4 py-8">
+        <a href="{% url 'forum:show_main' %}#articles-section" class="bg-black text-white py-2 px-4 border border-black rounded-md hover:bg-gray-800 focus:outline-none">Back to Articles</a>
+    </div>
+</div>
+
+<!-- Edit Article Modal -->
+<div id="editArticleModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Edit Article</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeEditModal()">&times;</span>
+        </div>
+        <form id="editArticleForm" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="edit-title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="edit-title" name="title" value="{{ article.title }}" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div>
+                <label for="edit-content" class="block text-sm font-medium text-gray-700">Content</label>
+                <textarea id="edit-content" name="content" rows="10" 
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">{{ article.content }}</textarea>
+            </div>
+            <div>
+                <label for="edit-thumbnail" class="block text-sm font-medium text-gray-700">Thumbnail URL</label>
+                <input type="text" id="edit-thumbnail" name="thumbnail_url" value="{{ article.thumbnail_url|default_if_none:'' }}" 
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="bg-black text-white py-2 px-4 rounded">Save Changes</button>
+            </div>                
+        </form>
+    </div>
+</div>
+
+<script>
+    // Function to open and close the edit modal
+    const editModal = document.getElementById('editArticleModal');
+    const editForm = document.getElementById('editArticleForm');
+
+    function openEditModal() {
+        editModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Close modal when clicking outside
+    editModal.addEventListener('click', function(e) {
+        if (e.target === editModal) {
+            closeEditModal();
         }
-    </script>
+    });
+
+    // Handle the form submission with Fetch API
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(editForm);
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+        fetch('{% url "forum:edit_article" article.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                console.log('Error:', data.errors);  // Debugging kesalahan
+                alert(data.message || 'Failed to update article');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the article');
+        });
+    });
+
+    // Delete comment function
+    function deleteComment(button) {
+        const commentId = button.getAttribute('data-comment-id');
+        fetch(`{% url 'forum:delete_comment' 0 %}`.replace('0', commentId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to delete the comment.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the comment.');
+        });
+    }
+</script>
 {% endblock %}

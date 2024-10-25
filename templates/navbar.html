@@ -1,7 +1,7 @@
 {% load static %}
 <nav class="bg-black shadow-lg w-full">
   <div class="container mx-auto flex justify-between items-center py-6 px-6">
-    <!-- Logo on the left -->
+        <!-- Logo on the left -->
     <div class="text-white text-xl font-bold">
       <a href="{% url 'main:show_main' %}" class="hover:text-gray-300">SouthFeast</a>
     </div>
@@ -9,7 +9,6 @@
     <div class="hidden md:flex space-x-8 text-white text-lg">
       {% if user.is_authenticated and user.is_staff %}
         <a href="/dashboard" class="hover:text-gray-300">DASHBOARD</a>
-        <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
       {% else %}
         <a href="/product" class="hover:text-gray-300">CATALOG</a>
         <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
@@ -39,7 +38,6 @@
   <div class="mobile-menu hidden flex flex-col items-center bg-black py-4 space-y-4 text-lg text-white">
     {% if user.is_authenticated and user.is_staff %}
       <a href="/dashboard" class="hover:text-gray-300">DASHBOARD</a>
-      <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
     {% else %}
       <a href="/product" class="hover:text-gray-300">CATALOG</a>
       <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
