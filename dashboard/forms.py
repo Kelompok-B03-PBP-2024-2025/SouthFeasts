@@ -1,6 +1,7 @@
 from django import forms
 from product.models import MenuItem
 from restaurant.models import Restaurant
+from django.utils.html import strip_tags
 
 class MenuItemForm(forms.ModelForm):
     # Fields from Restaurant model
@@ -87,3 +88,46 @@ class MenuItemForm(forms.ModelForm):
             self.fields['resto_name'].initial = self.instance.restaurant.name
             self.fields['kecamatan'].initial = self.instance.restaurant.kecamatan
             self.fields['location'].initial = self.instance.restaurant.location
+    
+    def clean_name(self):
+        return strip_tags(self.cleaned_data["name"])
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"])
+
+    def clean_image(self):
+        return strip_tags(self.cleaned_data["image"])
+
+    def clean_resto_name(self):
+        return strip_tags(self.cleaned_data["resto_name"])
+
+    def clean_location(self):
+        return strip_tags(self.cleaned_data["location"])
+
+class RestaurantForm(forms.ModelForm):
+    class Meta:
+        model = Restaurant
+        fields = ['name', 'location', 'kecamatan']
+        labels = {
+            'name': 'Nama Restaurant',
+            'location': 'Alamat',
+            'kecamatan': 'Kecamatan'
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+                'placeholder': 'Masukkan nama restaurant'
+            }),
+            'location': forms.Textarea(attrs={
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+                'rows': 2,
+                'placeholder': 'Masukkan alamat lengkap'
+            }),
+            'kecamatan': forms.Select(
+                choices=Restaurant.KECAMATAN_CHOICE,
+                attrs={
+                    'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                }
+            )
+        }
+        
