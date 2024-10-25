@@ -22,7 +22,7 @@
 
     <div class="mb-8">
         <div class="flex justify-between items-center mb-4">
-            <h1 class="text-2xl font-serif font-bold">{{ collection.name }}</h1>
+            <h1 class="text-3xl font-bold text-black">{{ collection.name }}</h1>
             <div class="flex gap-4">
                 {% if collection.name != "My Wishlist" %}
                 <a href="{% url 'wishlist:collection-edit' collection.id %}" 
@@ -58,16 +58,16 @@
             {% if item.menu_item.image %}
             <img src="{{ item.menu_item.image }}" alt="{{ item.menu_item.name }}" class="w-full h-48 object-cover">
             {% else %}
-            <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
+            <!-- <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
                 <span class="text-gray-400 font-serif">No image</span>
-            </div>
+            </div> -->
             {% endif %}
         </a>
             
             <div class="p-4">
                 <!-- untuk ke menu_detail -->
                 <a href="{% url 'product:menu_detail' id=item.menu_item.id %}" class="text-xl font-semibold hover:text-blue-600">
-                    <h3 class="font-serif font-semibold text-lg mb-2">{{ item.menu_item.name }}</h3>
+                    <h3 class="text-5lg font-bold text-center mb-4">{{ item.menu_item.name }}</h3>
                 </a>
                 <p class="text-gray-600 mb-4 text-sm">{{ item.menu_item.description|truncatewords:20 }}</p>
                 

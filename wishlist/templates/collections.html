@@ -2,7 +2,7 @@
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="mb-8 flex justify-between items-center">
-        <h1 class="text-2xl font-serif font-bold">My Collections</h1>
+        <h1 class="text-3xl font-bold text-black">My Collections</h1>
         
         <button id="openModalButton" type="button" class="text-black px-4 py-2 rounded hover:bg-gray-400 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus">
@@ -16,83 +16,76 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for collection in collections %}
         <div class="border lg p-4 bg-white shadow-sm hover:shadow transition-all">
-            <!-- Grid items dalam collection card -->
-            {% with items=collection.sorted_items|slice:":4" %}
-            {% if items %}
-                {% if collection.is_default %}
-                    <!-- My Wishlist display - show up to 4 items -->
-                    <div class="grid grid-cols-2 gap-2 mb-4">
-                        {% for item in items %}
-                            <div class="aspect-square overflow-hidden rounded">
-                                {% if item.menu_item.image %}
-                                    <img src="{{ item.menu_item.image }}" 
-                                        alt="{{ item.menu_item.name }}"
-                                        class="w-full h-full object-cover">
-                                {% else %}
-                                    <div class="w-full h-full bg-gray-100 flex items-center justify-center">
-                                        <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
+            {% with items=collection.sorted_items|slice:":4" %} 
+            {% if items %} 
+            {% if collection.is_default %}
+            
+            <div class="grid grid-cols-2 gap-2 mb-4">
+                {% for item in items %}
+                <div class="aspect-square overflow-hidden rounded relative">
+                    {% if item.menu_item.image %} 
+                    <img src="{{ item.menu_item.image }}" alt="{{ item.menu_item.name }}" class="w-full h-full object-cover">
+                    {% if forloop.first %}
+                    <span class="absolute top-2 left-2 text-sm bg-yellow-300 text-black px-5 py-1.5 rounded-full text-sm font-medium z-10">Default</span>
+                    {% endif %}
+                    {% else %}
+                    <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
                     </div>
-                {% else %}
-                    <!-- Other collections - show only first item -->
-                    <div class="mb-4">
-                        <div class="aspect-square overflow-hidden rounded">
-                            {% if items.0.menu_item.image %}
-                                <img src="{{ items.0.menu_item.image }}" 
-                                    alt="{{ items.0.menu_item.name }}"
-                                    class="w-full h-full object-cover">
-                            {% else %}
-                                <div class="w-full h-full bg-gray-100 flex items-center justify-center">
-                                    <span class="text-gray-400 text-sm">{{ items.0.menu_item.name }}</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
             {% else %}
-                <div class="mb-4">
-                    <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
-                        <div class="w-full h-full flex items-center justify-center">
-                            <span class="text-gray-300 text-sm">No item yet</span>
-                        </div>
+
+            <div class="mb-4">
+                <div class="aspect-square overflow-hidden rounded relative">
+                    {% if items.0.menu_item.image %} 
+                    <img src="{{ items.0.menu_item.image }}" alt="{{ items.0.menu_item.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <span class="text-gray-400 text-sm">{{ items.0.menu_item.name }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% endif %} 
+            {% else %}
+
+            <div class="mb-4">
+                <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
+                    <div class="w-full h-full flex items-center justify-center">
+                        <span class="text-gray-300 text-sm">No item yet</span>
                     </div>
                 </div>
-            {% endif %}
-        {% endwith %}
+            </div>
 
-            <!-- Collection info -->
+            {% endif %} 
+            {% endwith %}
+
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <a href="{% url 'wishlist:collection-detail' collection.id %}" 
-                       class="text-xl font-serif hover:text-gray-600">
+                    <a href="{% url 'wishlist:collection-detail' collection.id %}" class="text-xl font-bold text-center mb-4">
                         {{ collection.name }}
                     </a>
-                    {% if collection.is_default %}
-                    <span class="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mt-1 inline-block">
-                        Default
-                    </span>
-                    {% endif %}
                 </div>
 
                 {% if not collection.is_default %}
                 <div class="flex gap-2 underline">
-                    <a href="{% url 'wishlist:collection-edit' collection.id %}" 
-                       class="text-gray-600 hover:text-black">
-                        Edit
-                    </a>
+                    <a href="{% url 'wishlist:collection-edit' collection.id %}" class="text-gray-600 hover:text-black">Edit</a>
                 </div>
                 {% endif %}
             </div>
 
-            <p>{{ collection.description|default:"" }}</p>
+            {{ collection.description|default:"" }}
 
             <div class="text-sm text-gray-500 mt-2">
                 {{ collection.items.count }} items saved
             </div>
         </div>
+
         {% empty %}
         <div class="col-span-full text-center py-8 text-gray-500 font-serif">
             You don't have any collections yet.
@@ -116,14 +109,14 @@
 
             <!-- name -->
             <div class="py-2">
-                <label for="name" class="font-semibold text-gray-700">Collection Name</label>
+                <label for="name" class="text-5lg text-center mb-4">Collection Name</label>
                 <input type="text" name="name" id="name" class="border border-gray-300 rounded-lg p-3 w-full">
                 <p class="text-red-500 text-sm mt-2 hidden" id="nameError"></p>
             </div>
 
             <!-- description -->
             <div class="py-2">
-                <label for="description" class="font-semibold text-gray-700">Description (Optional)</label>
+                <label for="description" class="text-5lg text-center mb-4">Description (Optional)</label>
                 <textarea name="description" id="description" rows="4" class="border border-gray-300 rounded-lg p-3 w-full"></textarea>
                 <p class="text-red-500 text-sm mt-2 hidden" id="descriptionError"></p>
             </div>
