@@ -1,65 +1,93 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <div class="mb-8 flex justify-between items-center">
         <h1 class="text-2xl font-serif font-bold">My Collections</h1>
-        <a href="{% url 'wishlist:collection-add' %}" class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-all">New Collection</a>
+        
+        <button id="openModalButton" type="button" class="text-black px-4 py-2 rounded hover:bg-gray-400 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M12 5l0 14" />
+                <path d="M5 12l14 0" />
+            </svg>
+        </button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for collection in collections %}
-        <div class="border rounded-lg p-4 bg-white shadow-sm hover:shadow transition-all">
-            <div class="grid grid-cols-2 gap-2 mb-4">
-                {% for item in collection.items.all|slice:":4" %}
-                <div class="aspect-square overflow-hidden rounded">
-                    {% if item.menu_item.image %}
-                        <img src="{{ item.menu_item.image }}" alt="{{ item.menu_item.name }}" class="w-full h-full object-cover">
-                    {% else %}
-                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
-                            <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
-                        </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-
-                {% with items_count=collection.items.count %}
-                    {% if items_count < 4 %}
-                        {% with remaining=4|add:"-items_count" %}
-                            {% for i in remaining|make_list %}
-                            <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
-                                <div class="w-full h-full flex items-center justify-center">
-                                    <span class="text-gray-300 text-sm">No item yet</span>
-                                </div>
+        <div class="border lg p-4 bg-white shadow-sm hover:shadow transition-all">
+            <!-- Grid items dalam collection card -->
+            {% with items=collection.sorted_items|slice:":4" %}
+            {% if items %}
+                {% if collection.is_default %}
+                    <!-- My Wishlist display - show up to 4 items -->
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        {% for item in items %}
+                            <div class="aspect-square overflow-hidden rounded">
+                                {% if item.menu_item.image %}
+                                    <img src="{{ item.menu_item.image }}" 
+                                        alt="{{ item.menu_item.name }}"
+                                        class="w-full h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                        <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                            {% endfor %}
-                        {% endwith %}
-                    {% endif %}
-                {% endwith %}
-            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Other collections - show only first item -->
+                    <div class="mb-4">
+                        <div class="aspect-square overflow-hidden rounded">
+                            {% if items.0.menu_item.image %}
+                                <img src="{{ items.0.menu_item.image }}" 
+                                    alt="{{ items.0.menu_item.name }}"
+                                    class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                                    <span class="text-gray-400 text-sm">{{ items.0.menu_item.name }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="mb-4">
+                    <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <span class="text-gray-300 text-sm">No item yet</span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
 
+            <!-- Collection info -->
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h2 class="text-xl font-serif">
-                        <a href="{% url 'wishlist:collection-detail' collection.id %}" class="hover:text-gray-600">
-                            {{ collection.name }}
-                        </a>
-                    </h2>
+                    <a href="{% url 'wishlist:collection-detail' collection.id %}" 
+                       class="text-xl font-serif hover:text-gray-600">
+                        {{ collection.name }}
+                    </a>
                     {% if collection.is_default %}
-                        <span class="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mt-1 inline-block">Default</span>
+                    <span class="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs mt-1 inline-block">
+                        Default
+                    </span>
                     {% endif %}
                 </div>
 
                 {% if not collection.is_default %}
-                <div class="flex gap-2">
-                    <a href="{% url 'wishlist:collection-edit' collection.id %}" class="text-gray-600 hover:text-black">Edit</a>
+                <div class="flex gap-2 underline">
+                    <a href="{% url 'wishlist:collection-edit' collection.id %}" 
+                       class="text-gray-600 hover:text-black">
+                        Edit
+                    </a>
                 </div>
                 {% endif %}
             </div>
 
-            {% if not collection.is_default %}
-            <p class="text-gray-600">{{ collection.description|default:"" }}</p>
-            {% endif %}
+            <p>{{ collection.description|default:"" }}</p>
 
             <div class="text-sm text-gray-500 mt-2">
                 {{ collection.items.count }} items saved
@@ -72,4 +100,115 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Add Collection Modal -->
+<div id="collectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden justify-center items-center">
+    <div class="bg-white w-full max-w-2xl p-6 rounded-lg shadow-lg relative">
+        <button type="button" id="closeModalButton" class="absolute top-7 right-7 text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <h2 class="text-xl font-bold mb-4">New Collection</h2>
+        <form id="modalCollectionForm">
+            {% csrf_token %}
+
+            <!-- name -->
+            <div class="py-2">
+                <label for="name" class="font-semibold text-gray-700">Collection Name</label>
+                <input type="text" name="name" id="name" class="border border-gray-300 rounded-lg p-3 w-full">
+                <p class="text-red-500 text-sm mt-2 hidden" id="nameError"></p>
+            </div>
+
+            <!-- description -->
+            <div class="py-2">
+                <label for="description" class="font-semibold text-gray-700">Description (Optional)</label>
+                <textarea name="description" id="description" rows="4" class="border border-gray-300 rounded-lg p-3 w-full"></textarea>
+                <p class="text-red-500 text-sm mt-2 hidden" id="descriptionError"></p>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <button type="submit" class="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-md">
+                    Create Collection
+                </button>
+            </div>
+        </form>
+        <div id="errorMessages" class="text-red-500 mt-4"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('collectionModal');
+    const openModalButton = document.getElementById('openModalButton');
+    const closeModalButton = document.getElementById('closeModalButton');
+    const form = document.getElementById('modalCollectionForm');
+    const errorMessages = document.getElementById('errorMessages');
+    const nameError = document.getElementById('nameError');
+
+    openModalButton.addEventListener('click', function () {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    });
+
+    closeModalButton.addEventListener('click', function () {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const name = form.querySelector('#name').value.trim();
+        const description = form.querySelector('#description').value.trim();
+
+        // Clear previous error messages
+        errorMessages.textContent = '';
+        nameError.textContent = '';
+        nameError.classList.add('hidden');
+
+        let isValid = true;
+
+        // Client-side validation
+        if (!name) {
+            nameError.textContent = 'Collection name cannot be empty.';
+            nameError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // CSRF token handling
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const formData = new FormData(form);
+
+        fetch("{% url 'wishlist:create-collection-ajax' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                // close and clear modal
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                form.reset();
+                location.reload();
+            } else if (data.errors) {
+                if (data.errors.name) {
+                    nameError.textContent = data.errors.name[0];
+                    nameError.classList.remove('hidden');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
 {% endblock %}
