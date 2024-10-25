@@ -9,14 +9,17 @@ from authentication.models import UserProfile
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.core import serializers
 from django.contrib.auth.models import User
 from django.db.models import Count, Min, Max, Avg, F
 from product.models import MenuItem
 from restaurant.models import Restaurant
-from .forms import MenuItemForm
+from .forms import MenuItemForm, RestaurantForm
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.utils.html import strip_tags
 
 def initialize_admin(request):
     # Check if 'admin' user exists
@@ -260,16 +263,57 @@ def restaurant_list(request):
     return render(request, 'resto_list.html', context)
 
 @user_passes_test(is_admin)
-def makanan_create(request):
-    form = MenuItemForm(request.POST or None)
-    if form.is_valid() and request.method == 'POST':
-        menu_item = form.save(commit=False)
-        menu_item.save()
-        return redirect('dashboard:makanan_list')
+@login_required(login_url='/authentication/login/')
+def restaurant_update(request, resto_name):
+    restaurant = Restaurant.objects.get(name=resto_name)
+    
+    if request.method == 'POST':
+        form = RestaurantForm(request.POST, instance=restaurant)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard:restaurant_menu', resto_name=form.cleaned_data['name'])
+    else:
+        form = RestaurantForm(instance=restaurant)
+    
     context = {
-        'form': form
+        'form': form,
+        'restaurant': restaurant
     }
-    return render(request, 'create_makanan.html', context)
+    return render(request, 'update_restaurant.html', context)
+
+@csrf_exempt
+@require_POST
+@user_passes_test(is_admin)
+def makanan_create(request):
+    if request.method == 'POST':
+        name = strip_tags(request.POST.get('name'))
+        description = strip_tags(request.POST.get('description'))
+        price = request.POST.get('price')
+        image = strip_tags(request.POST.get('image'))
+        category = strip_tags(request.POST.get('category'))
+        resto_name = strip_tags(request.POST.get('resto_name'))
+        kecamatan = strip_tags(request.POST.get('kecamatan'))
+        location = strip_tags(request.POST.get('location'))
+
+        # Create form instance with the POST data
+        form_data = {
+            'name': name,
+            'description': description,
+            'price': price,
+            'image': image,
+            'category': category,
+            'resto_name': resto_name,
+            'kecamatan': kecamatan,
+            'location': location
+        }
+        
+        form = MenuItemForm(form_data)
+        
+        if form.is_valid():
+            form.save()
+            return HttpResponse(b"CREATED", status=201)
+
+    return HttpResponse(b"ERROR", status=400)
 
 @user_passes_test(is_admin)
 def makanan_update(request, id):
@@ -294,8 +338,59 @@ def show_xml(request):
     return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
 
 def show_json(request):
-    data = MenuItem.objects.all()
-    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+    search_query = request.GET.get('search', '')
+    selected_category = request.GET.get('category', 'all')
+    selected_kecamatan = request.GET.get('kecamatan', 'all')
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+
+    # Query dasar
+    menu_items = MenuItem.objects.all()
+
+    # Filter berdasarkan pencarian
+    if search_query:
+        menu_items = menu_items.filter(name__icontains=search_query)
+
+    # Filter berdasarkan kategori
+    if selected_category != 'all':
+        menu_items = menu_items.filter(category=selected_category)
+
+    # Filter berdasarkan kecamatan
+    if selected_kecamatan != 'all':
+        menu_items = menu_items.filter(restaurant__kecamatan=selected_kecamatan)
+
+    # Filter berdasarkan harga
+    if min_price:
+        menu_items = menu_items.filter(price__gte=min_price)
+    if max_price:
+        menu_items = menu_items.filter(price__lte=max_price)
+
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    per_page = 6
+    start = (page - 1) * per_page
+    end = start + per_page
+    total_pages = (menu_items.count() + per_page - 1) // per_page
+    menu_items = menu_items[start:end]
+
+    data = {
+        'results': [{
+            'id': menu_item.id,
+            'name': menu_item.name,
+            'description': menu_item.description,
+            'price': menu_item.price,
+            'category': menu_item.category,
+            'kecamatan': menu_item.restaurant.kecamatan,
+            'image': menu_item.image,
+            'restaurant_name': menu_item.restaurant.name,
+        } for menu_item in menu_items],
+        'total_pages': total_pages,
+        'has_previous': page > 1,
+        'has_next': page < total_pages,
+    }
+
+    return JsonResponse(data)
+
 
 def show_xml_by_id(request, id):
     data = MenuItem.objects.filter(pk=id)

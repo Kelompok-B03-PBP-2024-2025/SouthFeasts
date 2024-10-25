@@ -95,19 +95,21 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center py-8">
-            No restaurants found matching your criteria.
+        <div class="col-span-full flex flex-col items-center justify-center h-96">
+            <img src= "https://i.pinimg.com/736x/e3/57/ea/e357ea1f87ec8694411bc18ecfbe3b9a.jpg"
+                alt="No Results Found" class="mb-4" style="width: 150px; height: auto;">
+            <p class="text-gray-600 text-center">No restaurants found matching your criteria. Please try again with different filters.</p>
         </div>
         {% endfor %}
     </div>
 
-        <!-- Pagination -->
+    <!-- Pagination -->
     {% if restaurants.paginator.num_pages > 1 %}
     <div class="flex justify-center mt-8">
         <div class="flex gap-2">
             {% if restaurants.has_previous %}
             <a href="?page={{ restaurants.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                 Previous
             </a>
             {% endif %}
@@ -117,7 +119,7 @@
                 <span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ num }}</span>
                 {% elif num > restaurants.number|add:'-3' and num < restaurants.number|add:'3' %}
                 <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                     {{ num }}
                 </a>
                 {% endif %}
@@ -125,7 +127,7 @@
     
             {% if restaurants.has_next %}
             <a href="?page={{ restaurants.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                 Next
             </a>
             {% endif %}

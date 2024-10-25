@@ -3,19 +3,19 @@
   <div class="container mx-auto flex justify-between items-center py-6 px-6">
     <!-- Logo on the left -->
     <div class="text-white text-xl font-bold">
-      SouthFeast
+      <a href="{% url 'main:show_main' %}" class="hover:text-gray-300">SouthFeast</a>
     </div>
     <!-- Desktop Menu -->
     <div class="hidden md:flex space-x-8 text-white text-lg">
-      <a href="/product" class="hover:text-gray-300">CATALOG</a>
-      <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
-      <a href="/review" class="hover:text-gray-300">REVIEW</a>
-      <a href="/wishlist" class="hover:text-gray-300">WISHLIST</a>
-      <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
-      {% if user.is_authenticated %}
-        {% if user.is_staff %}
+      {% if user.is_authenticated and user.is_staff %}
         <a href="/dashboard" class="hover:text-gray-300">DASHBOARD</a>
-        {% endif %}
+        <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+      {% else %}
+        <a href="/product" class="hover:text-gray-300">CATALOG</a>
+        <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
+        <a href="/review" class="hover:text-gray-300">REVIEW</a>
+        <a href="/wishlist" class="hover:text-gray-300">WISHLIST</a>
+        <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
       {% endif %}
       {% if user.is_authenticated %}
         <!-- Logout Button -->
@@ -37,11 +37,16 @@
 
   <!-- Mobile Menu (hidden by default) -->
   <div class="mobile-menu hidden flex flex-col items-center bg-black py-4 space-y-4 text-lg text-white">
-    <a href="/product" class="hover:text-gray-300">CATALOG</a>
-    <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
-    <a href="review" class="hover:text-gray-300">REVIEW</a>
-    <a href="wishlist" class="hover:text-gray-300">WISHLIST</a>
-    <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+    {% if user.is_authenticated and user.is_staff %}
+      <a href="/dashboard" class="hover:text-gray-300">DASHBOARD</a>
+      <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+    {% else %}
+      <a href="/product" class="hover:text-gray-300">CATALOG</a>
+      <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
+      <a href="/review" class="hover:text-gray-300">REVIEW</a>
+      <a href="/wishlist" class="hover:text-gray-300">WISHLIST</a>
+      <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
+    {% endif %}
     {% if user.is_authenticated %}
       <!-- Logout Button for mobile -->
       <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300 ease-in-out">LOGOUT</a>

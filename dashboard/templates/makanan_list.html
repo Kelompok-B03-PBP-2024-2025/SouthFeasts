@@ -1,9 +1,12 @@
-<!-- makanan_list.html -->
 {% extends 'base.html' %}
-
+{% load static %}
 {% block content %}
+
+{% block meta %}
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+{% endblock meta %}
+
 <div class="container mx-auto px-4 py-8">
-    <!-- Back to Makanan Views Button -->
     <div class="flex justify-end mb-4">
         <a href="{% url 'dashboard:restaurant_list' %}" 
            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
@@ -11,76 +14,350 @@
         </a>
     </div>
 
-    <!-- Filter Form -->
-    {% include 'filter.html' %}
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-2xl font-bold mb-4">Filter Makanan</h2>
+        <form id="filterForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <input type="text" id="search" placeholder="Search..." 
+                       class="w-full p-2 border rounded">
+                
+                <select id="category" class="w-full p-2 border rounded">
+                    <option value="all">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
 
-    <!-- Tambah makanan button -->
+                <select id="kecamatan" class="w-full p-2 border rounded">
+                    <option value="all">All Locations</option>
+                    {% for kecamatan in kecamatans %}
+                        <option value="{{ kecamatan }}">{{ kecamatan }}</option>
+                    {% endfor %}
+                </select>
+
+                <div class="flex gap-2">
+                    <input type="number" id="minPrice" placeholder="Min Price" 
+                           class="w-1/2 p-2 border rounded">
+                    <input type="number" id="maxPrice" placeholder="Max Price" 
+                           class="w-1/2 p-2 border rounded">
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div class="flex justify-end mb-4">
-        <a href="{% url 'dashboard:makanan_create' %}" 
-           class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        <button onclick="showAddMakananModal()" 
+                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
             Tambah Makanan
-        </a>
+        </button>
     </div>
 
-    <!-- Results Display -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for makanan in makanans %}
-            {% include 'card_makanan.html' with makanan=makanan %}
-        {% empty %}
-        <div class="col-span-full text-center py-8">
-            <p class="text-gray-500">No items found matching your criteria.</p>
-        </div>
-        {% endfor %}
+    <div id="makananContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     </div>
-    {# makanan_list.html #}
-    {% if page_obj.paginator.num_pages > 1 %}
-    <div class="flex justify-center mt-8">
-        <div class="flex gap-2">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    Previous
-                </a>
-            {% endif %}
-            
-            {% for num in page_obj.paginator.page_range %}
-                {% if num == page_obj.number %}
-                    <span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ num }}</span>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                        {{ num }}
-                    </a>
-                {% endif %}
-            {% endfor %}
-            
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    Next
-                </a>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
 
+    <div id="paginationContainer" class="flex justify-center mt-8">
+    </div>
 </div>
 
+<!-- Add Makanan Modal -->
+<div id="addMakananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Menu Item</h3>
+        
+        <form id="addMakananForm" onsubmit="submitMakanan(event)" class="space-y-4">
+            <div class="mb-4">
+                <input type="text" id="itemName" placeholder="Item Name" required
+                       class="w-full p-2 border rounded">
+            </div>
+
+            <div class="mb-4">
+                <textarea id="itemDescription" placeholder="Description" required
+                          class="w-full p-2 border rounded"></textarea>
+            </div>
+
+            <div class="mb-4">
+                <input type="number" id="itemPrice" placeholder="Price" required
+                       class="w-full p-2 border rounded">
+            </div>
+
+            <div class="mb-4">
+                <input type="text" id="itemImage" placeholder="Image URL"
+                       class="w-full p-2 border rounded">
+            </div>
+
+            <div class="mb-4">
+                <select id="itemCategory" required class="w-full p-2 border rounded">
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <input type="text" id="itemRestaurant" placeholder="Restaurant Name" required
+                       class="w-full p-2 border rounded">
+            </div>
+
+            <div class="mb-4">
+                <select id="itemKecamatan" required class="w-full p-2 border rounded">
+                    {% for kecamatan in kecamatans %}
+                        <option value="{{ kecamatan }}">{{ kecamatan }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <input type="text" id="itemLocation" placeholder="Location" required
+                       class="w-full p-2 border rounded">
+            </div>
+
+            <div class="items-center px-4 py-3">
+                <button type="button" onclick="hideAddMakananModal()"
+                        class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">
+                    Close
+                </button>
+                <button type="submit"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Include the JavaScript file -->
 <script>
+let currentPage = 1; // Global variable to store the current page number
+
+// Handle filtering and pagination
+function loadMakanan(page = 1) {
+    currentPage = page; // Update the current page number
+    const searchQuery = document.getElementById('search').value;
+    const category = document.getElementById('category').value;
+    const kecamatan = document.getElementById('kecamatan').value;
+    const minPrice = document.getElementById('minPrice').value;
+    const maxPrice = document.getElementById('maxPrice').value;
+
+    const queryParams = new URLSearchParams({
+        page: page,
+        search: searchQuery,
+        category: category,
+        kecamatan: kecamatan,
+        min_price: minPrice,
+        max_price: maxPrice
+    });
+
+    fetch(`/dashboard/show-json/?${queryParams}`)
+        .then(response => response.json())
+        .then(data => {
+            updateMakananDisplay(data.results);
+            updatePagination(data, page);
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function updateMakananDisplay(makanan) {
+    const container = document.getElementById('makananContainer');
+    container.innerHTML = '';
+
+    if (makanan.length === 0) {
+        // Adjust container layout for no results
+        container.classList.remove('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
+        container.classList.add('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
+
+        // If no items are found, show a message and an image
+        container.innerHTML = `
+            <div class="text-center">
+                <img src="https://i.pinimg.com/736x/e3/57/ea/e357ea1f87ec8694411bc18ecfbe3b9a.jpg" 
+                     alt="No Results Found" class="mx-auto mb-4" style="width: 150px; height: auto;">
+                <p class="text-gray-600">No food items match your filter. Please try again with different filters.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Restore grid layout for cards
+    container.classList.remove('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
+    container.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
+
+    makanan.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+        const itemName = DOMPurify.sanitize(item.name);
+        const itemDescription = DOMPurify.sanitize(item.description);
+        const itemRestaurantName = DOMPurify.sanitize(item.restaurant_name || 'N/A');
+        
+        card.innerHTML = `
+            ${item.image ? `<img src="${DOMPurify.sanitize(item.image)}" alt="${itemName}" class="w-full h-48 object-cover">` : ''}
+            <div class="p-4">
+                <h3 class="text-xl font-bold mb-2">${itemName}</h3>
+                <div class="relative">
+                    <p class="text-gray-600 mb-2 description-short">${itemDescription.split(' ').slice(0, 20).join(' ')}...</p>
+                    <p class="text-gray-600 mb-2 description-full hidden">${itemDescription}</p>
+                    <button onclick="toggleDescription(this)" 
+                            class="text-blue-500 hover:text-blue-700 text-sm font-medium">
+                        Show More
+                    </button>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <span class="text-green-600 font-bold">Rp ${item.price.toLocaleString()}</span>
+                    <span class="text-gray-500">${itemRestaurantName}</span>
+                </div>
+                <div class="mt-2 text-sm text-gray-500">
+                    <span class="mr-2">${item.category}</span>
+                    <span>${item.kecamatan}</span>
+                </div>
+                <div class="mt-4 flex gap-2">
+                    <a href="javascript:void(0);" onclick="editMakanan(${item.id})" 
+                       class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">
+                        Edit
+                    </a>
+                    <a href="javascript:void(0);" onclick="deleteMakanan(${item.id})" 
+                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+                        Delete
+                    </a>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+
 function toggleDescription(button) {
-    const card = button.closest('.relative');
-    const shortDesc = card.querySelector('.description-short');
-    const fullDesc = card.querySelector('.description-full');
-    
-    if (shortDesc.classList.contains('hidden')) {
-        shortDesc.classList.remove('hidden');
-        fullDesc.classList.add('hidden');
-        button.textContent = 'Show More';
-    } else {
-        shortDesc.classList.add('hidden');
-        fullDesc.classList.remove('hidden');
+    const descriptionShort = button.previousElementSibling.previousElementSibling;
+    const descriptionFull = button.previousElementSibling;
+    const isHidden = descriptionFull.classList.contains('hidden');
+
+    if (isHidden) {
+        descriptionShort.classList.add('hidden');
+        descriptionFull.classList.remove('hidden');
         button.textContent = 'Show Less';
+    } else {
+        descriptionShort.classList.remove('hidden');
+        descriptionFull.classList.add('hidden');
+        button.textContent = 'Show More';
     }
 }
+
+function updatePagination(data, currentPage) {
+    const container = document.getElementById('paginationContainer');
+    container.innerHTML = '';
+
+    if (data.total_pages > 1) {
+        const pagination = document.createElement('div');
+        pagination.className = 'flex justify-center space-x-2';
+
+        // Previous button
+        if (data.has_previous) {
+            const prevButton = document.createElement('button');
+            prevButton.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded';
+            prevButton.textContent = 'Previous';
+            prevButton.onclick = () => loadMakanan(currentPage - 1);
+            pagination.appendChild(prevButton);
+        }
+
+        // Page indicator
+        const pageIndicator = document.createElement('span');
+        pageIndicator.className = 'py-2 px-4';
+        pageIndicator.textContent = `Page ${currentPage} of ${data.total_pages}`;
+        pagination.appendChild(pageIndicator);
+
+        // Next button
+        if (data.has_next) {
+            const nextButton = document.createElement('button');
+            nextButton.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded';
+            nextButton.textContent = 'Next';
+            nextButton.onclick = () => loadMakanan(currentPage + 1);
+            pagination.appendChild(nextButton);
+        }
+
+        container.appendChild(pagination);
+    }
+}
+
+// Handle adding new makanan
+function showAddMakananModal() {
+    document.getElementById('addMakananModal').classList.remove('hidden');
+}
+
+function hideAddMakananModal() {
+    document.getElementById('addMakananModal').classList.add('hidden');
+}
+
+function submitMakanan(event) {
+    event.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('name', document.getElementById('itemName').value);
+    formData.append('description', document.getElementById('itemDescription').value);
+    formData.append('price', document.getElementById('itemPrice').value);
+    formData.append('image', document.getElementById('itemImage').value);
+    formData.append('category', document.getElementById('itemCategory').value);
+    formData.append('resto_name', document.getElementById('itemRestaurant').value);
+    formData.append('kecamatan', document.getElementById('itemKecamatan').value);
+    formData.append('location', document.getElementById('itemLocation').value);
+
+    fetch('/dashboard/makanan-create/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.ok) {
+            hideAddMakananModal();
+            loadMakanan(currentPage); // Reload the list using the current page
+            document.getElementById('addMakananForm').reset();
+        } else {
+            throw new Error('Failed to create item');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Display error message
+        const errorContainer = document.createElement('div');
+        errorContainer.classList.add('bg-red-500', 'text-white', 'p-2', 'rounded', 'mt-4');
+        errorContainer.textContent = 'Failed to add new food item. Please check your input and try again.';
+        document.getElementById('addMakananForm').appendChild(errorContainer);
+    });
+}
+
+
+// Delete makanan
+function deleteMakanan(id) {
+    if (confirm('Are you sure you want to delete this item?')) {
+        fetch(`/dashboard/makanan-delete/${id}/`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (response.ok) {
+                loadMakanan(currentPage); // Reload the list using the current page
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function editMakanan(id) {
+    window.location.href = `/dashboard/makanan-update/${id}/?page=${currentPage}`;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadMakanan();
+
+    // Set up filter form submission
+    document.getElementById('filterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadMakanan();
+    });
+});
 </script>
+
 {% endblock %}
