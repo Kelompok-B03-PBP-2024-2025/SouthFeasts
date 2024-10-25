@@ -1,128 +1,326 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Culinary Insights{% endblock %}
 
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <div class="flex flex-col lg:flex-row justify-between items-start mb-8">
-            <!-- Articles Section -->
-            <div class="w-full lg:w-1/2">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold">Articles</h2>
-                    {% if user.is_authenticated %}
-                        <button class="bg-black text-white py-2 px-4" id="add-article-btn">Add Article</button>
-                    {% endif %}
-                </div>
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2024/08/seroja_15-980x719.jpg');">
+    <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
+        <h1 class="text-4xl font-bold text-white">CULINARY INSIGHTS</h1>
+        <p class="text-lg text-gray-200">Get the latest scoop on South Jakarta culinary world.</p>
+        <div class="mt-4">
+            <!-- Button to show Articles -->
+            <button id="see-articles-btn" onclick="showArticles()" class="bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                See Articles
+            </button>
+            <!-- Button to show Q&A -->
+            <button id="see-qna-btn" onclick="showQnA()" class="bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                See Q&A
+            </button>
+        </div>
+    </div>
+</div>
 
-                <!-- Displaying articles -->
-                {% if articles %}
-                    {% for article in articles %}
-                        <div class="border border-gray-300 rounded p-4 mb-4">
-                            <p><strong>{{ article.title }}</strong></p>
-                            <p>{{ article.description }}</p>
-                            <a href="{% if user.is_authenticated %}{% url 'forum:article_detail' article.id %}{% else %}{% url 'authentication:login' %}?next={% url 'forum:article_detail' article.id %}{% endif %}" class="bg-black text-white py-2 px-4 inline-block mt-2">
-                                View More
-                            </a>                          
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No articles available yet.</p>
-                {% endif %}
-            </div>
+<!-- Articles Section -->
+<div id="articles-section" class="container mx-auto px-4 py-8 hidden">
+    <h2 class="text-3xl font-bold text-center mb-4">Articles</h2>
+    <div class="text-center mb-4">
+        <!-- Button to add new Article -->
+        <button id="add-article-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"> + Add New Article</button>
+    </div>
 
-            <!-- Divider for desktop -->
-            <div class="hidden lg:block w-0.5 bg-gray-300 mx-8"></div>
-
-            <!-- QnA Section -->
-            <div class="w-full lg:w-1/2 mt-8 lg:mt-0">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold">QnA</h2>
-                    {% if user.is_authenticated %}
-                        <button class="bg-black text-white py-2 px-4" id="add-qna-btn">Add Question</button>
-                    {% endif %}
-                </div>
-
-                <!-- Displaying questions -->
-                {% if questions %}
-                    {% for question in questions %}
-                        <div class="border border-gray-300 rounded p-4 mb-4">
-                            <p><strong>{{ question.title }}</strong></p>
-                            <p>{{ question.description }}</p>
-                            <a href="{% if user.is_authenticated %}{% url 'forum:question_detail' question.id %}{% else %}{% url 'authentication:login' %}?next={% url 'forum:question_detail' question.id %}{% endif %}" class="bg-black text-white py-2 px-4 inline-block mt-2">
-                                View More
-                            </a>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No questions available yet.</p>
-                {% endif %}
+    <!-- If there are no articles -->
+    {% if not articles %}
+    <div class="text-center text-gray-500 mt-6">
+        <p class="text-lg">It looks like there are no articles yet. Be the first to add one!</p>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="articles-grid">
+        {% for article in articles %}
+        <div class="border rounded overflow-hidden shadow-lg h-full">
+            <img src="{{ article.get_thumbnail|default:'/static/image/default-thumbnail.jpg' }}" alt="Article Image" class="w-full h-48 object-cover">
+            <div class="p-4 article-content">
+                <h3 class="text-xl font-bold mb-2">{{ article.title }}</h3>
+                <p class="text-gray-600">{{ article.content|truncatewords:30 }}</p>
+                <a href="{% url 'forum:article_detail' article.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
             </div>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Go to Q&A Button -->
+    <div class="mt-8 flex justify-end">
+        <button onclick="showQnA()" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">See Q&A</button>
+    </div>
+</div>
+
+<!-- Q&A Section -->
+<div id="qna-section" class="container mx-auto px-4 py-8 hidden">
+    <h2 class="text-3xl font-bold text-center mb-4">Q&A</h2>
+    <div class="text-center mb-4">
+        <!-- Button to add new Question -->
+        <button id="add-question-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"> + Add New Question</button>
     </div>
 
-    <!-- Modal for Add Article -->
-    <div id="addArticleModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
-        <div class="bg-white p-6 rounded-lg w-1/3">
-            <span class="close text-gray-500 float-right text-2xl cursor-pointer" id="close-article-modal">&times;</span>
-            <h3 class="text-xl font-bold mb-4">Add Article</h3>
-            <form method="POST" action="{% url 'forum:add_article' %}">
-                {% csrf_token %}
-                {{ article_form.as_p }}
-                <button type="submit" class="bg-black text-white py-2 px-4 mt-4">Submit</button>
-            </form>
+    <!-- If there are no questions -->
+    {% if not questions %}
+    <div class="text-center text-gray-500 mt-6">
+        <p class="text-lg">It looks like there are no questions yet. Be the first to ask!</p>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="questions-grid">
+        {% for question in questions %}
+        <div class="border rounded overflow-hidden shadow-lg h-full">
+            <div class="p-4 article-content">
+                <h3 class="text-xl font-bold mb-2">{{ question.title }}</h3>
+                <p class="text-gray-600">{{ question.question|truncatewords:20 }}</p>
+                <a href="{% url 'forum:question_detail' question.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+            </div>
         </div>
+        {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- Modal for Add Question -->
-    <div id="addQnaModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
-        <div class="bg-white p-6 rounded-lg w-1/3">
-            <span class="close text-gray-500 float-right text-2xl cursor-pointer" id="close-qna-modal">&times;</span>
-            <h3 class="text-xl font-bold mb-4">Add Question</h3>
-            <form method="POST" action="{% url 'forum:add_question' %}">
-                {% csrf_token %}
-                {{ question_form.as_p }}
-                <button type="submit" class="bg-black text-white py-2 px-4 mt-4">Submit</button>
-            </form>
+    <!-- Go to Articles Button in Q&A Section -->
+    <div class="mt-8 flex justify-end">
+        <button onclick="showArticles()" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">See Articles</button>
+    </div>
+</div>
+
+<!-- Modal for Adding a New Article -->
+<div id="addArticleModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Add New Article</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeModal('addArticleModal')">&times;</span>
         </div>
+        <form id="addArticleForm" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="title" name="title" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div>
+                <label for="content" class="block text-sm font-medium text-gray-700">Content</label>
+                <textarea id="content" name="content" rows="6" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black"></textarea>
+            </div>
+            <div>
+                <label for="thumbnail_url" class="block text-sm font-medium text-gray-700">Image Cover URL (optional)</label>
+                <input type="url" id="thumbnail_url" name="thumbnail_url"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit"
+                        class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">Submit</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        // Modal functionality
-        var addArticleBtn = document.getElementById("add-article-btn");
-        var addQnaBtn = document.getElementById("add-qna-btn");
+<!-- Modal for Adding a New Question -->
+<div id="addQuestionModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Add New Question</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeModal('addQuestionModal')">&times;</span>
+        </div>
+        <form id="addQuestionForm" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="q-title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="q-title" name="title" required
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div>
+                <label for="q-question" class="block text-sm font-medium text-gray-700">Question</label>
+                <textarea id="q-question" name="question" rows="6" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black"></textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit"
+                        class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        var addArticleModal = document.getElementById("addArticleModal");
-        var addQnaModal = document.getElementById("addQnaModal");
+<!-- JavaScript for handling modals and section toggling -->
+<script>
+    // Capture user's login status from Django context
+    const isLoggedIn = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
 
-        var closeArticleModal = document.getElementById("close-article-modal");
-        var closeQnaModal = document.getElementById("close-qna-modal");
-
-        // Open modal
-        addArticleBtn && (addArticleBtn.onclick = function() {
-            addArticleModal.style.display = "flex";
-        });
-
-        addQnaBtn && (addQnaBtn.onclick = function() {
-            addQnaModal.style.display = "flex";
-        });
-
-        // Close modal
-        closeArticleModal.onclick = function() {
-            addArticleModal.style.display = "none";
+    document.getElementById("add-article-btn").addEventListener("click", function() {
+        if (!isLoggedIn) {
+            window.location.href = "/auth/login/?next=" + window.location.pathname;
+        } else {
+            document.getElementById("addArticleModal").classList.remove("hidden");
         }
+    });
 
-        closeQnaModal.onclick = function() {
-            addQnaModal.style.display = "none";
+    document.getElementById("add-question-btn").addEventListener("click", function() {
+        if (!isLoggedIn) {
+            window.location.href = "/auth/login/?next=" + window.location.pathname;
+        } else {
+            document.getElementById("addQuestionModal").classList.remove("hidden");
         }
+    });
 
-        // Close modal when clicking outside of it
-        window.onclick = function(event) {
-            if (event.target == addArticleModal) {
-                addArticleModal.style.display = "none";
+    // Function to close the modal
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        modal.classList.add('hidden');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+    // Handle initial hash on page load
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+    });
+
+    function handleHashChange() {
+        if (window.location.hash === "#qna-section") {
+            showQnA();
+        } else if (window.location.hash === "#articles-section") {
+            showArticles();
+        }
+    }
+
+    function showArticles() {
+        const articlesSection = document.getElementById('articles-section');
+        const qnaSection = document.getElementById('qna-section');
+        articlesSection.classList.remove('hidden');
+        qnaSection.classList.add('hidden');
+        articlesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showQnA() {
+        const articlesSection = document.getElementById('articles-section');
+        const qnaSection = document.getElementById('qna-section');
+        qnaSection.classList.remove('hidden');
+        articlesSection.classList.add('hidden');
+        qnaSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+   // Add New Article AJAX submission
+    document.getElementById("addArticleForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch("{% url 'forum:add_article' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Create a new article card in the DOM
+                const articlesGrid = document.getElementById('articles-grid');
+                const newArticleDiv = document.createElement('div');
+                newArticleDiv.className = 'border rounded overflow-hidden shadow-lg h-full';
+                newArticleDiv.innerHTML = `
+                    <img src="${data.article.thumbnail_url}" alt="Article Image" class="w-full h-48 object-cover">
+                    <div class="p-4 article-content">
+                        <h2 class="text-xl font-bold mb-2">${data.article.title}</h2>
+                        <p class="text-gray-600">${truncateText(data.article.content, 30)}</p>
+                        <a href="${data.article.url}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                    </div>
+                `;
+                articlesGrid.prepend(newArticleDiv);
+
+                // Apply consistent styles to the new article content
+                const articleContent = newArticleDiv.querySelector('.article-content');
+                articleContent.style.minHeight = '250px';
+
+                // Clear the form inputs after a successful submission
+                document.getElementById("addArticleForm").reset();
+
+                // Close the modal after submission
+                closeModal('addArticleModal');
+            } else {
+                console.error('Form validation errors:', data.form_errors);
+                alert('Failed to add article: ' + data.error);
             }
-            if (event.target == addQnaModal) {
-                addQnaModal.style.display = "none";
-            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while adding the article.');
         }
-    </script>
+    });
+
+    // Helper function to truncate the text to a specific number of words
+    function truncateText(text, wordLimit) {
+        const words = text.split(" ");
+        if (words.length > wordLimit) {
+            return words.slice(0, wordLimit).join(" ") + "...";
+        }
+        return text;
+    }
+
+    // Add New Question AJAX submission
+    document.getElementById("addQuestionForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch("{% url 'forum:add_question' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Create a new question card in the DOM
+                const questionsGrid = document.getElementById('questions-grid');
+                const newQuestionDiv = document.createElement('div');
+                newQuestionDiv.className = 'border rounded overflow-hidden shadow-lg h-full';
+                newQuestionDiv.innerHTML = `
+                    <div class="p-4 article-content">
+                        <h2 class="text-xl font-bold mb-2">${data.question.title}</h2>
+                        <p class="text-gray-600">${data.question.question}</p>
+                        <a href="${data.question.url}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                    </div>
+                `;
+                questionsGrid.prepend(newQuestionDiv);
+
+                // Clear the form inputs after a successful submission
+                document.getElementById("addQuestionForm").reset();
+
+                // Close the modal after submission
+                closeModal('addQuestionModal');
+            } else {
+                // Show detailed form validation errors
+                alert(`Failed to add question: ${data.error}\nErrors: ${JSON.stringify(data.form_errors)}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while adding the question.');
+        }
+    });
+</script>
+
+<style>
+    .article-content {
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+</style>
 {% endblock %}

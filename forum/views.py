@@ -1,8 +1,9 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponseNotFound, HttpResponseForbidden, JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from forum.models import Article, Comment, Question, Answer
 from forum.forms import ArticleForm, CommentForm, QuestionForm, AnswerForm
+from django.urls import reverse
 
 # View untuk menampilkan halaman utama (Culinary Insights)
 def show_main(request):
@@ -21,18 +22,14 @@ def show_main(request):
     return render(request, 'culinary_insights.html', context)
 
 # View untuk menampilkan detail artikel dan komentar
+@login_required(login_url='/auth/login/') 
 def article_detail(request, article_id):
-    try:
-        article = Article.objects.get(id=article_id)
-    except Article.DoesNotExist:
-        return HttpResponseNotFound("Article not found.")
-
+    article = get_object_or_404(Article, id=article_id)
     comments = Comment.objects.filter(article=article)
 
-    # Jika user belum login dan mencoba menambahkan komentar, arahkan ke login
     if request.method == 'POST':
         if not request.user.is_authenticated:
-            return redirect('auth:login')  # Redirect ke halaman login jika belum login
+            return redirect('auth:login')
 
         comment_form = CommentForm(request.POST)
         if comment_form.is_valid():
@@ -55,28 +52,81 @@ def article_detail(request, article_id):
 # View untuk menambah artikel
 @login_required(login_url='/auth/login/')
 def add_article(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ArticleForm(request.POST)
         if form.is_valid():
             article = form.save(commit=False)
             article.user = request.user
             article.save()
-            return redirect('forum:show_main')
-    return redirect('forum:show_main')
+            return JsonResponse({
+                'success': True,
+                'article': {
+                    'id': article.id,
+                    'title': article.title,
+                    'content': article.content,
+                    'thumbnail_url': article.get_thumbnail() or '/static/image/default-thumbnail.jpg',
+                    'url': reverse('forum:article_detail', args=[article.id]),
+                }
+            })
+
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+# View untuk mengedit artikel
+@login_required(login_url='/auth/login/')
+def edit_article(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+
+    # Authorization check
+    if request.user != article.user and not request.user.is_staff:
+        return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+
+    # Handle GET request for editing the article (optional, only if you want to support it)
+    if request.method == 'GET':
+        form = ArticleForm(instance=article)
+        return JsonResponse({
+            "success": True,
+            "form": {
+                "title": article.title,
+                "content": article.content,
+                "thumbnail_url": article.thumbnail_url
+            }
+        })
+
+    # Handle POST request for saving the edited article
+    elif request.method == 'POST':
+        form = ArticleForm(request.POST, instance=article)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({"success": True, "message": "Article updated successfully"})
+        else:
+            return JsonResponse({
+                "success": False,
+                "message": "Invalid data",
+                "errors": form.errors  # Send form validation errors to frontend
+            }, status=400)
+
+    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+
+# View untuk menghapus artikel
+def delete_article(request, article_id):
+    article = get_object_or_404(Article, id=article_id)
+
+    if request.user != article.user and not request.user.is_staff:
+        return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+
+    article.delete()
+    # Redirect ke halaman utama atau ke #section di halaman Culinary Insights
+    return redirect(reverse('forum:show_main') + '#articles-section')
 
 # View untuk menampilkan detail pertanyaan (QnA) dan jawaban
+@login_required(login_url='/auth/login/') 
 def question_detail(request, question_id):
-    try:
-        question = Question.objects.get(id=question_id)
-    except Question.DoesNotExist:
-        return HttpResponseNotFound("Question not found.")
-
+    question = get_object_or_404(Question, id=question_id)
     answers = Answer.objects.filter(question=question)
 
-    # Jika user belum login dan mencoba menambahkan jawaban, arahkan ke login
     if request.method == 'POST':
         if not request.user.is_authenticated:
-            return redirect('auth:login')  # Redirect ke halaman login jika belum login
+            return redirect('auth:login')
 
         answer_form = AnswerForm(request.POST)
         if answer_form.is_valid():
@@ -93,7 +143,6 @@ def question_detail(request, question_id):
         'answers': answers,
         'answer_form': answer_form,
     }
-
     return render(request, 'qna_detail.html', context)
 
 # View untuk menambah pertanyaan (QnA)
@@ -103,81 +152,73 @@ def add_question(request):
         form = QuestionForm(request.POST)
         if form.is_valid():
             question = form.save(commit=False)
-            question.user = request.user
+            question.user = request.user  # Pastikan user ditambahkan ke question
             question.save()
-            return redirect('forum:show_main')
-    return redirect('forum:show_main')
-
-# View untuk mengedit artikel
-@login_required(login_url='/auth/login/')
-def edit_article(request, article_id):
-    try:
-        article = Article.objects.get(id=article_id)
-    except Article.DoesNotExist:
-        return HttpResponseNotFound("Article not found.")
-
-    if request.user != article.user:
-        return JsonResponse({"success": False}, status=403)
-
-    if request.method == "POST":
-        form = ArticleForm(request.POST, instance=article)
-        if form.is_valid():
-            form.save()
             return JsonResponse({
-                "success": True,
-                "title": article.title,
-                "content": article.content,
+                'success': True,
+                'question': {
+                    'title': question.title,
+                    'question': question.question,
+                    'url': reverse('forum:question_detail', args=[question.id])
+                }
             })
         else:
-            return JsonResponse({"success": False, "errors": form.errors}, status=400)
-
-    return JsonResponse({"success": False}, status=405)
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid form data',
+                'form_errors': form.errors  # Kirim error form ke frontend
+            }, status=400)
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
 # View untuk mengedit pertanyaan (QnA)
 @login_required(login_url='/auth/login/')
 def edit_question(request, question_id):
-    try:
-        question = Question.objects.get(id=question_id)
-    except Question.DoesNotExist:
-        return JsonResponse({'success': False, 'message': 'Question not found'}, status=404)
+    question = get_object_or_404(Question, id=question_id)
 
-    if request.user != question.user:
+    # Authorization check
+    if request.user != question.user and not request.user.is_staff:
         return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
 
+    # Handle POST request for saving the edited question
     if request.method == 'POST':
         form = QuestionForm(request.POST, instance=question)
         if form.is_valid():
             form.save()
-            return JsonResponse({'success': True, 'title': question.title, 'question': question.question})
+            return JsonResponse({'success': True, 'message': 'Question updated successfully'})
         else:
-            return JsonResponse({'success': False, 'message': 'Form is invalid'}, status=400)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid data',
+                'errors': form.errors  # Send form validation errors to frontend
+            }, status=400)
     
-    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=400)
-
-# View untuk menghapus artikel
-@login_required(login_url='/auth/login/')
-def delete_article(request, article_id):
-    try:
-        article = Article.objects.get(id=article_id)
-    except Article.DoesNotExist:
-        return HttpResponseNotFound("Article not found.")
-
-    if request.user != article.user:
-        return HttpResponseForbidden("You are not authorized to delete this article.")
-
-    article.delete()
-    return redirect('forum:show_main')
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 
 # View untuk menghapus pertanyaan (QnA)
-@login_required(login_url='/auth/login/')
 def delete_question(request, question_id):
-    try:
-        question = Question.objects.get(id=question_id)
-    except Question.DoesNotExist:
-        return HttpResponseNotFound("Question not found.")
+    question = get_object_or_404(Question, id=question_id)
 
-    if request.user != question.user:
-        return HttpResponseForbidden("You are not authorized to delete this question.")
+    if request.user != question.user and not request.user.is_staff:
+        return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
 
     question.delete()
-    return redirect('forum:show_main')
+    return JsonResponse({'success': True, 'message': 'Question deleted successfully'})
+
+# View untuk menghapus jawaban (Answer)
+def delete_answer(request, answer_id):
+    answer = get_object_or_404(Answer, id=answer_id)
+
+    if request.user == answer.user or request.user.is_staff:
+        answer.delete()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    if request.user == comment.user or request.user.is_staff:
+        comment.delete()
+        return JsonResponse({'success': True, 'message': 'Comment deleted successfully'})
+    
+    return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)

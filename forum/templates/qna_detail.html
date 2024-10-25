@@ -1,28 +1,59 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ question.title }}{% endblock %}
 
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <h1>{{ question.title }}</h1>
-        <p>{{ question.question }}</p>
+<div class="container mx-auto px-4 py-8">
+    <!-- Question Title -->
+    <h1 class="text-4xl font-bold text-center mb-4">{{ question.title }}</h1>
 
-        <!-- Edit/Delete buttons for the owner of the question -->
-        {% if request.user == question.user %}
-        <div class="button-group">
-            <button class="btn-edit" onclick="openModal()">Edit</button>
-            <a href="{% url 'forum:delete_question' question.id %}" onclick="return confirm('Are you sure you want to delete this question?');" class="btn-delete">Delete</a>
+    <!-- Question Section -->
+    <div class="mt-8">
+        <h3 class="text-2xl font-bold mb-4">Question</h3> <!-- Add this line for "Question" -->
+        <div class="space-y-4">
+            <p class="text-lg text-justify">{{ question.question|linebreaks }}</p>
         </div>
-        {% endif %}
+    </div>
 
-        <h3>Answers</h3>
-        <div class="answer-box">
-            <!-- Display answers if there are any -->
+    <!-- Question Metadata (Date, Creator) -->
+    <div class="mb-4">
+        <p class="text-sm text-gray-500">Asked by: {{ question.user.username }} on {{ question.created_at|date:"M d, Y" }}</p>
+    </div>
+    
+    <!-- Edit/Delete buttons for the owner of the question -->
+    {% if request.user == question.user %}
+    <div class="flex justify-end space-x-2 my-4">
+        <button onclick="openEditModal()" class="py-2 px-6 bg-white text-black border border-black rounded-md hover:bg-gray-100 focus:outline-none">Edit</button>
+        <a href="{% url 'forum:delete_question' question.id %}" class="py-2 px-6 bg-red-600 text-white border border-black rounded-md hover:bg-red-700 focus:outline-none" id="delete-question-btn">Delete</a>
+    </div>
+    {% endif %}
+
+    <!-- Answers Section -->
+    <div class="mt-8">
+        <h3 class="text-2xl font-bold mb-4">Answers</h3>
+        <div class="mb-8">
             {% if answers %}
                 {% for answer in answers %}
-                    <div class="answer">
-                        <p><strong>{{ answer.user.username }}:</strong> {{ answer.content }}</p>
-                        <p>{{ answer.created_at }}</p>
+                    <div class="border-b border-gray-300 py-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-grow">
+                                <p><strong>{{ answer.user.username }}:</strong> {{ answer.content }}</p>
+                                <p class="text-sm text-gray-500">{{ answer.created_at|date:"M d, Y" }}</p>
+                            </div>
+                            {% if request.user == answer.user %}
+                            <button 
+                                class="ml-4 text-gray-500 hover:text-red-600 focus:outline-none"
+                                title="Delete answer"
+                                data-answer-id="{{ answer.id }}"
+                                onclick="deleteAnswer(this)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
                     </div>
                 {% endfor %}
             {% else %}
@@ -30,68 +61,147 @@
             {% endif %}
         </div>
 
-        <!-- Form to submit a new answer -->
-        <form method="POST">
-            {% csrf_token %}
-            {{ answer_form.as_p }}
-            <button type="submit">Submit Answer</button>
-        </form>
-
-        <!-- Back to question list button -->
-        <a href="{% url 'forum:show_main' %}" class="back-to-qna">Back to Questions</a>
-
-        <!-- Modal for Edit Question -->
-        <div id="editModal" class="modal">
-            <div class="modal-content">
-                <span class="close" onclick="closeModal()">&times;</span>
-                <h2>Edit Question</h2>
-                <form method="POST" id="editQuestionForm" action="{% url 'forum:edit_question' question.id %}">
-                    {% csrf_token %}
-                    <label for="title">Title</label>
-                    <input type="text" name="title" id="title" value="{{ question.title }}" class="border border-gray-300 p-2 w-full rounded mb-4">
-
-                    <label for="question">Question</label>
-                    <textarea name="question" id="question" class="border border-gray-300 p-2 w-full rounded mb-4" style="width: 100%; height: 150px;">{{ question.question }}</textarea>
-
-                    <div class="flex justify-end">
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
-                        <button type="button" class="ml-2 bg-gray-500 text-white px-4 py-2 rounded" onclick="closeModal()">Cancel</button>
-                    </div>
-                </form>
-            </div>
+        <!-- Answer Form -->
+        <div class="bg-white rounded-lg shadow-md p-4 mt-8">
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <textarea id="answer-content" name="content" rows="3" placeholder="What is your answer?" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"></textarea>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" class="py-2 px-6 bg-white text-black border border-black rounded-md hover:bg-gray-100 focus:outline-none" onclick="cancelAnswer()">Cancel</button>
+                    <button type="submit" class="py-2 px-6 bg-black text-white rounded-md hover:bg-gray-800 focus:outline-none">Answer</button>
+                </div>
+            </form>
         </div>
-
-        <script>
-            function openModal() {
-                document.getElementById('editModal').style.display = 'flex';
-            }
-
-            function closeModal() {
-                document.getElementById('editModal').style.display = 'none';
-            }
-
-            // AJAX form submission for editing question
-            document.getElementById('editQuestionForm').onsubmit = function(event) {
-                event.preventDefault();
-                let formData = new FormData(this);
-                fetch("{% url 'forum:edit_question' question.id %}", {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        closeModal();
-                        document.querySelector('h1').innerText = data.title;
-                        document.querySelector('p').innerText = data.question;
-                    } else {
-                        alert("Failed to update question.");
-                    }
-                });
-            };
-        </script>
+        
+        <!-- Back to Q&A Section Button -->
+        <div class="mt-8">
+            <a href="{% url 'forum:show_main' %}#qna-section" class="bg-black text-white py-2 px-4 border border-black rounded-md hover:bg-gray-800 focus:outline-none">Back to Q&A</a>
+        </div>
     </div>
+</div>
+
+<!-- Edit Question Modal -->
+<div id="editQuestionModal" class="fixed inset-0 hidden bg-gray-800 bg-opacity-50 flex justify-center items-center">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Edit Question</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeEditModal()">&times;</span>
+        </div>
+        <form id="editQuestionForm" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="edit-title" class="block text-sm font-medium text-gray-700">Title</label>
+                <input type="text" id="edit-title" name="title" value="{{ question.title }}" 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+            </div>
+            <div>
+                <label for="edit-content" class="block text-sm font-medium text-gray-700">Question</label>
+                <textarea id="edit-content" name="question" rows="10" 
+                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">{{ question.question }}</textarea>
+            </div>
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="bg-black text-white py-2 px-4 rounded">Save Changes</button>
+            </div>                
+        </form>        
+    </div>
+</div>
+
+<script>
+    document.getElementById('delete-question-btn').addEventListener('click', function(event) {
+        event.preventDefault();
+        fetch(this.href, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = "{% url 'forum:show_main' %}#qna-section";
+            } else {
+                alert('Failed to delete the question.');
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the question.');
+        });
+    });
+</script>
+
+<script>
+    const editModal = document.getElementById('editQuestionModal');
+    const editForm = document.getElementById('editQuestionForm');
+
+    function openEditModal() {
+        editModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        editModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    function deleteAnswer(button) {
+        const answerId = button.getAttribute('data-answer-id');
+        
+        // Fetch request untuk langsung menghapus answer
+        fetch(`{% url 'forum:delete_answer' 0 %}`.replace('0', answerId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();  // Reload halaman setelah delete
+            } else {
+                alert('Failed to delete the answer.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the answer.');
+        });
+    }
+
+    // Close modal when clicking outside
+    editModal.addEventListener('click', function(e) {
+        if (e.target === editModal) {
+            closeEditModal();
+        }
+    });
+
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(editForm);
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+        fetch('{% url "forum:edit_question" question.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to update question');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the question');
+        });
+    });
+
+    function cancelAnswer() {
+        document.getElementById('answer-content').value = '';
+    }
+</script>
 {% endblock %}

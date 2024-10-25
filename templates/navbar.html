@@ -9,7 +9,6 @@
     <div class="hidden md:flex space-x-8 text-white text-lg">
       {% if user.is_authenticated and user.is_staff %}
         <a href="/dashboard" class="hover:text-gray-300">DASHBOARD</a>
-        <a href="{% url 'forum:show_main' %}" class="hover:text-gray-300">CULINARY INSIGHTS</a>
       {% else %}
         <a href="/product" class="hover:text-gray-300">CATALOG</a>
         <a href="/restaurant" class="hover:text-gray-300">RESTAURANT</a>
