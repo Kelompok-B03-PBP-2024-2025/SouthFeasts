@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from product.models import MenuItem
+from django.utils import timezone
 
 class WishlistCollection(models.Model):
     name = models.CharField(max_length=100)
@@ -38,9 +39,11 @@ class WishlistItem(models.Model):
         on_delete=models.CASCADE,
         related_name='wishlist_items'
     )
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = ['collection', 'menu_item']  # Prevent duplicate items in a collection
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.menu_item.name} in {self.collection.name}"

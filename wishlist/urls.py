@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'wishlist'
@@ -12,10 +12,10 @@ urlpatterns = [
     path('collection/<int:collection_id>/delete/', views.collection_delete, name='collection-delete'),
     path('collection/<int:collection_id>/set-default/', views.collection_set_default, name='collection-set-default'),
     path('get-collections/', views.get_collections, name='get-collections'),
-    path('collection/create-ajax/', 
-            views.create_collection_ajax, 
-            name='create-collection-ajax'),
+    # path('collection/create-ajax/', views.create_collection_ajax, name='create-collection-ajax'),
+    path('create-collection-ajax/', views.new_collection_ajax, name='create-collection-ajax'),
 
+    
     # Item URLs
     path('create/', views.add_to_wishlist_from_menu, name='create'),
     path('item/add/<int:menu_item_id>/', views.item_add, name='item-add'),
@@ -24,8 +24,5 @@ urlpatterns = [
     path('item/<int:item_id>/add-to/<int:collection_id>/', 
          views.add_item_to_collection, 
          name='add-item-to-collection'),
-    
-    path('collections/get/', views.get_collections, name='get-collections'),
-    path('collections/create/ajax/', views.create_collection_ajax, name='create-collection-ajax'),
-    path('items/<int:item_id>/add-to/<int:collection_id>/', views.add_item_to_collection, name='add-item-to-collection'),
+    path('product/', include('product.urls', namespace='product')),
 ]

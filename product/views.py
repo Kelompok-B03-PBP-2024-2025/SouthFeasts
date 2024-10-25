@@ -10,6 +10,7 @@ from restaurant.models import Restaurant
 import csv
 import pandas as pd
 from decimal import Decimal
+from django.shortcuts import render, get_object_or_404
 from product.models import MenuItem
 from review.models import ReviewEntry
 from review.forms import ReviewForm
@@ -83,23 +84,24 @@ def menu_detail(request, id):
     """View untuk menampilkan detail menu item"""
     menu_item = get_object_or_404(MenuItem, pk=id)
     reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
-    form = ReviewForm(request.POST or None, request.FILES or None) 
+    form = ReviewForm(request.POST or None)
 
     if request.method == 'POST' and form.is_valid():
         review = form.save(commit=False)
         review.user = request.user
-        review.menu_item = menu_item 
+        review.product = menu_item
         review.save()
         return redirect('product:menu_detail', id=menu_item.id)
 
     context = {
         'menu_item': menu_item,
         'restaurant': menu_item.restaurant,
-        'reviews': reviews,
+        'reviews' : reviews,
         'form': form,
     }
     
     return render(request, 'menu_detail.html', context)
+
 
 def restaurant_menu(request, restaurant_id):
     """View untuk menampilkan semua menu dari restoran tertentu"""
