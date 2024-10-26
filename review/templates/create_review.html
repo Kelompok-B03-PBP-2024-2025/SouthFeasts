@@ -6,8 +6,8 @@
     <div class="w-full max-w-2xl bg-white rounded-lg shadow-lg border border-gray-200 p-6">
         
         <!-- Header Section -->
-        <div class="bg-pink-100 p-6 rounded-t-lg text-center">
-            <h1 class="text-3xl font-bold text-pink-700">Write a Review</h1>
+        <div class="bg-gray-200 p-6 rounded-t-lg text-center">
+            <h1 class="text-3xl font-bold text-gray-700">Write a Review</h1>
         </div>
         
         <!-- Product Preview Section -->
@@ -18,7 +18,7 @@
             <div>
                 <h2 class="text-xl font-bold text-gray-800">{{ menu_item.name }}</h2>
                 <p class="text-gray-600">{{ menu_item.description }}</p>
-                <a href="{% url 'product:menu_detail' menu_item.id %}" class="text-sm text-pink-600 hover:underline mt-2 inline-block">Menu Description</a>
+                <a href="{% url 'product:menu_detail' menu_item.id %}" class="text-sm text-gray-500 hover:underline mt-2 inline-block">Menu Description</a>
             </div>
         </div>
 
@@ -29,34 +29,34 @@
             <!-- Review Text Area -->
             <div class="mb-4">
                 <label class="block text-lg font-semibold text-gray-700 mb-1">Write A Review</label>
-                <textarea name="review_text" rows="4" maxlength="250" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-200" placeholder="Tell us what you like about this product!"></textarea>
+                <textarea name="review_text" rows="4" maxlength="250" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300" placeholder="Tell us what you like about this product!"></textarea>
                 <div class="text-right text-sm text-gray-400 mt-1">max 250</div>
             </div>
 
             <!-- Rating Input -->
             <div class="mb-4">
                 <label class="block text-lg font-semibold text-gray-700 mb-1">Rating (1-5)</label>
-                <input type="number" step="0.1" min="1" max="5" name="rating" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-200" placeholder="Enter rating">
+                <input type="number" step="0.1" min="1" max="5" name="rating" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300" placeholder="Enter rating">
             </div>
 
             <!-- Photo Upload Section -->
             <div class="mb-6">
                 <label class="block text-lg font-semibold text-gray-700 mb-1">Add Photo</label>
-                <div class="bg-pink-50 border-2 border-dashed border-pink-200 p-6 rounded-lg text-center cursor-pointer relative" id="upload-box">
+                <div class="bg-gray-100 border-2 border-dashed border-gray-300 p-6 rounded-lg text-center cursor-pointer relative" id="upload-box">
                     <input type="file" name="review_image" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" id="upload-photo" onchange="previewImage(event)">
                     <!-- Image Preview -->
                     <img id="frame" src="" class="hidden w-full h-full object-cover rounded-lg" alt="Image Preview">
-                    <span id="upload-text" class="text-pink-600 font-semibold">Click to upload (Max 1 photo & max 5 MB)</span>
+                    <span id="upload-text" class="text-brown-600 font-semibold">Click to upload (Max 1 photo & max 5 MB)</span>
                 </div>
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="w-full py-3 bg-pink-600 text-white font-bold rounded-lg hover:bg-pink-700 transition duration-200">Publish</button>
+            <button type="submit" class="w-full py-3 bg-gray-800 text-white font-bold rounded-lg hover:bg-blue-800 transition duration-200">Publish</button>
         </form>
         
         <!-- Back to Product Link -->
         <div class="text-center mt-6">
-            <a href="{% url 'product:menu_detail' menu_item.id %}" class="text-gray-500 hover:text-pink-600">Back to Product</a>
+            <a href="{% url 'product:menu_detail' menu_item.id %}" class="text-gray-500 hover:text-gray-800">Back to Product</a>
         </div>
     </div>
 </div>
@@ -85,6 +85,11 @@
         width: 100%;
         height: 100%;
         cursor: pointer;
+    }
+
+    /* Brown color styling */
+    .text-brown-600 {
+        color: #8B4513; /* Coklat tua */
     }
 </style>
 

@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Culinary Insights{% endblock %}
+
+{% block content %}
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2020/07/Manual-Jakarta_Fabelio-3-980x719.jpg');">
+    <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
+        <p class="text-sm text-gray-200 mb-2 tracking-wide">Food & Drink</p>
+        <h1 class="text-4xl font-bold text-white text-center" style="font-family: Arial, Helvetica, sans-serif;">Get Lost. Find South Jakarta.</h1>
+        <button onclick="scrollToContent()" class="mt-4 bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+            See More
+        </button>
+    </div>
+</div>
+
+<!-- Content Section Below the Hero Section -->
+<div id="content-section" class="bg-white py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-8">Explore South Jakarta's Culinary Delights</h2>
+        <p class="text-lg text-center text-gray-600">Discover the hidden gems and popular spots that make South Jakarta a food paradise.</p>
+        
+        <!-- Articles Section -->
+        <div class="articles mt-12">
+            {% if articles %}
+                {% for article in articles|slice:":3" %}
+                    <div class="flex flex-col md:flex-row items-center bg-black text-white mb-8 p-6 rounded-md">
+                        <!-- Thumbnail Image -->
+                        <div class="md:w-1/2 mb-4 md:mb-0">
+                            <img src="{{ article.get_thumbnail }}" alt="{{ article.title }}" class="w-full h-full object-cover rounded-md">
+                        </div>
+                        <!-- Article Content -->
+                        <div class="md:w-1/2 md:ml-8">
+                            <p class="text-sm uppercase mb-2 tracking-wide">Food and Beverage</p>
+                            <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
+                            <p class="text-gray-300 mb-4 overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; text-overflow: ellipsis; overflow: hidden;">
+                                {{ article.content|truncatechars:100 }}
+                            </p>
+                            
+                            <a href="{% url 'forum:article_detail' article.id %}" class="inline-block bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                                Learn More →
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-gray-600">No articles available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Explore the Neighborhood Section -->
+<div class="bg-black text-white py-16">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-4xl font-bold pl-4">Explore The Neighborhood</h2> <!-- Adjust padding here -->
+            <a href="http://127.0.0.1:8000/restaurant/" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+        </div>
+        <p class="text-lg text-gray-300 mb-8 pl-4">Discover local hotspots in the area, from cozy cafes to cultural landmarks.</p> <!-- Add padding to paragraph as well -->
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Restaurant 1 -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://manual.co.id/wp-content/uploads/2023/12/scarlett_461-980x719.jpg" alt="Scarlett House" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">
+                        <a href="/restaurant/46/" class="text-black hover:text-gray-600">
+                            Scarlett House
+                        </a>
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Sultan Hasanudin Dalam, Blok M, Kebayoran Baru, Jakarta Selatan</p>
+                </div>
+            </div>            
+            <!-- Restaurant 2 (same content for now) -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://manual.co.id/wp-content/uploads/2020/01/LawlessMenteng_Di-4-980x719.jpg" alt="Lawless Burger" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">
+                        <a href="/restaurant/36/" class="text-black hover:text-gray-600">
+                            Lawless Burger
+                        </a>
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Kemang Selatan VIII No.67K 7, RT.7/RW.2, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12730</p>
+                </div>
+            </div>
+            <!-- Restaurant 3 (same content for now) -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://manual.co.id/wp-content/uploads/2023/12/scarlett_461-980x719.jpg" alt="Scarlett House" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">Scarlett House</h3>
+                    <p class="text-sm text-gray-600">Jl. Sultan Hasanudin Dalam, Blok M, Kebayoran Baru, Jakarta Selatan</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8 flex flex-wrap">
+    <!-- Left Directory Sidebar -->
+    <div class="w-full lg:w-1/4 pr-4">
+        <!-- Directory Sidebar with Tab -->
+        <div class="relative bg-black text-white shadow-lg rounded-b-lg mt-8 mb-8">
+            <!-- Tab Header -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-t-lg px-4 py-1 w-3/4 text-center shadow-md">
+                <h2 class="text-sm font-semibold uppercase text-black">Directory</h2>
+            </div>
+
+            <!-- Directory Content -->
+            <div class="pt-8 px-6 pb-6">
+                <!-- Description -->
+                <p class="text-gray-300 text-sm mb-6 leading-relaxed">Find the best local cafes, bars, restaurants, shops, and more in Jakarta with our Directory.</p>
+                
+                <!-- Category Links with Spacing and Border Styling -->
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Laut&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Laut</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Tradisional&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Tradisional</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Sehat&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Sehat</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Cepat+Saji&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Cepat Saji</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Penutup&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Penutup</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Product Grid Sidebar -->
+    <div class="w-full lg:w-3/4 pl-4">
+        <h2 class="text-xl font-semibold mb-4">Related Products</h2>
+        <!-- Product Grid with 4x2 layout -->
+        <div class="grid grid-cols-4 gap-4">
+            <!-- Product 1 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-md">
+                <a href="/menu/83/">
+                    <img src="https://assets-pergikuliner.com/pvidG9v_YDsAKkj-zaWxSzb5sno=/624x0/smart/filters:watermark(https://assets-pergikuliner.com/uploads/image/picture/401639/picture-1481204613.png,-0,-3,20):no_upscale()/https://assets-pergikuliner.com/uploads/image/picture/3155320/picture-1704968481.jpg" alt="Cookie D'OH Gelato" class="w-full h-24 object-cover">
+                    <p class="text-center text-black font-semibold py-2">Cookie D'OH Gelato</p>
+                </a>
+            </div>
+            <!-- Repeat product elements for additional items to reach 8 products -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-md">
+                <a href="/menu/84/">
+                    <img src="https://assets-pergikuliner.com/path-to-image-2.jpg" alt="Product 2" class="w-full h-24 object-cover">
+                    <p class="text-center text-black font-semibold py-2">Product 2</p>
+                </a>
+            </div>
+            <!-- Add more product divs to reach 8 products in a 4x2 layout -->
+
+            <!-- Product 3 to Product 8 here... -->
+
+        </div>
+
+        <!-- See All Link -->
+        <div class="text-center mt-4">
+            <a href="/product/" class="text-blue-500 text-sm underline hover:text-blue-700">See All Products →</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- Reviews Section -->
+<div id="review-section" class="bg-gray-100 py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-8">User Reviews</h2>
+        <p class="text-lg text-center text-gray-600 mb-12">See what others are saying about our menu items.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div class="bg-white text-black rounded-lg shadow-md p-6">
+                        <!-- Reviewer's Name and Rating -->
+                        <div class="flex items-center mb-2">
+                            <p class="font-semibold text-lg">{{ review.user.username }}</p>
+                            <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+                        </div>
+                        
+                        <!-- Review Text Snippet -->
+                        <p class="text-gray-700 mb-4">
+                            {{ review.review_text|truncatechars:100 }}
+                        </p>
+                        
+                        <!-- Review Image (if available) -->
+                        {% if review.review_image %}
+                            <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
+                        {% else %}
+                            <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
+                        {% endif %}
+                        
+                        <!-- Link to Full Review -->
+                        <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
+                            Read Full Review →
+                        </a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-gray-600">No reviews available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function scrollToContent() {
+        document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
+    }
+</script>
+
+<style>
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+</style>
+{% endblock %}
