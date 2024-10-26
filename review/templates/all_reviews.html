@@ -1,20 +1,85 @@
 {% extends "base.html" %}
 
-{% block content %}
-    <h1>All Reviews</h1>
+{% block title %}Culinary Insights - Reviews{% endblock %}
 
-    {% for review in reviews %}
-        <div>
-            <strong>{{ review.user.username }} reviewed {{ review.product.name }}:</strong>
-            <p>{{ review.review_text }}</p>
-            <p>Rating: {{ review.rating }}</p>
-            
-            <!-- Display the image if it exists -->
-            {% if review.review_image %}
-                <p><img src="{{ review.review_image.url }}" alt="Review image for {{ review.product.name }}" style="max-width:300px;"></p>
-            {% endif %}
+{% block content %}
+<!-- Hero Section with See Reviews Button -->
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2024/08/seroja_15-980x719.jpg');">
+    <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
+        <h1 class="text-4xl font-bold text-white">CULINARY INSIGHTS</h1>
+        <p class="text-lg text-gray-200">Get the latest scoop on South Jakarta culinary world.</p>
+        <div class="mt-4">
+            <!-- Button to show Reviews -->
+            <button id="see-reviews-btn" onclick="showReviews()" class="bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                See Reviews
+            </button>
         </div>
-    {% empty %}
-        <p>No reviews yet.</p>
-    {% endfor %}
+    </div>
+</div>
+
+<!-- Reviews Section -->
+<div id="reviews-section" class="container mx-auto px-4 py-8 hidden">
+    <h2 class="text-3xl font-bold text-center mb-4">Reviews</h2>
+
+    <!-- If there are no reviews -->
+    {% if not reviews %}
+    <div class="text-center text-gray-500 mt-6">
+        <p class="text-lg">No reviews yet. Be the first to add one!</p>
+    </div>
+    {% else %}
+    <!-- Reviews Grid Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for review in reviews %}
+        <div class="border rounded overflow-hidden shadow-lg h-full">
+            {% if review.review_image %}
+                <img src="{{ review.review_image.url }}" alt="Review image for {{ review.menu_item.name }}" class="w-full h-48 object-cover">
+            {% else %}
+                <img src="/static/image/default-thumbnail.jpg" alt="Default Review Image" class="w-full h-48 object-cover">
+            {% endif %}
+            <div class="p-4 review-content">
+                <div class="flex items-center justify-between mb-2">
+                    <strong class="text-lg font-semibold">{{ review.user.username }}</strong>
+                    <span class="text-sm text-gray-600">Rating: <strong>{{ review.rating }}/5</strong></span>
+                </div>
+                
+                <!-- Display the product (menu item) information -->
+                {% if review.menu_item %}
+                    <h3 class="text-xl font-semibold mb-2">{{ review.menu_item.name }}</h3>
+                    <p class="text-gray-600 italic mb-4">{{ review.menu_item.description }}</p>
+                    <p class="text-gray-800"><strong>Price:</strong> ${{ review.menu_item.price }}</p>
+                {% else %}
+                    <p class="text-gray-500 italic mb-4">No product information available for this review.</p>
+                {% endif %}
+
+                <p class="text-gray-700">{{ review.review_text|truncatewords:20 }}</p>
+                <a href="{% url 'review:review_detail' review.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript to handle section toggling -->
+<script>
+    function showReviews() {
+        const reviewsSection = document.getElementById('reviews-section');
+        reviewsSection.classList.toggle('hidden');
+        reviewsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+
+<style>
+    /* Review Content Styling */
+    .review-content {
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+</style>
 {% endblock %}

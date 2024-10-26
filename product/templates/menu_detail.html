@@ -8,9 +8,7 @@
         <div class="md:flex">
             <!-- Image Section -->
             <div class="md:w-1/2">
-                <img src="{{ menu_item.image }}" 
-                     alt="{{ menu_item.name }}" 
-                     class="w-full h-96 object-cover">
+                <img src="{{ menu_item.image }}" alt="{{ menu_item.name }}" class="w-full h-96 object-cover">
             </div>
             
             <!-- Content Section -->
@@ -55,9 +53,10 @@
                     </div>
                 </div>
 
-                <!-- Add Review Button -->
+                <!-- Add Review Button to open the modal -->
                 <div class="mt-6">
                     <a href="{% url 'review:create_review' menu_item.id %}" 
+                       id="open-review-form-btn" 
                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
                         Add Review
                     </a>
@@ -65,31 +64,115 @@
             </div>
         </div>
     </div>
-    <!-- Display Reviews Section -->
-    <div class="mt-10">
-        <h2 class="text-2xl font-bold mb-4">Reviews</h2>
 
-        {% if reviews %}
-            <div class="space-y-6">
-                {% for review in reviews %}
-                    <div class="border p-4 rounded-lg shadow-md">
-                        <p class="text-lg font-semibold">{{ review.user.username }}</p>
-                        <p class="text-gray-600">{{ review.review_text }}</p>
-                        <p class="mt-2">Rating: <span class="font-bold">{{ review.rating }}</span>/5</p>
-                        <p class="text-sm text-gray-400">Posted on {{ review.created_at|date:"F j, Y, g:i a" }}</p>
-                        
-                        <!-- Display the image if uploaded -->
-                        {% if review.review_image %}
-                            <div class="mt-4">
-                                <img src="{{ review.review_image.url }}" alt="Review Image" class="max-w-full h-auto rounded-lg">
-                            </div>
-                        {% endif %}
+    <!-- Reviews Section -->
+<div class="mt-10">
+    <h2 class="text-2xl font-bold mb-4">Reviews</h2>
+    <div id="reviews-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for review in reviews %}
+            <div class="border p-4 rounded-lg shadow-md mb-6">
+                <p class="text-lg font-semibold">{{ review.user.username }}</p>
+                <p class="text-gray-600">{{ review.review_text }}</p>
+                <p class="mt-2">Rating: <span class="font-bold">{{ review.rating }}</span>/5</p>
+                <p class="text-sm text-gray-400">Posted on {{ review.created_at|date:"F j, Y, g:i a" }}</p>
+                
+                {% if review.review_image %}
+                    <div class="mt-4">
+                        <img src="{{ review.review_image.url }}" alt="Review Image" class="max-w-full h-auto rounded-lg">
                     </div>
-                {% endfor %}
+                {% endif %}
             </div>
-        {% else %}
+        {% empty %}
             <p class="text-gray-600">No reviews yet. Be the first to review this product!</p>
-        {% endif %}
+        {% endfor %}
     </div>
+</div>
+
+</div>
+
+<!-- Modal for submitting a review -->
+<div id="reviewFormModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Submit Your Review</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeModal('reviewFormModal')">&times;</span>
+        </div>
+        <form id="reviewForm" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="flex justify-end space-x-2">
+                <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg uppercase hover:bg-blue-700 transition duration-300">Submit</button>
+            </div>
+        </form>
     </div>
+</div>
 {% endblock %}
+
+<!-- JavaScript for modal and AJAX submission -->
+<script>
+    // Prevent default link behavior and open modal
+    document.getElementById("open-review-form-btn").addEventListener("click", function(event) {
+        event.preventDefault();
+        document.getElementById("reviewFormModal").classList.remove("hidden");
+    });
+
+    // Close modal function
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // AJAX submission for the review form
+    document.getElementById("reviewForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch("{% url 'review:create_review' menu_item.id %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Create new review card in DOM
+                const reviewsList = document.getElementById('reviews-list');
+                const newReviewDiv = document.createElement('div');
+                newReviewDiv.className = 'border p-4 rounded-lg shadow-md mb-6';
+                newReviewDiv.innerHTML = `
+                    <p class="text-lg font-semibold">${data.review.user}</p>
+                    <p class="text-gray-600">${data.review.comment}</p>
+                    <p class="mt-2">Rating: <span class="font-bold">${data.review.rating}</span>/5</p>
+                    <p class="text-sm text-gray-400">Just now</p>
+                `;
+
+                if (data.review.image_url) {
+                    const imageDiv = document.createElement('div');
+                    imageDiv.className = 'mt-4';
+                    imageDiv.innerHTML = `<img src="${data.review.image_url}" alt="Review image" class="max-w-full h-auto rounded-lg">`;
+                    newReviewDiv.appendChild(imageDiv);
+                }
+
+                reviewsList.prepend(newReviewDiv);
+
+                // Clear form and close modal
+                document.getElementById("reviewForm").reset();
+                closeModal("reviewFormModal");
+            } else {
+                alert('Failed to submit review. Please check your input.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while adding the review.');
+        }
+    });
+</script>
+
+<style>
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+</style>
