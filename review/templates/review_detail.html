@@ -1,19 +1,41 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container mx-auto py-10 max-w-4xl">
-        <h1 class="text-4xl font-bold mb-8">{{ review.menu_item.name }}</h1>
-        <p><strong>Reviewer:</strong> {{ review.user.username }}</p>
-        <p><strong>Rating:</strong> {{ review.rating }}/5</p>
-        <p class="mt-4">{{ review.review_text }}</p>
+    <div class="container mx-auto py-10 max-w-4xl bg-white p-8 rounded-lg shadow-lg">
+
+        <!-- Review Title -->
+        <h1 class="text-4xl font-bold mb-4 text-center text-gray-900">{{ review.menu_item.name }}  's Review</h1>
+
+        <!-- Product Preview Section -->
+        <div class="flex items-center border rounded-lg mb-8 p-4 bg-gray-50 shadow-sm">
+            {% if review.menu_item.image %}
+                <img src="{{ review.menu_item.image }}" alt="{{ review.menu_item.name }}" class="w-24 h-24 object-cover rounded-md mr-4">
+            {% endif %}
+            <div>
+                <p class="text-gray-600">{{ review.menu_item.description }}</p>
+                <a href="{% url 'product:menu_detail' review.menu_item.id %}" class="text-sm text-pink-600 hover:underline mt-2 inline-block">View Menu Details</a>
+            </div>
+        </div>
         
+        <!-- Reviewer and Rating -->
+        <div class="flex items-center justify-between text-lg mt-4 mb-8">
+            <p><strong>Reviewer:</strong> {{ review.user.username }}</p>
+            <p><span class="text-blue-800 font-bold" style="font-size: 18px;">Rating: {{ review.rating }}/5</span></p>
+        </div>
+        
+        <!-- Review Text -->
+        <p class="text-gray-700 leading-relaxed text-justify mb-6">{{ review.review_text }}</p>
+        
+        <!-- Review Image -->
         {% if review.review_image %}
-            <img src="{{ review.review_image.url }}" alt="Review image" class="mt-4 w-full max-w-md mx-auto rounded-lg shadow-md">
+            <div class="flex justify-center">
+                <img src="{{ review.review_image.url }}" alt="Review image" class="mt-4 w-full max-w-md rounded-lg shadow-md">
+            </div>
         {% endif %}
         
         <!-- Back to Reviews Button -->
-        <div class="mt-6 text-center">
-            <a href="{% url 'review:all_reviews' %}" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">
+        <div class="mt-8 text-center">
+            <a href="{% url 'review:all_reviews' %}" class="bg-black text-white py-3 px-6 rounded-md hover:bg-gray-800 transition duration-300">
                 Back to Reviews
             </a>
         </div>

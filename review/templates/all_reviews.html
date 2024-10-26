@@ -4,10 +4,10 @@
 
 {% block content %}
 <!-- Hero Section with See Reviews Button -->
-<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2024/08/seroja_15-980x719.jpg');">
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2020/07/roma_osteria_sequis-4-980x719.jpg');">
     <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
-        <h1 class="text-4xl font-bold text-white">CULINARY INSIGHTS</h1>
-        <p class="text-lg text-gray-200">Get the latest scoop on South Jakarta culinary world.</p>
+        <h1 class="text-4xl font-bold text-white">REVIEWS</h1>
+        <p class="text-lg text-gray-200">These reviews don’t lie – this place won’t disappoint!</p>
         <div class="mt-4">
             <!-- Button to show Reviews -->
             <button id="see-reviews-btn" onclick="showReviews()" class="bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
@@ -39,19 +39,19 @@
             <div class="p-4 review-content">
                 <div class="flex items-center justify-between mb-2">
                     <strong class="text-lg font-semibold">{{ review.user.username }}</strong>
-                    <span class="text-sm text-gray-600">Rating: <strong>{{ review.rating }}/5</strong></span>
+                    <span class="text-blue-800 font-bold" style="font-size: 18px;">Rating: <strong>{{ review.rating }}/5</strong></span>
                 </div>
                 
                 <!-- Display the product (menu item) information -->
                 {% if review.menu_item %}
                     <h3 class="text-xl font-semibold mb-2">{{ review.menu_item.name }}</h3>
                     <p class="text-gray-600 italic mb-4">{{ review.menu_item.description }}</p>
-                    <p class="text-gray-800"><strong>Price:</strong> ${{ review.menu_item.price }}</p>
+                    <p class="text-gray-800 mb-4"><strong>Price:</strong> ${{ review.menu_item.price }}</p>
                 {% else %}
                     <p class="text-gray-500 italic mb-4">No product information available for this review.</p>
                 {% endif %}
 
-                <p class="text-gray-700">{{ review.review_text|truncatewords:20 }}</p>
+                <p class="text-gray-700 mb-2 bg-gray-100 p-2 rounded">{{ review.review_text|truncatewords:20 }}</p>
                 <a href="{% url 'review:review_detail' review.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
             </div>
         </div>
@@ -80,6 +80,19 @@
 
     .transition-colors {
         transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Additional styling for gap and color enhancements */
+    .text-blue-800 {
+        color: #1e3a8a; /* dark blue color for rating */
+    }
+
+    .bg-gray-100 {
+        background-color: #f3f4f6; /* light gray background for review text */
+    }
+
+    .mb-4 {
+        margin-bottom: 1rem; /* add margin between price and review */
     }
 </style>
 {% endblock %}
