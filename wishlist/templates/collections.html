@@ -35,6 +35,31 @@
                     {% endif %}
                 </div>
                 {% endfor %}
+
+                {% with total_items=items|length %}
+                {% if total_items == 1 %}
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                {% elif total_items == 2 %}
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                {% elif total_items == 3 %}
+                <div class="aspect-square overflow-hidden rounded relative">
+                    <div class="w-full h-full bg-gray-100"></div>
+                </div>
+                {% endif %}
+                {% endwith %}
             </div>
 
             {% else %}
@@ -55,7 +80,7 @@
             {% else %}
 
             <div class="mb-4">
-                <div class="aspect-square overflow-hidden rounded bg-gray-50 border-2 border-dashed border-gray-200">
+                <div class="aspect-square overflow-hidden rounded bg-gray-50">
                     <div class="w-full h-full flex items-center justify-center">
                         <span class="text-gray-300 text-sm">No item yet</span>
                     </div>
@@ -87,7 +112,7 @@
         </div>
 
         {% empty %}
-        <div class="col-span-full text-center py-8 text-gray-500 font-serif">
+        <div class="col-span-full text-center py-8 text-gray-500 font-sans">
             You don't have any collections yet.
         </div>
         {% endfor %}
