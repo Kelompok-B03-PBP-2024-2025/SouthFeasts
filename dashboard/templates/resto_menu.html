@@ -9,6 +9,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <p>{{ restaurant.location }}</p>
+                <hr class="border-gray-300 my-2">
                 <p>{{ restaurant.kecamatan }}</p>
             </div>
             
@@ -33,7 +34,7 @@
 
     <div class="flex justify-end mt-4">
         <a href="{% url 'dashboard:restaurant_update' restaurant.resto_name %}" 
-           class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+           class="bg-gray-900 hover:bg-gray-950 text-white font-bold py-2 px-4 rounded">
             Edit Restaurant Info
         </a>
     </div>
@@ -67,89 +68,90 @@
                 
                 <div class="flex justify-between items-center mt-4">
                     <span class="text-green-600 font-bold">Rp {{ item.price }}</span>
-                    <span class="text-gray-500">{{ item.resto_name }}</span>
-                </div>
-                
-                <div class="mt-2 text-sm text-gray-500">
-                    <span class="mr-2">{{ item.categories }}</span>
-                    <span>{{ item.kecamatan }}</span>
+                    <span class="text-gray-500">{{ item.categories }}</span>
                 </div>
                 
                 <div class="mt-4 flex gap-2">
-                    <a href="{% url 'dashboard:makanan_update' item.id %}" 
-                       class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">
+                    <a href="{% url 'dashboard:makanan_update_resto' item.id %}" 
+                       class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-1 px-2 rounded">
                         Edit
                     </a>
-                    <a href="{% url 'dashboard:makanan_delete' item.id %}" 
-                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
-                       onclick="return confirm('Are you sure you want to delete this item?')">
+                    <a href="javascript:void(0);" onclick="showDeleteConfirmationModal('{{ item.id }}')"
+                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
                         Delete
                     </a>
                 </div>
             </div>
         </div>
-        {% empty %}
-        <div class="col-span-full text-center py-8">
-            No menu items found matching your criteria.
-        </div>
         {% endfor %}
     </div>
-     
-    <!-- Pagination -->
-    {% if menu_items.paginator.num_pages > 1 %}
-    <div class="flex justify-center mt-8">
-        <div class="flex gap-2">
-            {% if menu_items.has_previous %}
-            <a href="?page={{ menu_items.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                Previous
-            </a>
-            {% endif %}
-    
-            {% for num in menu_items.paginator.page_range %}
-                {% if num == menu_items.number %}
-                <span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ num }}</span>
-                {% elif num > menu_items.number|add:'-3' and num < menu_items.number|add:'3' %}
-                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    {{ num }}
-                </a>
-                {% endif %}
-            {% endfor %}
-    
-            {% if menu_items.has_next %}
-            <a href="?page={{ menu_items.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                Next
-            </a>
-            {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+        <p>Are you sure you want to delete this item?</p>
+        <div class="items-center px-4 py-3">
+            <button type="button" onclick="hideDeleteConfirmationModal()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">
+                Cancel
+            </button>
+            <button type="button" id="confirmDeleteButton"
+                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Delete
+            </button>
         </div>
     </div>
-    {% endif %}
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const showMoreButtons = document.querySelectorAll('.relative button');
-        
-        showMoreButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const container = this.parentElement;
-                const shortDescription = container.querySelector('.description-short');
-                const fullDescription = container.querySelector('.description-full');
-                
-                if (shortDescription.classList.contains('hidden')) {
-                    shortDescription.classList.remove('hidden');
-                    fullDescription.classList.add('hidden');
-                    this.textContent = 'Show More';
-                } else {
-                    shortDescription.classList.add('hidden');
-                    fullDescription.classList.remove('hidden');
-                    this.textContent = 'Show Less';
-                }
-            });
-        });
-    });
+let deleteItemId = null; // Store the ID of the item to delete
+
+function showDeleteConfirmationModal(id) {
+    deleteItemId = id;
+    document.getElementById('deleteConfirmationModal').classList.remove('hidden');
+}
+
+function hideDeleteConfirmationModal() {
+    deleteItemId = null;
+    document.getElementById('deleteConfirmationModal').classList.add('hidden');
+}
+
+function deleteMakanan() {
+    if (deleteItemId !== null) {
+        fetch(`/dashboard/makanan-delete/${deleteItemId}/`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (response.ok) {
+                hideDeleteConfirmationModal();
+                location.reload(); // Reload to update the item list
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('confirmDeleteButton').addEventListener('click', deleteMakanan);
+});
+
+function toggleDescription(button) {
+    const descriptionShort = button.previousElementSibling.previousElementSibling;
+    const descriptionFull = button.previousElementSibling;
+    const isHidden = descriptionFull.classList.contains('hidden');
+
+    if (isHidden) {
+        descriptionShort.classList.add('hidden');
+        descriptionFull.classList.remove('hidden');
+        button.textContent = 'Show Less';
+    } else {
+        descriptionShort.classList.remove('hidden');
+        descriptionFull.classList.add('hidden');
+        button.textContent = 'Show More';
+    }
+}
 </script>
 
 {% endblock %}
