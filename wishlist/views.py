@@ -1,4 +1,3 @@
-# views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -13,48 +12,8 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
+from django.views.decorators.http import require_http_methods
 
-# @login_required
-# def collection_list(request):
-#     # Get all collections except "All Wishlist"
-#     collections = WishlistCollection.objects.filter(user=request.user).exclude(name="All Wishlist")
-    
-#     # Cek apakah sudah ada koleksi default
-#     default_collection = collections.filter(is_default=True).first()
-#     if not default_collection:
-#         try:
-#             default_collection = WishlistCollection.objects.get(
-#                 user=request.user,
-#                 name="My Wishlist"
-#             )
-#             # Jika ada tapi bukan default, jadikan default
-#             if not default_collection.is_default:
-#                 with transaction.atomic():
-#                     WishlistCollection.objects.filter(user=request.user, is_default=True).update(is_default=False)
-#                     default_collection.is_default = True
-#                     default_collection.save()
-#         except WishlistCollection.DoesNotExist:
-#             # Buat My Wishlist baru jika belum ada
-#             default_collection = WishlistCollection.objects.create(
-#                 user=request.user,
-#                 name="My Wishlist",
-#                 description="Your default wishlist collection",
-#                 is_default=True
-#             )
-    
-#     # Refresh collections dan urutkan items berdasarkan created_at
-#     collections = WishlistCollection.objects.filter(user=request.user).exclude(name="All Wishlist")
-    
-#     # Preload items dengan urutan terbaru
-#     for collection in collections:
-#         collection.sorted_items = collection.items.all().select_related('menu_item').order_by('-created_at')
-    
-#     # Hapus All Wishlist jika masih ada
-#     WishlistCollection.objects.filter(user=request.user, name="All Wishlist").delete()
-    
-#     return render(request, 'collections.html', {
-#         'collections': collections
-#     })
 @login_required(login_url='authentication:login')
 def collection_list(request):
     # Get all collections except "All Wishlist"
@@ -198,29 +157,6 @@ def get_collections(request):
         return JsonResponse(collections_data, safe=False)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-# @login_required
-# def item_add(request, menu_item_id):
-#     if request.method == 'POST':
-#         data = json.loads(request.body)
-#         collection_id = data.get('collection_id')
-        
-#         if not collection_id:
-#             collection = WishlistCollection.objects.filter(
-#                 user=request.user,
-#                 is_default=True
-#             ).first()
-#         else:
-#             collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
-            
-#         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
-        
-#         # Check if item already exists in collection
-#         if WishlistItem.objects.filter(collection=collection, menu_item=menu_item).exists():
-#             return JsonResponse({'status': 'exists'})
-            
-#         WishlistItem.objects.create(collection=collection, menu_item=menu_item)
-#         return JsonResponse({'status': 'success'})
-#     return JsonResponse({'status': 'error'}, status=400)
 @login_required(login_url='authentication:login')
 def item_add(request, menu_item_id):
     if request.method == 'POST':
@@ -297,8 +233,16 @@ def item_remove(request, item_id):
         
     return redirect('wishlist:collection-detail', collection_id=collection_id)
 
-# @login_required
+# @login_required(login_url='authentication:login')
 # def add_to_wishlist_from_menu(request):
+#     if not request.user.is_authenticated:
+#         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#             return JsonResponse({
+#                 'error': 'Authentication required',
+#                 'login_url': reverse('authentication:login')
+#             }, status=401)
+#         return redirect('authentication:login')
+
 #     menu_item_id = request.GET.get('menu_item')
 #     if not menu_item_id:
 #         return JsonResponse({'error': 'No menu item ID provided.'}, status=400)
@@ -338,16 +282,12 @@ def item_remove(request, item_id):
 @login_required(login_url='authentication:login')
 def add_to_wishlist_from_menu(request):
     if not request.user.is_authenticated:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'error': 'Authentication required',
-                'login_url': reverse('authentication:login')
-            }, status=401)
         return redirect('authentication:login')
 
     menu_item_id = request.GET.get('menu_item')
     if not menu_item_id:
-        return JsonResponse({'error': 'No menu item ID provided.'}, status=400)
+        messages.error(request, 'No menu item ID provided.')
+        return redirect(request.META.get('HTTP_REFERER', 'product:menu_catalog'))
         
     # Get default collection
     default_collection = WishlistCollection.objects.filter(
@@ -365,22 +305,28 @@ def add_to_wishlist_from_menu(request):
     
     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
     
-    # Add to default collection
-    wishlist_item, created = WishlistItem.objects.get_or_create(
-        collection=default_collection,
+    # Check if item exists in any collection
+    existing_item = WishlistItem.objects.filter(
+        collection__user=request.user,
         menu_item=menu_item
-    )
+    ).first()
     
-    if created:
-        response = {'message': 'Item added to wishlist!'}
+    if existing_item:
+        # If item exists, remove it from all collections
+        WishlistItem.objects.filter(
+            collection__user=request.user,
+            menu_item=menu_item
+        ).delete()
+       
     else:
-        response = {'message': 'Item is already in your wishlist.'}
+        # If item doesn't exist, add it to default collection
+        WishlistItem.objects.create(
+            collection=default_collection,
+            menu_item=menu_item
+        )
 
-    # Check if it's an AJAX request
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        return JsonResponse(response)
-    
-    return redirect('product:menu_catalog')
+    # Redirect back to the previous page
+    return redirect(request.META.get('HTTP_REFERER', 'product:menu_catalog'))
 
 # views untuk fitur Add to
 @login_required
@@ -419,6 +365,52 @@ def add_item_to_collection(request, item_id, collection_id):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
+# @login_required(login_url='authentication:login')
+# def create_collection_ajax(request):
+#     if not request.user.is_authenticated:
+#         return JsonResponse({
+#             'error': 'Authentication required',
+#             'login_url': reverse('authentication:login')
+#         }, status=401)
+
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             name = data.get('name')
+#             description = data.get('description', '')
+            
+#             if not name:
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'Collection name is required'
+#                 }, status=400)
+                
+#             if WishlistCollection.objects.filter(user=request.user, name=name).exists():
+#                 return JsonResponse({
+#                     'status': 'error',
+#                     'message': 'You already have a collection with this name'
+#                 }, status=400)
+            
+#             collection = WishlistCollection.objects.create(
+#                 user=request.user,
+#                 name=name,
+#                 description=description,
+#                 is_default=False
+#             )
+            
+#             return JsonResponse({
+#                 'status': 'success',
+#                 'id': collection.id,
+#                 'name': collection.name
+#             })
+            
+#         except json.JSONDecodeError:
+#             return JsonResponse({
+#                 'status': 'error',
+#                 'message': 'Invalid JSON data'
+#             }, status=400)
+            
+#     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 # @login_required
 # def create_collection_ajax(request):
 #     if request.method == 'POST':
@@ -468,23 +460,21 @@ def create_collection_ajax(request):
         }, status=401)
 
     if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        errors = {}
+        
+        # Validate name
+        if not name:
+            errors['name'] = ["Collection name cannot be empty."]
+        elif WishlistCollection.objects.filter(user=request.user, name=name).exists():
+            errors['name'] = ["A collection with this name already exists."]
+            
+        if errors:
+            return JsonResponse({"errors": errors}, status=400)
+            
         try:
-            data = json.loads(request.body)
-            name = data.get('name')
-            description = data.get('description', '')
-            
-            if not name:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Collection name is required'
-                }, status=400)
-                
-            if WishlistCollection.objects.filter(user=request.user, name=name).exists():
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'You already have a collection with this name'
-                }, status=400)
-            
             collection = WishlistCollection.objects.create(
                 user=request.user,
                 name=name,
@@ -493,50 +483,18 @@ def create_collection_ajax(request):
             )
             
             return JsonResponse({
-                'status': 'success',
-                'id': collection.id,
-                'name': collection.name
-            })
+                "message": "Collection created successfully",
+                "collection_id": collection.id,
+                "collection_name": collection.name
+            }, status=201)
             
-        except json.JSONDecodeError:
+        except Exception as e:
             return JsonResponse({
-                'status': 'error',
-                'message': 'Invalid JSON data'
-            }, status=400)
+                "errors": {"server": [str(e)]}
+            }, status=500)
             
-    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    return JsonResponse({"errors": {"method": ["Invalid request method"]}}, status=405)
 
-
-# @login_required(login_url="authentication:login")
-# @csrf_exempt
-# @require_POST
-# def new_collection_ajax(request):
-#     name = strip_tags(request.POST.get("name"))
-#     description = strip_tags(request.POST.get("description", ""))
-#     user = request.user
-    
-#     errors = {}
-#     if not name:
-#         errors['name'] = ["Collection name cannot be empty."]
-#     if WishlistCollection.objects.filter(user=user, name=name).exists():
-#         errors['name'] = ["A collection with this name already exists."]
-        
-#     if errors:
-#         return JsonResponse({"errors": errors}, status=400)
-        
-#     new_collection = WishlistCollection(
-#         name=name,
-#         description=description,
-#         user=user,
-#         is_default=False
-#     )
-#     new_collection.save()
-    
-#     return JsonResponse({
-#         "message": "Collection created successfully",
-#         "collection_id": new_collection.id,
-#         "collection_name": new_collection.name,
-#     }, status=201)
 @login_required(login_url='authentication:login')
 @csrf_exempt
 @require_POST

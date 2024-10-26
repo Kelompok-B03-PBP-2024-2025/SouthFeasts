@@ -58,9 +58,6 @@
             {% if item.menu_item.image %}
             <img src="{{ item.menu_item.image }}" alt="{{ item.menu_item.name }}" class="w-full h-48 object-cover">
             {% else %}
-            <!-- <div class="w-full h-48 bg-gray-100 flex items-center justify-center">
-                <span class="text-gray-400 font-serif">No image</span>
-            </div> -->
             {% endif %}
         </a>
             
@@ -104,7 +101,7 @@
             </div>
         </div>
         {% empty %}
-        <div class="col-span-full text-center py-8 text-gray-500 font-serif">
+        <div class="col-span-full text-center py-8 text-gray-500 font-sans">
             No items in this collection yet.
         </div>
         {% endfor %}
@@ -114,7 +111,7 @@
     <!-- Move Item Modal -->
     <div id="moveItemModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 class="text-lg font-serif font-semibold mb-4">Move to Collection</h3>
+            <h3 class="text-lg font-sans font-semibold mb-4">Move to Collection</h3>
             <select id="targetCollection" class="w-full p-2 border rounded mb-4">
                 {% for other_collection in request.user.wishlist_collections.all %}
                     {% if other_collection != collection and other_collection.name != "My Wishlist" %}
@@ -133,7 +130,7 @@
 <!-- ADD TO -->
 <div id="addToModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg max-w-md w-full">
-        <h3 class="text-lg font-serif font-semibold mb-4">Add to Collection</h3>
+        <h3 class="text-lg font-sans font-semibold mb-4">Add to Collection</h3>
         
         <!-- Create New Collection Form - Initially Hidden -->
         <div id="newCollectionForm" class="hidden mb-4">
@@ -154,6 +151,13 @@
                     Create
                 </button>
             </div>
+        </div>
+
+        <div id="toast" class="fixed bottom-4 right-4 bg-black text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300 z-50 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span id="toastMessage"></span>
         </div>
 
         <!-- Existing Collections List -->
@@ -281,7 +285,7 @@ function removeItem(itemId) {
                 const itemsContainer = document.querySelector('.grid');
                 if (!itemsContainer.querySelector('.border')) {
                     itemsContainer.innerHTML = `
-                        <div class="col-span-full text-center py-8 text-gray-500 font-serif">
+                        <div class="col-span-full text-center py-8 text-gray-500 font-sans">
                             No items in this collection yet.
                         </div>
                     `;
@@ -301,12 +305,23 @@ function toggleNewCollectionForm() {
     const form = document.getElementById('newCollectionForm');
     const list = document.getElementById('existingCollections');
     
+    if (!form || !list) {
+        console.error('Required elements not found');
+        return;
+    }
+    
     if (form.classList.contains('hidden')) {
         form.classList.remove('hidden');
         list.classList.add('hidden');
     } else {
         form.classList.add('hidden');
         list.classList.remove('hidden');
+        
+        // Reset form fields when hiding
+        const nameInput = document.getElementById('newCollectionName');
+        const descInput = document.getElementById('newCollectionDescription');
+        if (nameInput) nameInput.value = '';
+        if (descInput) descInput.value = '';
     }
 }
 
@@ -319,31 +334,51 @@ function createNewCollection() {
         return;
     }
     
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('description', description);
+    
     fetch('{% url "wishlist:create-collection-ajax" %}', {
         method: 'POST',
+        body: formData,
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify({
-            name: name,
-            description: description
-        })
+        }
     })
     .then(response => response.json())
     .then(data => {
-        if (data.status === 'success') {
-            // Add the new collection to the dropdown
-            const select = document.getElementById('targetAddCollection');
-            const option = new Option(data.name, data.id);
-            select.add(option);
+        if (data.collection_id) {
+            // Add the new collection to both dropdowns if they exist
+            const addSelect = document.getElementById('targetAddCollection');
+            const moveSelect = document.getElementById('targetCollection');
             
-            // Reset and hide form
+            if (addSelect) {
+                const addOption = new Option(data.collection_name, data.collection_id);
+                addSelect.add(addOption);
+                // Set the new collection as selected
+                addSelect.value = data.collection_id;
+            }
+            
+            if (moveSelect) {
+                const moveOption = new Option(data.collection_name, data.collection_id);
+                moveSelect.add(moveOption);
+            }
+            
+            // Reset form fields
             document.getElementById('newCollectionName').value = '';
             document.getElementById('newCollectionDescription').value = '';
+            
+            // Toggle back to collection list
             toggleNewCollectionForm();
-        } else {
-            alert(data.message || 'Failed to create collection');
+            
+            // Show success message
+            showToast('Collection created successfully');
+            
+            // Tidak reload page di sini
+        } else if (data.errors) {
+            if (data.errors.name) {
+                alert(data.errors.name[0]);
+            }
         }
     })
     .catch(error => {
@@ -351,6 +386,21 @@ function createNewCollection() {
         alert('Failed to create collection');
     });
 }
+
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    
+    if (toast && toastMessage) {
+        toastMessage.textContent = message;
+        toast.classList.remove('translate-y-full', 'opacity-0');
+        
+        setTimeout(() => {
+            toast.classList.add('translate-y-full', 'opacity-0');
+        }, 3000);
+    }
+}
+
 
 function closeAddToModal() {
     document.getElementById('addToModal').classList.add('hidden');
@@ -386,9 +436,11 @@ function addToCollection(itemId, collectionId) {
     .then(data => {
         if (data.status === 'success') {
             closeAddToModal();
-            alert('Item added to collection successfully');
-            // Optional: reload page to see changes
-            // window.location.reload();
+            showToast('Item added to collection successfully');
+            // Reload page setelah item berhasil ditambahkan ke collection
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
         } else {
             alert(data.message || 'Failed to add item to collection');
         }
@@ -398,6 +450,7 @@ function addToCollection(itemId, collectionId) {
         alert('Failed to add item to collection');
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.move-item-btn').forEach(btn => {

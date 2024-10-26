@@ -14,6 +14,7 @@ from django.shortcuts import render, get_object_or_404
 from product.models import MenuItem
 from review.models import ReviewEntry
 from review.forms import ReviewForm
+from wishlist.models import WishlistItem 
 
 def menu_catalog(request):
     """View untuk menampilkan katalog menu dengan fitur filter dan search"""
@@ -55,6 +56,14 @@ def menu_catalog(request):
     # Data untuk dropdown filter
     categories = MenuItem.CATEGORY_CHOICES
     kecamatans = Restaurant.objects.values_list('kecamatan', flat=True).distinct()
+
+    # Tambahkan pengecekan wishlist untuk setiap item
+    if request.user.is_authenticated:
+        for item in page_obj:
+            item.is_in_wishlist = WishlistItem.objects.filter(
+                collection__user=request.user,
+                menu_item=item
+            ).exists()
     
     context = {
         'menu_items': page_obj,
