@@ -4,7 +4,7 @@
     <!-- Back to Makanan Views Button -->
     <div class="mb-6">
         <a href="{% url 'dashboard:makanan_list' %}" 
-           class="bg-gray-500 text-white font-bold px-4 py-2 rounded-md hover:bg-gray-600">
+           class="bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
             Back to Makanan Views
         </a>
     </div>
@@ -46,7 +46,7 @@
             <!-- Submit Button -->
             <div class="flex justify-end mt-4">
                 <button type="submit" 
-                        class="px-4 py-2 bg-gray-900 bg-gray-900 hover:bg-gray-950 text-white font-bold rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                     Apply Filters
                 </button>
             </div>
@@ -88,7 +88,7 @@
 
                 <div class="mt-4">
                     <a href="{% url 'dashboard:restaurant_menu' restaurant.resto_name %}"
-                       class="block w-full text-center bg-gray-900 hover:bg-gray-950 text-white font-bold py-2 rounded-md">
+                       class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                         View Menu
                     </a>
                 </div>
@@ -109,17 +109,17 @@
         <div class="flex gap-2">
             {% if restaurants.has_previous %}
             <a href="?page={{ restaurants.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                 Previous
             </a>
             {% endif %}
     
             {% for num in restaurants.paginator.page_range %}
                 {% if num == restaurants.number %}
-                <span class="px-4 py-2 bg-gray-900 text-white rounded-lg">{{ num }}</span>
+                <span class="px-4 py-2 bg-black text-white rounded-lg rounded-md">{{ num }}</span>
                 {% elif num > restaurants.number|add:'-3' and num < restaurants.number|add:'3' %}
                 <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                     {{ num }}
                 </a>
                 {% endif %}
@@ -127,7 +127,7 @@
     
             {% if restaurants.has_next %}
             <a href="?page={{ restaurants.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                 Next
             </a>
             {% endif %}

@@ -1,7 +1,9 @@
 from django.urls import path
 from dashboard import views
-from dashboard.views import makanan_list, makanan_create, is_admin, makanan_delete, makanan_update, show_xml, show_json, show_xml_by_id, show_json_by_id, initialize_admin
-from dashboard.views import restaurant_list, restaurant_menu, restaurant_update, makanan_update_resto
+from dashboard.views import (makanan_list, makanan_create, is_admin, makanan_delete, 
+                             makanan_update, show_json, initialize_admin, restaurant_list, 
+                             restaurant_menu, restaurant_update, makanan_update_resto, 
+                             get_reviews, delete_review, get_reviews_resto)
 
 app_name = 'dashboard'
 
@@ -15,8 +17,8 @@ urlpatterns = [
     path('makanan-update/<str:id>/', makanan_update, name='makanan_update'),
     path('makanan-update-resto/<str:id>/', makanan_update_resto, name='makanan_update_resto'),
     path('resto-update/<str:resto_name>/', restaurant_update, name='restaurant_update'),
-    path('show-xml/', show_xml, name='show_xml'),
     path('show-json/', show_json, name='show_json'),
-    path('show-xml/<str:id>/', show_xml_by_id, name='show_xml_by_id'),
-    path('show-json/<str:id>/', show_json_by_id, name='show_json_by_id'),
+    path('menu-item-reviews/<int:menu_item_id>/', get_reviews, name='menu_item_reviews'),
+    path('menu-item-reviews-resto/<int:menu_item_id>/', get_reviews_resto, name='menu_item_reviews_resto'),
+    path('delete-review/<int:review_id>/', delete_review, name='delete_review'),
 ]
