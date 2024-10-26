@@ -4,11 +4,12 @@ from django.contrib.auth.decorators import login_required
 from forum.models import Article, Comment, Question, Answer
 from forum.forms import ArticleForm, CommentForm, QuestionForm, AnswerForm
 from django.urls import reverse
+from django.db.models import Count
 
 # View untuk menampilkan halaman utama (Culinary Insights)
 def show_main(request):
     articles = Article.objects.all().order_by('-created_at')
-    questions = Question.objects.all().order_by('-created_at')
+    questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
 
     article_form = ArticleForm()
     question_form = QuestionForm()

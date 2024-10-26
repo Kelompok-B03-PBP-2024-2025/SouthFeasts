@@ -36,6 +36,9 @@ class Question(models.Model):
     def __str__(self):
         return self.title
     
+    def total_replies(self):
+        return self.answers.count()
+    
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
