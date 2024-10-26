@@ -2,32 +2,36 @@
 {% block content %}
 
 <div class="container mx-auto px-4 py-8">
-    {# Restaurant Info #}
-    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-2xl font-bold mb-4">{{ restaurant.resto_name }}</h2>
+        <!-- Restaurant Info Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8 transition-transform transform hover:scale-105 hover:shadow-lg hover:bg-gradient-to-r from-white via-black-50 to-black-100">
+        <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ restaurant.resto_name }}</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <p>{{ restaurant.location }}</p>
+            <div class="space-y-2">
+                <p class="text-gray-600 font-medium">{{ restaurant.location }}</p>
                 <hr class="border-gray-300 my-2">
-                <p>{{ restaurant.kecamatan }}</p>
+                <p class="text-gray-600 font-medium">{{ restaurant.kecamatan }}</p>
+                <hr class="border-gray-300 my-2">
             </div>
             
-            <div class="space-y-2">
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Menu Items:</span>
-                    <span class="font-medium">{{ stats.menu_count }}</span>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-bold">Menu Items</span>
+                    <span class="font-semibold text-black">{{ stats.menu_count }}</span>
                 </div>
+                <hr class="border-gray-300 my-2">
                 
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Average Price:</span>
-                    <span class="font-medium">Rp {{ stats.avg_price|floatformat:0 }}</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-bold">Average Price</span>
+                    <span class="font-semibold text-black">Rp {{ stats.avg_price|floatformat:0 }}</span>
                 </div>
+                <hr class="border-gray-300 my-2">
                 
-                <div class="flex justify-between">
-                    <span class="text-gray-600">Price Range:</span>
-                    <span class="font-medium">Rp {{ stats.min_price|floatformat:0 }} - Rp {{ stats.max_price|floatformat:0 }}</span>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600 font-bold">Price Range</span>
+                    <span class="font-semibold text-black">Rp {{ stats.min_price|floatformat:0 }} - Rp {{ stats.max_price|floatformat:0 }}</span>
                 </div>
+                <hr class="border-gray-300 my-2">
             </div>
         </div>
     </div>
@@ -49,9 +53,9 @@
     {# Menu Grid #}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in menu_items %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-500 hover:scale-105 hover:shadow-lg">
             {% if item.image %}
-            <img src="{{ item.image }}" alt="{{ item.item }}" class="w-full h-48 object-cover">
+            <img src="{{ item.image }}" alt="{{ item.item }}" class="w-full h-48 object-cover transition duration-500 hover:opacity-75">
             {% endif %}
             
             <div class="p-4">
@@ -68,7 +72,7 @@
                 
                 <div class="flex justify-between items-center mt-4">
                     <span class="text-green-600 font-bold">Rp {{ item.price }}</span>
-                    <span class="text-gray-500">{{ item.categories }}</span>
+                    <span class="bg-yellow-200 text-yellow-700 text-xs font-semibold py-1 px-2 rounded">{{ item.categories }}</span>
                 </div>
                 
                 <div class="mt-4 flex items-center gap-2">
