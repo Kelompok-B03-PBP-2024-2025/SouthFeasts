@@ -4,7 +4,7 @@
     <!-- Back to Makanan Views Button -->
     <div class="mb-6">
         <a href="{% url 'dashboard:makanan_list' %}" 
-           class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
+           class="bg-gray-500 text-white font-bold px-4 py-2 rounded-md hover:bg-gray-600">
             Back to Makanan Views
         </a>
     </div>
@@ -19,7 +19,7 @@
                         Kecamatan
                     </label>
                     <select name="kecamatan" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500">
                         <option value="all" {% if not selected_kecamatan %}selected{% endif %}>All Kecamatan</option>
                         {% for kecamatan in kecamatans %}
                             <option value="{{ kecamatan }}" 
@@ -39,14 +39,14 @@
                            name="search" 
                            value="{{ search_query|default:'' }}"
                            placeholder="Search by name..." 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500">
                 </div>
             </div>
     
             <!-- Submit Button -->
             <div class="flex justify-end mt-4">
                 <button type="submit" 
-                        class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        class="px-4 py-2 bg-gray-900 bg-gray-900 hover:bg-gray-950 text-white font-bold rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                     Apply Filters
                 </button>
             </div>
@@ -63,22 +63,22 @@
                  class="w-full h-48 object-cover">
             
             <div class="p-6">
-                <h3 class="text-xl font-semibold mb-2">{{ restaurant.resto_name }}</h3>
-                <p class="text-gray-600">{{ restaurant.location }}</p>
+                <h3 class="text-xl font-bold mb-2">{{ restaurant.resto_name }}</h3>
+                <p class="text-gray-700">{{ restaurant.location }}</p>
                 
                 <div class="space-y-2 mt-4">
                     <div class="flex justify-between">
-                        <span class="text-sm text-gray-500">Kecamatan:</span>
+                        <span class="text-sm text-gray-700 font-bold">Kecamatan</span>
                         <span class="text-sm font-medium">{{ restaurant.kecamatan }}</span>
                     </div>
                     
                     <div class="flex justify-between">
-                        <span class="text-sm text-gray-500">Menu Items:</span>
+                        <span class="text-sm text-gray-700 font-bold">Menu Items</span>
                         <span class="text-sm font-medium">{{ restaurant.menu_count }}</span>
                     </div>
                     
                     <div class="flex justify-between">
-                        <span class="text-sm text-gray-500">Price Range:</span>
+                        <span class="text-sm text-gray-700 font-bold">Price Range</span>
                         <span class="text-sm font-medium">
                             Rp {{ restaurant.min_price|floatformat:0 }} - 
                             Rp {{ restaurant.max_price|floatformat:0 }}
@@ -88,7 +88,7 @@
 
                 <div class="mt-4">
                     <a href="{% url 'dashboard:restaurant_menu' restaurant.resto_name %}"
-                       class="block w-full text-center bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">
+                       class="block w-full text-center bg-gray-900 hover:bg-gray-950 text-white font-bold py-2 rounded-md">
                         View Menu
                     </a>
                 </div>
@@ -116,7 +116,7 @@
     
             {% for num in restaurants.paginator.page_range %}
                 {% if num == restaurants.number %}
-                <span class="px-4 py-2 bg-blue-500 text-white rounded-lg">{{ num }}</span>
+                <span class="px-4 py-2 bg-gray-900 text-white rounded-lg">{{ num }}</span>
                 {% elif num > restaurants.number|add:'-3' and num < restaurants.number|add:'3' %}
                 <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
                     class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">

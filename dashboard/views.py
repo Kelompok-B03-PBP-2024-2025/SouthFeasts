@@ -68,7 +68,8 @@ def makanan_list(request):
                 .select_related('restaurant')
                 .annotate(
                     resto_name=F('restaurant__name'),
-                    kecamatan=F('restaurant__kecamatan')
+                    kecamatan=F('restaurant__kecamatan'),
+                    location=F('restaurant__location')  # Tambahkan location
                 )
                 .values(
                     'id',
@@ -78,7 +79,8 @@ def makanan_list(request):
                     'image',
                     'category',
                     'resto_name',
-                    'kecamatan'
+                    'kecamatan',
+                    'location'  # Tambahkan location
                 ))
     
     # Filter berdasarkan input user
@@ -121,6 +123,7 @@ def makanan_list(request):
             'categories': item['category'],
             'resto_name': item['resto_name'],
             'kecamatan': item['kecamatan'],
+            'location': item['location'],  # Tambahkan location
         }
         for item in page_obj
     ]
@@ -158,30 +161,7 @@ def restaurant_menu(request, resto_name):
     
     menu_items = MenuItem.objects.filter(restaurant=restaurant)
     
-    # Filter based on user input
-    category = request.GET.get('category')
-    min_price = request.GET.get('min_price')
-    max_price = request.GET.get('max_price')
-    search_query = request.GET.get('search')
-    
-    if category and category != 'all':
-        menu_items = menu_items.filter(category=category)
-    
-    if min_price:
-        menu_items = menu_items.filter(price__gte=min_price)
-    
-    if max_price:
-        menu_items = menu_items.filter(price__lte=max_price)
-    
-    if search_query:
-        menu_items = menu_items.filter(name__icontains=search_query)
-    
     categories = menu_items.values_list('category', flat=True).distinct()
-    
-    # Pagination
-    paginator = Paginator(list(menu_items), 6)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
     
     # Format the data correctly
     formatted_menu_items = [
@@ -195,7 +175,7 @@ def restaurant_menu(request, resto_name):
             'resto_name': restaurant.name,
             'kecamatan': restaurant.kecamatan,
         }
-        for item in page_obj
+        for item in menu_items
     ]
     
     context = {
@@ -206,12 +186,7 @@ def restaurant_menu(request, resto_name):
         },
         'stats': stats,
         'menu_items': formatted_menu_items,
-        'page_obj': page_obj,
         'categories': categories,
-        'selected_category': category,
-        'min_price': min_price,
-        'max_price': max_price,
-        'search_query': search_query,
     }
     
     return render(request, 'resto_menu.html', context)
@@ -327,6 +302,23 @@ def makanan_update(request, id):
     }
     return render(request, 'update_makanan.html', context)
 
+
+def makanan_update_resto(request, id):
+    menu_item = MenuItem.objects.get(pk=id)
+    form = MenuItemForm(request.POST or None, instance=menu_item)
+    if form.is_valid():
+        form.save()
+        return HttpResponseRedirect(
+            reverse('dashboard:restaurant_menu', 
+                   kwargs={'resto_name': menu_item.restaurant.name})
+        )
+    context = {
+        'form': form,
+        'menu_item': menu_item
+    }
+    return render(request, 'update_makanan_resto.html', context)
+    
+
 @user_passes_test(is_admin)
 def makanan_delete(request, id):
     menu_item = MenuItem.objects.get(pk=id)
@@ -373,6 +365,7 @@ def show_json(request):
     total_pages = (menu_items.count() + per_page - 1) // per_page
     menu_items = menu_items[start:end]
 
+    # Tambahkan atribut 'current_page' di JSON response pada fungsi show_json
     data = {
         'results': [{
             'id': menu_item.id,
@@ -383,14 +376,16 @@ def show_json(request):
             'kecamatan': menu_item.restaurant.kecamatan,
             'image': menu_item.image,
             'restaurant_name': menu_item.restaurant.name,
+            'location': menu_item.restaurant.location
         } for menu_item in menu_items],
         'total_pages': total_pages,
+        'current_page': page,
         'has_previous': page > 1,
         'has_next': page < total_pages,
     }
 
-    return JsonResponse(data)
 
+    return JsonResponse(data)
 
 def show_xml_by_id(request, id):
     data = MenuItem.objects.filter(pk=id)

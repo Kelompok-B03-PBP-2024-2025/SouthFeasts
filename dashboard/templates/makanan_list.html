@@ -44,7 +44,7 @@
             </div>
             
             <div class="flex justify-end">
-                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                <button type="submit" class="bg-gray-900 hover:bg-gray-950 text-white font-bold py-2 px-4 rounded">
                     Apply Filters
                 </button>
             </div>
@@ -53,7 +53,7 @@
 
     <div class="flex justify-end mb-4">
         <button onclick="showAddMakananModal()" 
-                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                class="bg-gray-900 hover:bg-gray-950 text-white font-bold py-2 px-4 rounded">
             Tambah Makanan
         </button>
     </div>
@@ -131,9 +131,27 @@
     </div>
 </div>
 
-<!-- Include the JavaScript file -->
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Confirm Deletion</h3>
+        <p>Are you sure you want to delete this item?</p>
+        <div class="items-center px-4 py-3">
+            <button type="button" onclick="hideDeleteConfirmationModal()"
+                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">
+                Cancel
+            </button>
+            <button type="button" id="confirmDeleteButton"
+                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 let currentPage = 1; // Global variable to store the current page number
+let deleteItemId = null; // Global variable to store the ID of the item to be deleted
 
 // Handle filtering and pagination
 function loadMakanan(page = 1) {
@@ -157,7 +175,7 @@ function loadMakanan(page = 1) {
         .then(response => response.json())
         .then(data => {
             updateMakananDisplay(data.results);
-            updatePagination(data, page);
+            updatePagination(data);
         })
         .catch(error => console.error('Error:', error));
 }
@@ -167,69 +185,65 @@ function updateMakananDisplay(makanan) {
     container.innerHTML = '';
 
     if (makanan.length === 0) {
-        // Adjust container layout for no results
         container.classList.remove('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
         container.classList.add('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
-
-        // If no items are found, show a message and an image
         container.innerHTML = `
             <div class="text-center">
-                <img src="https://i.pinimg.com/736x/e3/57/ea/e357ea1f87ec8694411bc18ecfbe3b9a.jpg" 
-                     alt="No Results Found" class="mx-auto mb-4" style="width: 150px; height: auto;">
+                <img src="" alt="No Results Found" class="mx-auto mb-4" style="width: 150px; height: auto;">
                 <p class="text-gray-600">No food items match your filter. Please try again with different filters.</p>
             </div>
         `;
         return;
     }
 
-    // Restore grid layout for cards
     container.classList.remove('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
     container.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
-
+    
     makanan.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'bg-white rounded-lg shadow-md overflow-hidden';
+        card.className = 'bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden';
+    
         const itemName = DOMPurify.sanitize(item.name);
         const itemDescription = DOMPurify.sanitize(item.description);
         const itemRestaurantName = DOMPurify.sanitize(item.restaurant_name || 'N/A');
-        
+        const itemLocation = DOMPurify.sanitize(item.location || 'N/A');
+    
         card.innerHTML = `
             ${item.image ? `<img src="${DOMPurify.sanitize(item.image)}" alt="${itemName}" class="w-full h-48 object-cover">` : ''}
             <div class="p-4">
-                <h3 class="text-xl font-bold mb-2">${itemName}</h3>
+                <h3 class="text-xl font-bold mb-2 text-gray-800">${itemName}</h3>
                 <div class="relative">
                     <p class="text-gray-600 mb-2 description-short">${itemDescription.split(' ').slice(0, 20).join(' ')}...</p>
                     <p class="text-gray-600 mb-2 description-full hidden">${itemDescription}</p>
-                    <button onclick="toggleDescription(this)" 
-                            class="text-blue-500 hover:text-blue-700 text-sm font-medium">
+                    <button onclick="toggleDescription(this)" class="text-blue-500 hover:text-blue-700 text-sm font-medium">
                         Show More
                     </button>
                 </div>
                 <div class="flex justify-between items-center mt-4">
                     <span class="text-green-600 font-bold">Rp ${item.price.toLocaleString()}</span>
-                    <span class="text-gray-500">${itemRestaurantName}</span>
+                    <span class="text-gray-500">${item.category}</span>
                 </div>
                 <div class="mt-2 text-sm text-gray-500">
-                    <span class="mr-2">${item.category}</span>
+                    <span class="mr-2">${itemRestaurantName}</span>
                     <span>${item.kecamatan}</span>
                 </div>
+                <div class="mt-2 text-sm text-gray-500">
+                    <span>${itemLocation}</span>
+                </div>
                 <div class="mt-4 flex gap-2">
-                    <a href="javascript:void(0);" onclick="editMakanan(${item.id})" 
-                       class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded">
+                    <a href="javascript:void(0);" onclick="editMakanan(${item.id})" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-1 px-2 rounded">
                         Edit
                     </a>
-                    <a href="javascript:void(0);" onclick="deleteMakanan(${item.id})" 
-                       class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+                    <a href="javascript:void(0);" onclick="showDeleteConfirmationModal(${item.id})" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
                         Delete
                     </a>
                 </div>
             </div>
         `;
-
+    
         container.appendChild(card);
     });
 }
-
 
 function toggleDescription(button) {
     const descriptionShort = button.previousElementSibling.previousElementSibling;
@@ -247,41 +261,47 @@ function toggleDescription(button) {
     }
 }
 
-function updatePagination(data, currentPage) {
+function updatePagination(data) {
     const container = document.getElementById('paginationContainer');
     container.innerHTML = '';
 
     if (data.total_pages > 1) {
         const pagination = document.createElement('div');
-        pagination.className = 'flex justify-center space-x-2';
+        pagination.className = 'flex gap-2';
 
-        // Previous button
+        // Tombol Previous
         if (data.has_previous) {
-            const prevButton = document.createElement('button');
-            prevButton.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded';
+            const prevButton = document.createElement('a');
+            prevButton.href = `javascript:loadMakanan(${data.current_page - 1})`;
+            prevButton.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300';
             prevButton.textContent = 'Previous';
-            prevButton.onclick = () => loadMakanan(currentPage - 1);
             pagination.appendChild(prevButton);
         }
 
-        // Page indicator
-        const pageIndicator = document.createElement('span');
-        pageIndicator.className = 'py-2 px-4';
-        pageIndicator.textContent = `Page ${currentPage} of ${data.total_pages}`;
-        pagination.appendChild(pageIndicator);
+        // Nomor Halaman (tampilkan hanya 2 halaman sebelum dan sesudah halaman aktif)
+        for (let i = Math.max(1, data.current_page - 2); i <= Math.min(data.total_pages, data.current_page + 2); i++) {
+            const pageButton = document.createElement('a');
+            pageButton.href = `javascript:loadMakanan(${i})`;
+            pageButton.className = i === data.current_page 
+                ? 'px-4 py-2 bg-gray-900 text-white rounded-lg' 
+                : 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300';
+            pageButton.textContent = i;
+            pagination.appendChild(pageButton);
+        }
 
-        // Next button
+        // Tombol Next
         if (data.has_next) {
-            const nextButton = document.createElement('button');
-            nextButton.className = 'bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded';
+            const nextButton = document.createElement('a');
+            nextButton.href = `javascript:loadMakanan(${data.current_page + 1})`;
+            nextButton.className = 'px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300';
             nextButton.textContent = 'Next';
-            nextButton.onclick = () => loadMakanan(currentPage + 1);
             pagination.appendChild(nextButton);
         }
 
         container.appendChild(pagination);
     }
 }
+
 
 // Handle adding new makanan
 function showAddMakananModal() {
@@ -327,25 +347,36 @@ function submitMakanan(event) {
         document.getElementById('addMakananForm').appendChild(errorContainer);
     });
 }
+function editMakanan(id) {
+    window.location.href = `/dashboard/makanan-update/${id}/`;
+}
 
+// Show delete confirmation modal
+function showDeleteConfirmationModal(id) {
+    deleteItemId = id;
+    document.getElementById('deleteConfirmationModal').classList.remove('hidden');
+}
+
+// Hide delete confirmation modal
+function hideDeleteConfirmationModal() {
+    deleteItemId = null;
+    document.getElementById('deleteConfirmationModal').classList.add('hidden');
+}
 
 // Delete makanan
-function deleteMakanan(id) {
-    if (confirm('Are you sure you want to delete this item?')) {
-        fetch(`/dashboard/makanan-delete/${id}/`, {
+function deleteMakanan() {
+    if (deleteItemId !== null) {
+        fetch(`/dashboard/makanan-delete/${deleteItemId}/`, {
             method: 'GET'
         })
         .then(response => {
             if (response.ok) {
+                hideDeleteConfirmationModal();
                 loadMakanan(currentPage); // Reload the list using the current page
             }
         })
         .catch(error => console.error('Error:', error));
     }
-}
-
-function editMakanan(id) {
-    window.location.href = `/dashboard/makanan-update/${id}/?page=${currentPage}`;
 }
 
 // Initialize on page load
@@ -357,6 +388,9 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         loadMakanan();
     });
+
+    // Set up delete confirmation button
+    document.getElementById('confirmDeleteButton').addEventListener('click', deleteMakanan);
 });
 </script>
 
