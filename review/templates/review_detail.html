@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mx-auto py-10 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8">{{ review.menu_item.name }}</h1>
+        <p><strong>Reviewer:</strong> {{ review.user.username }}</p>
+        <p><strong>Rating:</strong> {{ review.rating }}/5</p>
+        <p class="mt-4">{{ review.review_text }}</p>
+        
+        {% if review.review_image %}
+            <img src="{{ review.review_image.url }}" alt="Review image" class="mt-4 w-full max-w-md mx-auto rounded-lg shadow-md">
+        {% endif %}
+        
+        <!-- Back to Reviews Button -->
+        <div class="mt-6 text-center">
+            <a href="{% url 'review:all_reviews' %}" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">
+                Back to Reviews
+            </a>
+        </div>
+    </div>
+{% endblock %}
