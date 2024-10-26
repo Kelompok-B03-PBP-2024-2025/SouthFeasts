@@ -95,6 +95,15 @@ def menu_detail(request, id):
     reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
     form = ReviewForm(request.POST or None)
 
+    # Tambahkan pengecekan wishlist
+    if request.user.is_authenticated:
+        menu_item.is_in_wishlist = WishlistItem.objects.filter(
+            collection__user=request.user,
+            menu_item=menu_item
+        ).exists()
+    else:
+        menu_item.is_in_wishlist = False
+
     if request.method == 'POST' and form.is_valid():
         review = form.save(commit=False)
         review.user = request.user
