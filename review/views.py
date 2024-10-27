@@ -45,10 +45,9 @@ def all_reviews(request):
 
 #     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
 
-
 @csrf_exempt
-@require_POST
 @login_required
+@require_POST
 def create_review(request, item_id):
     menu_item = get_object_or_404(MenuItem, pk=item_id)
 
@@ -85,16 +84,21 @@ def review_detail(request, review_id):
   
 @login_required
 def edit_review(request, review_id):
-    review = get_object_or_404(ReviewEntry, id=review_id, user=request.user)  # Only allow owner to edit
+    # Mendapatkan review berdasarkan id dan memastikan hanya pemiliknya yang bisa mengedit
+    review = get_object_or_404(ReviewEntry, id=review_id, user=request.user)
 
     if request.method == 'POST':
+        # Menginisialisasi form dengan data POST dan FILES yang disertakan
         form = ReviewForm(request.POST, request.FILES, instance=review)
         if form.is_valid():
             form.save()
-            return redirect('review:all_reviews')  # Redirect to the all_reviews page after saving
+            # Redirect ke halaman semua review setelah perubahan berhasil disimpan
+            return redirect('review:all_reviews')
     else:
+        # Mengisi form dengan data review yang sudah ada
         form = ReviewForm(instance=review)
 
+    # Merender halaman edit_review.html dengan form dan objek review
     return render(request, 'edit_review.html', {'form': form, 'review': review})
 
 @login_required(login_url='/auth/login/')
