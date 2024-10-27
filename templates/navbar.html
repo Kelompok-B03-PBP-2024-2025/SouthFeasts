@@ -1,104 +1,164 @@
 {% load static %}
-<nav class="bg-black shadow-lg w-full sticky top-0 z-50">
-  <div class="container mx-auto px-4 sm:px-6">
-    <div class="flex justify-between items-center py-6">
-      <!-- Logo -->
-      <div class="flex-shrink-0">
-        <a href="{% url 'main:show_main' %}" class="text-white text-xl font-bold hover:text-gray-300 transition duration-300">
-          SouthFeast
-        </a>
-      </div>
+<nav class="bg-black w-full sticky top-0 z-50 shadow-lg">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center h-20">
+            <!-- Logo Section -->
+            <div class="flex-shrink-0">
+                <a href="{% url 'main:show_main' %}" 
+                   class="flex items-center space-x-2 group">
+                    <span class="text-white text-2xl font-bold group-hover:text-gray-300 transition-colors duration-300">
+                        SouthFeast
+                    </span>
+                </a>
+            </div>
 
-      <!-- Desktop Menu -->
-      <div class="hidden lg:flex items-center space-x-8">
-        {% if user.is_authenticated %}
-          <span class="text-white text-lg ml-4">WELCOME, {{ user.username|upper }}!</span>
-        {% endif %}
-        
-        {% if user.is_authenticated and user.is_staff %}
-          <a href="/dashboard" class="text-white text-lg hover:text-gray-300 transition duration-300">DASHBOARD</a>
-        {% else %}
-          <div class="flex items-center space-x-8">
-            <a href="/product" class="text-white text-lg hover:text-gray-300 transition duration-300">CATALOG</a>
-            <a href="/restaurant" class="text-white text-lg hover:text-gray-300 transition duration-300">RESTAURANT</a>
-            <a href="/review" class="text-white text-lg hover:text-gray-300 transition duration-300">REVIEW</a>
-            <a href="/wishlist" class="text-white text-lg hover:text-gray-300 transition duration-300">WISHLIST</a>
-            <a href="{% url 'forum:show_main' %}" class="text-white text-lg hover:text-gray-300 transition duration-300">CULINARY INSIGHTS</a>
-          </div>
-        {% endif %}
+            <!-- Desktop Menu -->
+            <div class="hidden lg:flex items-center space-x-8">
+                {% if user.is_authenticated %}
+                <div class="mr-8">
+                    <span class="text-white text-lg">Welcome, {{ user.username|title }}!</span>
+                </div>
+                {% endif %}
+                
+                {% if user.is_authenticated and user.is_staff %}
+                    <a href="/dashboard" 
+                       class="relative text-white text-lg hover:text-gray-300 transition-colors duration-300 group">
+                        DASHBOARD
+                        <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                    </a>
+                {% else %}
+                    <div class="flex items-center space-x-8">
+                        {% with navigation_items=request.path|default:"/" %}
+                        <a href="/product" 
+                           class="relative text-lg {% if navigation_items == '/product' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            CATALOG
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
+                        <a href="/restaurant" 
+                           class="relative text-lg {% if navigation_items == '/restaurant' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            RESTAURANT
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
+                        <a href="/review" 
+                           class="relative text-lg {% if navigation_items == '/review' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            REVIEW
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
+                        <a href="/wishlist" 
+                           class="relative text-lg {% if navigation_items == '/wishlist' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            WISHLIST
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
+                        <a href="{% url 'forum:show_main' %}" 
+                           class="relative text-lg {% if navigation_items == '/forum' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            CULINARY INSIGHTS
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
+                        {% endwith %}
+                    </div>
+                {% endif %}
 
-        <div class="flex items-center">
-          {% if user.is_authenticated %}
-            <a href="{% url 'authentication:logout' %}" class="bg-transparent border border-white text-white text-lg py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300">LOGOUT</a>
-          {% else %}
-            <a href="{% url 'authentication:login' %}" class="bg-transparent border border-white text-white text-lg py-1.5 px-4 rounded hover:bg-white hover:text-black transition duration-300">LOGIN</a>
-          {% endif %}
+                <!-- Auth Icons -->
+                <div class="flex items-center ml-4">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'authentication:logout' %}" 
+                           class="p-2 text-white hover:text-gray-300 transition-colors duration-300" 
+                           title="Logout">
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                 fill="none" 
+                                 viewBox="0 0 24 24" 
+                                 stroke-width="1.5" 
+                                 stroke="currentColor" 
+                                 class="w-7 h-7">
+                                <path stroke-linecap="round" 
+                                      stroke-linejoin="round" 
+                                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                            </svg>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'authentication:login' %}" 
+                           class="p-2 text-white hover:text-gray-300 transition-colors duration-300"
+                           title="Login">
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                 fill="none" 
+                                 viewBox="0 0 24 24" 
+                                 stroke-width="1.5" 
+                                 stroke="currentColor" 
+                                 class="w-7 h-7">
+                                <path stroke-linecap="round" 
+                                      stroke-linejoin="round" 
+                                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                            </svg>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <div class="lg:hidden">
+                <button class="mobile-menu-button p-2 hover:bg-gray-800 rounded-lg transition-colors duration-300">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path class="line-1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16"/>
+                        <path class="line-2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16"/>
+                        <path class="line-3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 18h16"/>
+                    </svg>
+                </button>
+            </div>
         </div>
-      </div>
 
-      <!-- Mobile Menu Button -->
-      <div class="lg:hidden">
-        <button class="mobile-menu-button p-2">
-          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu hidden lg:hidden">
+            <div class="px-2 pt-2 pb-3 space-y-3">
+                {% if user.is_authenticated %}
+                    <div class="text-white text-lg text-center py-2 border-b border-gray-700">
+                        Welcome, {{ user.username|title }}!
+                    </div>
+                {% endif %}
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu hidden lg:hidden">
-      <div class="px-2 pt-2 pb-3 space-y-3">
-        {% if user.is_authenticated %}
-          <div class="text-white text-lg text-center py-2 border-b border-gray-700">WELCOME, {{ user.username|upper }}!</div>
-        {% endif %}
+                {% if user.is_authenticated and user.is_staff %}
+                    <a href="/dashboard" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        DASHBOARD
+                    </a>
+                {% else %}
+                    <a href="/product" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        CATALOG
+                    </a>
+                    <a href="/restaurant" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        RESTAURANT
+                    </a>
+                    <a href="/review" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        REVIEW
+                    </a>
+                    <a href="/wishlist" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        WISHLIST
+                    </a>
+                    <a href="{% url 'forum:show_main' %}" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        CULINARY INSIGHTS
+                    </a>
+                {% endif %}
 
-        {% if user.is_authenticated and user.is_staff %}
-          <a href="/dashboard" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">DASHBOARD</a>
-        {% else %}
-          <a href="/product" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">CATALOG</a>
-          <a href="/restaurant" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">RESTAURANT</a>
-          <a href="/review" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">REVIEW</a>
-          <a href="/wishlist" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">WISHLIST</a>
-          <a href="{% url 'forum:show_main' %}" class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition duration-300">CULINARY INSIGHTS</a>
-        {% endif %}
-
-        <div class="pt-2 pb-3">
-          {% if user.is_authenticated %}
-            <a href="{% url 'authentication:logout' %}" class="block w-full text-center bg-transparent border border-white text-white text-lg py-2 rounded hover:bg-white hover:text-black transition duration-300">LOGOUT</a>
-          {% else %}
-            <a href="{% url 'authentication:login' %}" class="block w-full text-center bg-transparent border border-white text-white text-lg py-2 rounded hover:bg-white hover:text-black transition duration-300">LOGIN</a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuButton = document.querySelector('.mobile-menu-button');
-    const mobileMenu = document.querySelector('.mobile-menu');
-    
-    mobileMenuButton.addEventListener('click', function() {
-      mobileMenu.classList.toggle('hidden');
-    });
-
-    // Close mobile menu when clicking outside
-    document.addEventListener('click', function(event) {
-      const isClickInsideMenu = mobileMenu.contains(event.target);
-      const isClickOnButton = mobileMenuButton.contains(event.target);
-      
-      if (!isClickInsideMenu && !isClickOnButton && !mobileMenu.classList.contains('hidden')) {
-        mobileMenu.classList.add('hidden');
-      }
-    });
-
-    // Close mobile menu when window is resized to desktop size
-    window.addEventListener('resize', function() {
-      if (window.innerWidth >= 1024) { // lg breakpoint
-        mobileMenu.classList.add('hidden');
-      }
-    });
-  });
-</script>
+                <div class="flex justify-center pt-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'authentication:logout' %}" 
+                           class="text-white hover:text-gray-300 transition-colors duration-300 p-2"
+                           title="Logout">
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                 fill="none" 
+                                 viewBox="0 0 24 24" 
+                                 stroke-width="1.5" 
+                                 stroke="currentColor" 
+                                 class="w-7 h-7">
+                                <path stroke-linecap="round" 
+                                      stroke-linejoin="round" 
+                                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                            </svg>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'authentication:login' %}" 
+                           class="text-white hover:te

@@ -28,7 +28,11 @@
         <!-- Button to add new Article -->
         <button id="add-article-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"> + Add New Article</button>
     </div>
-
+    <!-- Filter options for Articles -->
+    <div class="text-center mb-4">
+        <a href="{% url 'forum:show_main' %}?filter=public_articles" onclick="applyFilter('public_articles', 'articles-section', event)" class="{% if current_filter == 'public_articles' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Public Articles</a>
+        <a href="{% url 'forum:show_main' %}?filter=your_articles" onclick="applyFilter('your_articles', 'articles-section', event)" class="{% if current_filter == 'your_articles' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Your Articles</a>
+    </div>
     {% if not articles %}
     <div class="text-center text-gray-500 mt-6">
         <p class="text-lg">It looks like there are no articles yet. Be the first to add one!</p>
@@ -74,6 +78,11 @@
     <div class="text-center mb-4">
         <!-- Button add new Question -->
         <button id="add-question-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"> + Add New Question</button>
+    </div>
+    <!-- Filter options for Q&A -->
+    <div class="text-center mb-4">
+        <a href="{% url 'forum:show_main' %}?filter=public_qna" onclick="applyFilter('public_qna', 'qna-section', event)" class="{% if current_filter == 'public_qna' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Public Q&A</a>
+        <a href="{% url 'forum:show_main' %}?filter=your_qna" onclick="applyFilter('your_qna', 'qna-section', event)" class="{% if current_filter == 'your_qna' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Your Q&A</a>
     </div>
     {% if not questions %}
     <div class="text-center text-gray-500 mt-6">
@@ -205,6 +214,36 @@
             uploadText.classList.remove('hidden');
             uploadSuccess.classList.add('hidden');
         }
+    }
+
+    function applyFilter(filterType, sectionId, event) {
+        event.preventDefault();
+        const url = new URL(window.location);
+        url.searchParams.set('filter', filterType);
+        window.history.pushState({}, '', url);
+        if (sectionId === 'articles-section') {
+            showArticles();
+        } else if (sectionId === 'qna-section') {
+            showQnA();
+        }
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data, 'text/html');
+
+                if (sectionId === 'articles-section') {
+                    const newContent = doc.querySelector('#articles-grid').innerHTML;
+                    document.getElementById('articles-grid').innerHTML = newContent;
+                } else if (sectionId === 'qna-section') {
+                    const newContent = doc.querySelector('#questions-grid').innerHTML;
+                    document.getElementById('questions-grid').innerHTML = newContent;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching filtered content:', error);
+                alert('Failed to load the filtered content.');
+            });
     }
 
     function closeModal(modalId) {
