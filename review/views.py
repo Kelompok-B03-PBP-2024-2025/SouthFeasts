@@ -1,3 +1,5 @@
+from django.contrib import messages
+from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from product.models import MenuItem
 from review.models import ReviewEntry
@@ -46,7 +48,7 @@ def review_detail(request, review_id):
         'review': review,
     }
     return render(request, 'review_detail.html', context)
-
+  
 @login_required
 def edit_review(request, review_id):
     review = get_object_or_404(ReviewEntry, id=review_id, user=request.user)  # Only allow owner to edit
@@ -60,3 +62,15 @@ def edit_review(request, review_id):
         form = ReviewForm(instance=review)
 
     return render(request, 'edit_review.html', {'form': form, 'review': review})
+  
+@login_required(login_url='/auth/login/')
+def delete_review(request, review_id):
+    """View to handle deletion of a review. Only accessible by staff members."""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("You don't have permission to delete reviews.")
+    
+    review = get_object_or_404(ReviewEntry, pk=review_id)
+    menu_item_id = review.menu_item.id
+    review.delete()
+    messages.success(request, 'Review has been successfully deleted.')
+    return redirect('review:all_reviews')
