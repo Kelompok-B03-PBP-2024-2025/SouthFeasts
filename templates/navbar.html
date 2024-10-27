@@ -161,4 +161,52 @@
                         </a>
                     {% else %}
                         <a href="{% url 'authentication:login' %}" 
-                           class="text-white hover:te
+                           class="text-white hover:text-gray-300 transition-colors duration-300 p-2"
+                           title="Login">
+                            <svg xmlns="http://www.w3.org/2000/svg" 
+                                 fill="none" 
+                                 viewBox="0 0 24 24" 
+                                 stroke-width="1.5" 
+                                 stroke="currentColor" 
+                                 class="w-7 h-7">
+                                <path stroke-linecap="round" 
+                                      stroke-linejoin="round" 
+                                      d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                            </svg>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuButton = document.querySelector('.mobile-menu-button');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    
+    mobileMenuButton.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!mobileMenu.contains(event.target) && 
+            !mobileMenuButton.contains(event.target) && 
+            !mobileMenu.classList.contains('hidden')) {
+            mobileMenu.classList.add('hidden');
+        }
+    });
+
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            if (window.innerWidth >= 1024) {
+                mobileMenu.classList.add('hidden');
+            }
+        }, 250);
+    });
+});
+</script>
+
