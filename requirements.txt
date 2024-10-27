@@ -5,3 +5,5 @@ psycopg2-binary
 requests
 urllib3
 pandas
+dj-database-url
+Pillow
