@@ -22,51 +22,43 @@
 </div>
 
 <!-- Articles Section -->
-<div id="articles-section" class="container mx-auto px-4 py-8 hidden">
+<div id="articles-section" class="container mx-auto px-4 py-8">
     <h2 class="text-3xl font-bold text-center mb-4">Articles</h2>
     <div class="text-center mb-4">
-        <!-- Button to add new Article -->
-        <button id="add-article-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800"> + Add New Article</button>
+        <button id="add-article-btn" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 mb-8">
+            + Add New Article
+        </button>
     </div>
-    <!-- Filter options for Articles -->
     <div class="text-center mb-4">
         <a href="{% url 'forum:show_main' %}?filter=public_articles" onclick="applyFilter('public_articles', 'articles-section', event)" class="{% if current_filter == 'public_articles' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Public Articles</a>
         <a href="{% url 'forum:show_main' %}?filter=your_articles" onclick="applyFilter('your_articles', 'articles-section', event)" class="{% if current_filter == 'your_articles' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Your Articles</a>
     </div>
-    {% if not articles %}
-    <div class="text-center text-gray-500 mt-6">
-        <p class="text-lg">It looks like there are no articles yet. Be the first to add one!</p>
-    </div>
+    {% if articles.exists %}
+        <div class="flex flex-col space-y-8" id="articles-grid">
+            {% for article in articles %}
+                <div class="flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]">
+                    <div class="flex-shrink-0 w-full md:w-1/3 h-full">
+                        <img src="{% if article.thumbnail_file %}{{ article.thumbnail_file.url }}{% else %}/static/image/default-thumbnail.jpg{% endif %}" alt="{{ article.title }}" class="w-full h-96 object-cover">
+                    </div>
+                    <div class="p-4 flex flex-col justify-between md:w-2/3">
+                        <div class="flex-grow">
+                            <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
+                            <p class="text-sm text-gray-500 mb-4">by {{ article.user.username }} | {{ article.created_at|date:"d M, Y" }}</p>
+                            <p class="text-gray-600 mb-4">{{ article.content|truncatewords:50 }}</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'forum:article_detail' article.id %}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                        </div>
+                    </div>
+                </div>             
+            {% endfor %}
+        </div>
     {% else %}
-    <div class="flex flex-col space-y-8" id="articles-grid">
-        {% for article in articles %}
-        <div class="flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]">
-            <!-- Thumbnail -->
-            <div class="flex-shrink-0 w-full md:w-1/3 h-full">
-                <img src="{{ article.get_thumbnail|default:'/static/image/default-thumbnail.jpg' }}" 
-                     alt="Article Image" 
-                     class="w-full h-full object-cover">
-            </div>
-            <!-- Content -->
-            <div class="p-4 flex flex-col justify-between md:w-2/3">
-                <div class="flex-grow">
-                    <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
-                <p class="text-sm text-gray-500 mb-4">by {{ article.user.username }} | {{ article.created_at|date:"d M, Y" }}</p>
-                    <p class="text-gray-600 mb-4">{{ article.content|truncatewords:50 }}</p>
-                </div>
-                <div>
-                    <a href="{% url 'forum:article_detail' article.id %}" 
-                       class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
-                        View More
-                    </a>
-                </div>
-            </div>
-        </div>             
-        {% endfor %}
-    </div>
+        <div class="text-center text-gray-500 mt-6">
+            <p class="text-lg">It looks like there are no articles yet. Be the first to add one!</p>
+        </div>
     {% endif %}
 
-    <!-- Go to Q&A Button -->
     <div class="mt-8 flex justify-end">
         <button onclick="showQnA()" class="bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800">See Q&A</button>
     </div>
@@ -84,23 +76,24 @@
         <a href="{% url 'forum:show_main' %}?filter=public_qna" onclick="applyFilter('public_qna', 'qna-section', event)" class="{% if current_filter == 'public_qna' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Public Q&A</a>
         <a href="{% url 'forum:show_main' %}?filter=your_qna" onclick="applyFilter('your_qna', 'qna-section', event)" class="{% if current_filter == 'your_qna' %}font-bold{% endif %} text-gray-700 mr-4 hover:underline">Your Q&A</a>
     </div>
-    {% if not questions %}
-    <div class="text-center text-gray-500 mt-6">
-        <p class="text-lg">It looks like there are no questions yet. Be the first to ask!</p>
-    </div>
-    {% else %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="questions-grid">
-        {% for question in questions %}
-        <div class="border rounded overflow-hidden shadow-lg h-full">
-            <div class="p-4 article-content">
-                <h3 class="text-xl font-bold mb-2">{{ question.title }}</h3>
-                <p class="text-gray-600">{{ question.question|truncatewords:20 }}</p>
-                <p class="text-sm text-gray-500 font-bold">{{ question.total_answers }} answers</p>
-                <a href="{% url 'forum:question_detail' question.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+
+    {% if questions.exists %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="questions-grid">
+            {% for question in questions %}
+            <div class="border rounded overflow-hidden shadow-lg h-full">
+                <div class="p-4 article-content">
+                    <h3 class="text-xl font-bold mb-2">{{ question.title }}</h3>
+                    <p class="text-gray-600">{{ question.question|truncatewords:20 }}</p>
+                    <p class="text-sm text-gray-500 font-bold">{{ question.total_answers }} answers</p>
+                    <a href="{% url 'forum:question_detail' question.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
+    {% else %}
+        <div class="flex justify-center items-center h-64">
+            <p class="text-lg text-gray-500 text-center">It looks like there are no questions yet. Be the first to ask!</p>
+        </div>
     {% endif %}
 
     <!-- Go to Articles Button in Q&A Section -->
@@ -221,23 +214,33 @@
         const url = new URL(window.location);
         url.searchParams.set('filter', filterType);
         window.history.pushState({}, '', url);
-        if (sectionId === 'articles-section') {
-            showArticles();
-        } else if (sectionId === 'qna-section') {
-            showQnA();
-        }
+
         fetch(url)
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
             .then(data => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data, 'text/html');
 
                 if (sectionId === 'articles-section') {
-                    const newContent = doc.querySelector('#articles-grid').innerHTML;
-                    document.getElementById('articles-grid').innerHTML = newContent;
+                    const newArticlesContent = doc.querySelector('#articles-grid');
+                    document.getElementById('articles-grid').innerHTML = newArticlesContent ? newArticlesContent.innerHTML : '';
                 } else if (sectionId === 'qna-section') {
-                    const newContent = doc.querySelector('#questions-grid').innerHTML;
-                    document.getElementById('questions-grid').innerHTML = newContent;
+                    const newQuestionsContent = doc.querySelector('#questions-grid');
+                    document.getElementById('questions-grid').innerHTML = newQuestionsContent ? newQuestionsContent.innerHTML : '';
+                }
+
+                // Update styling untuk link filter yang aktif
+                if (sectionId === 'articles-section') {
+                    document.querySelector('a[href*="filter=public_articles"]').classList.toggle('font-bold', filterType === 'public_articles');
+                    document.querySelector('a[href*="filter=your_articles"]').classList.toggle('font-bold', filterType === 'your_articles');
+                } else if (sectionId === 'qna-section') {
+                    document.querySelector('a[href*="filter=public_qna"]').classList.toggle('font-bold', filterType === 'public_qna');
+                    document.querySelector('a[href*="filter=your_qna"]').classList.toggle('font-bold', filterType === 'your_qna');
                 }
             })
             .catch(error => {
@@ -247,17 +250,25 @@
     }
 
     function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-        const frame = document.getElementById('frame');
-        const uploadText = document.getElementById('upload-text');
-        const uploadSuccess = document.getElementById('upload-success');
-        frame.src = '';
-        frame.classList.add('hidden');
-        uploadText.classList.remove('hidden');
-        uploadSuccess.classList.add('hidden'); 
-        const modal = document.getElementById(modalId);
+    const modal = document.getElementById(modalId);
+    if (modal) {
         modal.classList.add('hidden');
     }
+
+    const frame = document.getElementById('frame');
+    if (frame) {
+        frame.src = '';
+        frame.classList.add('hidden');
+    }
+    const uploadText = document.getElementById('upload-text');
+    const uploadSuccess = document.getElementById('upload-success');
+    if (uploadText) {
+        uploadText.classList.remove('hidden');
+    }
+    if (uploadSuccess) {
+        uploadSuccess.classList.add('hidden');
+    }
+}
 
     document.addEventListener("DOMContentLoaded", function() {
     handleHashChange();
@@ -293,45 +304,45 @@
    document.getElementById("addArticleForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-
+        
         try {
-        const response = await fetch("{% url 'forum:add_article' %}", {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-            },
-            body: formData
-        });
+            const response = await fetch("{% url 'forum:add_article' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: formData
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (data.success) {
-            const articlesGrid = document.getElementById('articles-grid');
-            const newArticleDiv = document.createElement('div');
-            newArticleDiv.className = 'flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]';
-            newArticleDiv.innerHTML = `
-                <div class="flex-shrink-0 w-full md:w-1/3 h-full">
-                    <img src="${data.article.thumbnail_img}" alt="Article Image" class="w-full h-full object-cover">
-                </div>
-                <div class="p-4 flex flex-col justify-between md:w-2/3">
-                    <div class="flex-grow">
-                        <h3 class="text-2xl font-bold mb-2">${data.article.title}</h3>
-                        <p class="text-sm text-gray-500 mb-4">by ${data.article.author} | ${data.article.created_at}</p>
-                        <p class="text-gray-600 mb-4">${truncateText(data.article.content, 50)}</p>
+            if (data.success) {
+                const articlesGrid = document.getElementById('articles-grid');
+                const newArticleDiv = document.createElement('div');
+                newArticleDiv.className = 'flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]';
+                newArticleDiv.innerHTML = `
+                    <div class="flex-shrink-0 w-full md:w-1/3 h-full">
+                        <img src="${data.article.thumbnail_img}" alt="Article Image" class="w-full h-full object-cover">
                     </div>
-                    <div>
-                        <a href="${data.article.url}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                    <div class="p-4 flex flex-col justify-between md:w-2/3">
+                        <div class="flex-grow">
+                            <h3 class="text-2xl font-bold mb-2">${data.article.title}</h3>
+                            <p class="text-sm text-gray-500 mb-4">by ${data.article.author} | ${data.article.created_at}</p>
+                            <p class="text-gray-600 mb-4">${truncateText(data.article.content, 50)}</p>
+                        </div>
+                        <div>
+                            <a href="${data.article.url}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                        </div>
                     </div>
-                </div>
-            `;
-            articlesGrid.prepend(newArticleDiv);
+                `;
+                articlesGrid.prepend(newArticleDiv);
 
-            document.getElementById("addArticleForm").reset();
-            closeModal('addArticleModal');
-        } else {
-            console.error('Form validation errors:', data.form_errors);
-            alert('Failed to add article: ' + data.error);
-        }
+                // Reset form and close modal
+                document.getElementById("addArticleForm").reset();
+                closeModal('addArticleModal');
+            } else {
+                alert('Failed to add article: ' + data.error);
+            }
         } catch (error) {
         console.error('Error:', error);
         alert('An error occurred while adding the article.');
@@ -348,6 +359,7 @@
     }
 
     // Add New Question AJAX submission
+    // Tambahkan ke fungsi AJAX untuk menambahkan pertanyaan baru
     document.getElementById("addQuestionForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -364,7 +376,7 @@
             const data = await response.json();
 
             if (data.success) {
-                // Create a new question card in the DOM
+                // Buat elemen baru untuk pertanyaan di Your Q&A
                 const questionsGrid = document.getElementById('questions-grid');
                 const newQuestionDiv = document.createElement('div');
                 newQuestionDiv.className = 'border rounded overflow-hidden shadow-lg h-full';
@@ -376,10 +388,12 @@
                     </div>
                 `;
                 questionsGrid.prepend(newQuestionDiv);
+
+                // Reset form dan tutup modal
                 document.getElementById("addQuestionForm").reset();
                 closeModal('addQuestionModal');
             } else {
-                alert(`Failed to add question: ${data.error}\nErrors: ${JSON.stringify(data.form_errors)}`);
+                alert(`Failed to add question: ${data.error}`);
             }
         } catch (error) {
             console.error('Error:', error);

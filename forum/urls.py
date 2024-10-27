@@ -13,7 +13,6 @@ urlpatterns = [
     path('question/edit/<int:question_id>/', edit_question, name='edit_question'),
     path('question/delete/<int:question_id>/', delete_question, name='delete_question'),
     path('question/<int:question_id>/', question_detail, name='question_detail'),
-    path('question/<int:question_id>/delete/', delete_question, name='delete_question'),
     path('answer/<int:answer_id>/delete/', delete_answer, name='delete_answer'),
     path('comment/delete/<int:comment_id>/', delete_comment, name='delete_comment'),
 ]
