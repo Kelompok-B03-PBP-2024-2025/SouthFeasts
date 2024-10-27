@@ -239,19 +239,60 @@
 </div>
 
 <script>
-    function scrollLeft() {
-        document.getElementById("reviews-carousel").scrollBy({
+// First, define the carousel and buttons
+const carousel = document.getElementById("reviews-carousel");
+const leftButton = document.querySelector('button[onclick="scrollLeft()"]');
+const rightButton = document.querySelector('button[onclick="scrollRight()"]');
+
+// Function to check scroll position and update button visibility
+function updateButtonVisibility() {
+    // Check if we can scroll left
+    if (carousel.scrollLeft <= 0) {
+        leftButton.style.opacity = "0.5";
+        leftButton.style.cursor = "not-allowed";
+    } else {
+        leftButton.style.opacity = "1";
+        leftButton.style.cursor = "pointer";
+    }
+
+    // Check if we can scroll right
+    if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+        rightButton.style.opacity = "0.5";
+        rightButton.style.cursor = "not-allowed";
+    } else {
+        rightButton.style.opacity = "1";
+        rightButton.style.cursor = "pointer";
+    }
+}
+
+// Scroll left function
+function scrollLeft() {
+    if (carousel.scrollLeft > 0) {
+        carousel.scrollBy({
             left: -300,
             behavior: "smooth"
         });
     }
+}
 
-    function scrollRight() {
-        document.getElementById("reviews-carousel").scrollBy({
+// Scroll right function
+function scrollRight() {
+    if (carousel.scrollLeft < carousel.scrollWidth - carousel.clientWidth) {
+        carousel.scrollBy({
             left: 300,
             behavior: "smooth"
         });
     }
+}
+
+// Add scroll event listener to update button visibility
+carousel.addEventListener('scroll', updateButtonVisibility);
+
+// Initial button visibility check
+document.addEventListener('DOMContentLoaded', updateButtonVisibility);
+
+// Add resize event listener to handle window resizing
+window.addEventListener('resize', updateButtonVisibility);
 </script>
 
 <style>
