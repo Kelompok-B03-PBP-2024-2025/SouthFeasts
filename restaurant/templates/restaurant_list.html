@@ -98,9 +98,7 @@
 
             {% if restaurants.has_next %}
             <a href="?page={{ restaurants.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_kecamatan %}&kecamatan={{ selected_kecamatan }}{% endif %}" 
-               class="px-4 py- 2 text-sm font-medium bg-white border rounded-r-lg hover:bg-gray-50">
-                Next
-            </a>
+            class="px-4 py-2 text-sm font-medium bg-white border rounded-r-lg hover:bg-gray-50">Next</a>
             {% endif %}
         </nav>
     </div>
