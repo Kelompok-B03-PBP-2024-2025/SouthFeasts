@@ -222,7 +222,7 @@ def edit_question(request, question_id):
 def delete_question(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
-    if request.user != question.user:
+    if request.user != question.user and not request.user.is_staff:
         return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
 
     question.delete()
@@ -232,7 +232,7 @@ def delete_question(request, question_id):
 def delete_answer(request, answer_id):
     answer = get_object_or_404(Answer, id=answer_id)
 
-    if request.user == answer.user:
+    if request.user == answer.user or request.user.is_staff:
         answer.delete()
         return JsonResponse({'success': True})
     
@@ -242,7 +242,7 @@ def delete_answer(request, answer_id):
 def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
 
-    if request.user == comment.user:
+    if request.user == comment.user or request.user.is_staff:
         comment.delete()
         return JsonResponse({'success': True, 'message': 'Comment deleted successfully'})
     

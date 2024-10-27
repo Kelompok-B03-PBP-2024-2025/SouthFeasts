@@ -20,8 +20,8 @@
                     <p class="text-lg">by {{ article.user.username }}</p>
                 </div>
 
-                <!-- Edit/Delete buttons for the owner of the article -->
-                {% if request.user == article.user %}
+                <!-- Edit/Delete buttons for the owner of the article or admin-->
+                {% if request.user == article.user or request.user.is_staff %}
                 <div class="flex space-x-2">
                     <!-- Button Edit -->
                     <button onclick="openEditModal()" class="bg-transparent border border-white text-white rounded-md hover:bg-white hover:text-black transition duration-100 ease-in-out focus:outline-none flex items-center justify-center space-x-2 px-4 py-2 h-10">
@@ -66,7 +66,7 @@
                             <p><strong>{{ comment.user.username }}:</strong> {{ comment.content }}</p>
                             <p class="text-sm text-gray-500">{{ comment.created_at|date:"M d, Y" }}</p>
                         </div>
-                        {% if request.user == comment.user %}
+                        {% if request.user == comment.user or request.user.is_staff %}
                         <button 
                             class="ml-4 text-gray-500 hover:text-red-600 focus:outline-none"
                             title="Delete comment"
