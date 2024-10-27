@@ -83,30 +83,29 @@ def review_detail(request, review_id):
     }
     return render(request, 'review_detail.html', context)
   
-@login_required
+@login_required(login_url='/auth/login/')
 def edit_review(request, review_id):
-    # Mendapatkan review berdasarkan id dan memastikan hanya pemiliknya yang bisa mengedit
-    review = get_object_or_404(ReviewEntry, id=review_id, user=request.user)
+    review = get_object_or_404(ReviewEntry, id=review_id)
 
     if request.method == 'POST':
-        # Menginisialisasi form dengan data POST dan FILES yang disertakan
-        form = ReviewForm(request.POST, request.FILES, instance=review)
+        form = ReviewForm(request.POST, instance=review)
         if form.is_valid():
-            form.save()
-            # Redirect ke halaman semua review setelah perubahan berhasil disimpan
-            return redirect('review:all_reviews')
+            form.save()  # Simpan perubahan pada review
+            return redirect('review:all_reviews')  # Redirect ke halaman "All Reviews" setelah penyimpanan
     else:
-        # Mengisi form dengan data review yang sudah ada
         form = ReviewForm(instance=review)
 
-    # Merender halaman edit_review.html dengan form dan objek review
-    return render(request, 'edit_review.html', {'form': form, 'review': review})
+    context = {
+        'review': review,
+        'form': form,
+    }
+    return render(request, 'edit_review.html', context)
 
 @login_required(login_url='/auth/login/')
 def delete_review(request, review_id):
     if request.method == "POST":
         review = get_object_or_404(ReviewEntry, id=review_id)
-        if review.user == request.user:
+        if review.user == request.user or request.user.is_staff:
             review.delete()
             messages.success(request, 'Review has been successfully deleted.')
             return redirect('review:all_reviews')

@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <form method="post" class="text-left mt-6">
+        <form method="post" action="{% url 'review:edit_review' review.id %}" class="text-left mt-6">
             {% csrf_token %}
 
             <!-- Review Text Area -->
@@ -54,13 +54,5 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-<style>
-    .container, .font-merriweather {
-        font-family: 'Merriweather', serif;
-    }
-    .shadow-sm {
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-</style>
+{% endblock %}
