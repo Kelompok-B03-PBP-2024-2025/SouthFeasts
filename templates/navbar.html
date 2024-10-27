@@ -23,6 +23,11 @@
                         DASHBOARD
                         <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
                     </a>
+                    <a href="{% url 'forum:show_main' %}" 
+                           class="relative text-lg {% if navigation_items == '/forum' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            CULINARY INSIGHTS
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
                 {% else %}
                     <div class="flex items-center space-x-8">
                         {% with navigation_items=request.path|default:"/" %}
@@ -116,6 +121,10 @@
                     <a href="/dashboard" 
                        class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
                         DASHBOARD
+                    </a>
+                    <a href="/forum" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        CULINARY INSIGHTS
                     </a>
                 {% else %}
                     <a href="/product" 

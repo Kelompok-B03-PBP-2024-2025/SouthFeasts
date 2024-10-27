@@ -36,21 +36,21 @@
     {% if articles.exists %}
         <div class="flex flex-col space-y-8" id="articles-grid">
             {% for article in articles %}
-                <div class="flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]">
-                    <div class="flex-shrink-0 w-full md:w-1/3 h-full">
-                        <img src="{% if article.thumbnail_file %}{{ article.thumbnail_file.url }}{% else %}/static/image/default-thumbnail.jpg{% endif %}" alt="{{ article.title }}" class="w-full h-96 object-cover">
+            <div class="flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg">
+                <!-- Thumbnail -->
+                <div class="flex-shrink-0 w-full md:w-1/3">
+                    <img src="{% if article.thumbnail_file %}{{ article.thumbnail_file.url }}{% else %}/static/image/default-thumbnail.jpg{% endif %}" alt="{{ article.title }}" class="w-full h-64 object-cover">
+                </div>
+                <!-- Content -->
+                <div class="p-4 flex flex-col justify-between w-full md:w-2/3">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
+                        <p class="text-sm text-gray-500 mb-4">by {{ article.user.username }} | {{ article.created_at|date:"d M, Y" }}</p>
+                        <p class="text-gray-600 mb-4">{{ article.content|truncatewords:50 }}</p>
                     </div>
-                    <div class="p-4 flex flex-col justify-between md:w-2/3">
-                        <div class="flex-grow">
-                            <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
-                            <p class="text-sm text-gray-500 mb-4">by {{ article.user.username }} | {{ article.created_at|date:"d M, Y" }}</p>
-                            <p class="text-gray-600 mb-4">{{ article.content|truncatewords:50 }}</p>
-                        </div>
-                        <div>
-                            <a href="{% url 'forum:article_detail' article.id %}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
-                        </div>
-                    </div>
-                </div>             
+                    <a href="{% url 'forum:article_detail' article.id %}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                </div>
+            </div>                     
             {% endfor %}
         </div>
     {% else %}
@@ -413,5 +413,30 @@
     .transition-colors {
         transition: background-color 0.3s, color 0.3s;
     }
+
+    /* CSS khusus untuk tampilan mobile */
+    @media (max-width: 768px) {
+        /* Atur ulang layout artikel menjadi kolom tunggal */
+        #articles-grid .flex {
+            flex-direction: column;
+        }
+
+        /* Batasi tinggi gambar pada tampilan mobile */
+        #articles-grid img {
+            height: auto;
+            max-height: 200px; /* Ubah ini sesuai kebutuhan */
+        }
+
+        /* Pastikan padding konten cukup untuk mengakomodasi teks */
+        .article-content {
+            padding: 1rem;
+        }
+
+        /* Pastikan tombol "View More" selalu terlihat */
+        .article-content .block {
+            margin-top: 1rem;
+        }
+    }
+
 </style>
 {% endblock %}
