@@ -4,10 +4,13 @@
 {% block title %}Culinary Insights{% endblock %}
 
 {% block content %}
-<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2020/07/Manual-Jakarta_Fabelio-3-980x719.jpg');">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=La+Belle+Aurore&display=swap">
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2023/10/2_kama_230-980x719.jpg');">
     <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
         <p class="text-sm text-gray-200 mb-2 tracking-wide">Food & Drink</p>
-        <h1 class="text-4xl font-bold text-white text-center" style="font-family: Arial, Helvetica, sans-serif;">Get Lost. Find South Jakarta.</h1>
+        <h1 class="text-7xl font-bold text-white text-center" style="font-family: Helvetica, Arial, sans-serif;">
+            <span style="font-family: 'La Belle Aurore', cursive;">get Lost.</span> Find South Jakarta.
+        </h1>
         <button onclick="scrollToContent()" class="mt-4 bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
             See More
         </button>
@@ -225,9 +228,32 @@
     function scrollToContent() {
         document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
     }
+    // Changing background images in the hero section
+    const images = [
+        'https://manual.co.id/wp-content/uploads/2024/04/1317_solo_ristorante_web-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/06/nothing-personal_57-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/05/Sando-Shop_29-980x719.jpg'
+
+    ];
+    
+    let currentIndex = 0;
+    const heroSection = document.querySelector('.bg-cover');
+
+    function changeBackgroundImage() {
+        heroSection.style.backgroundImage = `url('${images[currentIndex]}')`;
+        currentIndex = (currentIndex + 1) % images.length;
+    }
+
+    setInterval(changeBackgroundImage, 5000);
 </script>
 
 <style>
+    .hover-effect {
+        transition: background-color 0.3s;
+    }
+    .hover-effect:hover {
+        background-color: #333;
+    }
     .transition-colors {
         transition: background-color 0.3s, color 0.3s;
     }
