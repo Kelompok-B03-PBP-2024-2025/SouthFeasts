@@ -8,6 +8,7 @@ from django.db.models import Q
 from review.forms import ReviewForm
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.http import JsonResponse
 
 # View for displaying all reviews across products with search functionality
 def all_reviews(request):
@@ -44,25 +45,36 @@ def all_reviews(request):
 
 #     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
 
+
 @csrf_exempt
 @require_POST
-@login_required(login_url='/auth/login/') 
+@login_required
 def create_review(request, item_id):
     menu_item = get_object_or_404(MenuItem, pk=item_id)
 
     review_text = request.POST.get("review_text")
     rating = request.POST.get("rating")
-    review_image = request.POST.get("review_image")
+    review_image = request.FILES.get("review_image")
     user = request.user
 
+    # Create and save the new review entry
     new_review = ReviewEntry(
-        menu_item=menu_item, review_text=review_text,
-        rating=rating, review_image=review_image,
+        menu_item=menu_item,
+        review_text=review_text,
+        rating=rating,
+        review_image=review_image,
         user=user
     )
     new_review.save()
 
-    return HttpResponse(b"CREATED", status=201)
+    # Return JSON response
+    return JsonResponse({
+        "success": True,
+        "user": user.username,
+        "review_text": new_review.review_text,
+        "rating": new_review.rating,
+        "review_image": new_review.review_image.url if new_review.review_image else None
+    })
 
 def review_detail(request, review_id):
     review = get_object_or_404(ReviewEntry, pk=review_id)
