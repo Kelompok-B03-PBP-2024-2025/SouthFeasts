@@ -2,6 +2,8 @@
 
 # South Jakarta Flavors, SouthFeasts Delivers! 🍜🍖
 
+[https://southfeast-production.up.railway.app](https://southfeast-production.up.railway.app)
+
 ## Anggota Kelompok B03
 - [Gnade Yuka](https://github.com/yukaagnd) - 2306165704
 - [Nabila Maharani Putri](https://github.com/nabsskrrtt) - 2306275191
