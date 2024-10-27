@@ -10,7 +10,7 @@
 <div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2024/08/seroja_15-980x719.jpg');">
     <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
         <!-- Heading "Culinary Insight" with La Belle Aurore font -->
-        <h1 class="text-4xl font-bold text-white" style="font-family: 'La Belle Aurore', cursive;">Culinary Insight</h1>
+        <h1 class="text-6xl font-bold text-white" style="font-family: 'La Belle Aurore', cursive;">Culinary Insight</h1>
         <p class="text-lg text-gray-200">Get the latest scoop on South Jakarta culinary world.</p>
         <div class="mt-4">
             <!-- Button to show Articles -->
@@ -287,7 +287,36 @@
             showArticles();
         }
     }
+    // Function to fetch and update content
+    async function refreshContent(filterType) {
+        const url = new URL(window.location);
+        url.searchParams.set('filter', filterType);
 
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+
+            if (filterType.includes('articles')) {
+                const newArticlesContent = doc.querySelector('#articles-grid');
+                if (newArticlesContent) {
+                    document.getElementById('articles-grid').innerHTML = newArticlesContent.innerHTML;
+                }
+            } else if (filterType.includes('qna')) {
+                const newQuestionsContent = doc.querySelector('#questions-grid');
+                if (newQuestionsContent) {
+                    document.getElementById('questions-grid').innerHTML = newQuestionsContent.innerHTML;
+                }
+            }
+        } catch (error) {
+            console.error('Error refreshing content:', error);
+            alert('Failed to refresh content.');
+        }
+    }
     function showArticles() {
         const articlesSection = document.getElementById('articles-section');
         const qnaSection = document.getElementById('qna-section');
@@ -321,35 +350,21 @@
             const data = await response.json();
 
             if (data.success) {
-                const articlesGrid = document.getElementById('articles-grid');
-                const newArticleDiv = document.createElement('div');
-                newArticleDiv.className = 'flex flex-col md:flex-row items-stretch border rounded overflow-hidden shadow-lg h-[320px]';
-                newArticleDiv.innerHTML = `
-                    <div class="flex-shrink-0 w-full md:w-1/3 h-full">
-                        <img src="${data.article.thumbnail_img}" alt="Article Image" class="w-full h-full object-cover">
-                    </div>
-                    <div class="p-4 flex flex-col justify-between md:w-2/3">
-                        <div class="flex-grow">
-                            <h3 class="text-2xl font-bold mb-2">${data.article.title}</h3>
-                            <p class="text-sm text-gray-500 mb-4">by ${data.article.author} | ${data.article.created_at}</p>
-                            <p class="text-gray-600 mb-4">${truncateText(data.article.content, 50)}</p>
-                        </div>
-                        <div>
-                            <a href="${data.article.url}" class="block bg-white border border-black text-black text-center py-2 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
-                        </div>
-                    </div>
-                `;
-                articlesGrid.prepend(newArticleDiv);
-
                 // Reset form and close modal
                 document.getElementById("addArticleForm").reset();
                 closeModal('addArticleModal');
+                
+                // Refresh the articles content
+                await refreshContent('your_articles');
+                
+                // Show success message
+                alert('Article added successfully!');
             } else {
                 alert('Failed to add article: ' + data.error);
             }
         } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while adding the article.');
+            console.error('Error:', error);
+            alert('An error occurred while adding the article.');
         }
     });
 
@@ -363,7 +378,6 @@
     }
 
     // Add New Question AJAX submission
-    // Tambahkan ke fungsi AJAX untuk menambahkan pertanyaan baru
     document.getElementById("addQuestionForm").addEventListener("submit", async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -380,24 +394,17 @@
             const data = await response.json();
 
             if (data.success) {
-                // Buat elemen baru untuk pertanyaan di Your Q&A
-                const questionsGrid = document.getElementById('questions-grid');
-                const newQuestionDiv = document.createElement('div');
-                newQuestionDiv.className = 'border rounded overflow-hidden shadow-lg h-full';
-                newQuestionDiv.innerHTML = `
-                    <div class="p-4 article-content">
-                        <h2 class="text-xl font-bold mb-2">${data.question.title}</h2>
-                        <p class="text-gray-600">${data.question.question}</p>
-                        <a href="${data.question.url}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
-                    </div>
-                `;
-                questionsGrid.prepend(newQuestionDiv);
-
-                // Reset form dan tutup modal
+                // Reset form and close modal
                 document.getElementById("addQuestionForm").reset();
                 closeModal('addQuestionModal');
+                
+                // Refresh the questions content
+                await refreshContent('your_qna');
+                
+                // Show success message
+                alert('Question added successfully!');
             } else {
-                alert(`Failed to add question: ${data.error}`);
+                alert('Failed to add question: ' + data.error);
             }
         } catch (error) {
             console.error('Error:', error);

@@ -188,74 +188,79 @@
     <div class="container mx-auto px-4">
         <h2 class="text-3xl font-bold text-center mb-8">User Reviews</h2>
         <p class="text-lg text-center text-gray-600 mb-12">See what others are saying about our menu items.</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {% if reviews %}
-                {% for review in reviews %}
-                    <div class="bg-white text-black rounded-lg shadow-md p-6">
-                        <!-- Reviewer's Name and Rating -->
-                        <div class="flex items-center mb-2">
-                            <p class="font-semibold text-lg">{{ review.user.username }}</p>
-                            <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+
+        <!-- Carousel Wrapper -->
+        <div class="relative">
+            <!-- Left Button -->
+            <button onclick="scrollLeft()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+                &larr;
+            </button>
+
+            <!-- Reviews Carousel -->
+            <div id="reviews-carousel" class="flex overflow-x-auto gap-4 scroll-smooth">
+                {% if reviews %}
+                    {% for review in reviews %}
+                        <div class="bg-white text-black rounded-lg shadow-md p-6 min-w-[250px]">
+                            <!-- Reviewer's Name and Rating -->
+                            <div class="flex items-center mb-2">
+                                <p class="font-semibold text-lg">{{ review.user.username }}</p>
+                                <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+                            </div>
+
+                            <!-- Review Text Snippet -->
+                            <p class="text-gray-700 mb-4">
+                                {{ review.review_text|truncatechars:100 }}
+                            </p>
+
+                            <!-- Review Image (if available) -->
+                            {% if review.review_image %}
+                                <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
+                            {% else %}
+                                <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
+                            {% endif %}
+
+                            <!-- Link to Full Review -->
+                            <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
+                                Read Full Review →
+                            </a>
                         </div>
-                        
-                        <!-- Review Text Snippet -->
-                        <p class="text-gray-700 mb-4">
-                            {{ review.review_text|truncatechars:100 }}
-                        </p>
-                        
-                        <!-- Review Image (if available) -->
-                        {% if review.review_image %}
-                            <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
-                        {% else %}
-                            <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
-                        {% endif %}
-                        
-                        <!-- Link to Full Review -->
-                        <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
-                            Read Full Review →
-                        </a>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center text-gray-600">No reviews available</p>
-            {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-gray-600">No reviews available</p>
+                {% endif %}
+            </div>
+
+            <!-- Right Button -->
+            <button onclick="scrollRight()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+                &rarr;
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-    function scrollToContent() {
-        document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
-    }
-    // Changing background images in the hero section
-    const images = [
-        'https://manual.co.id/wp-content/uploads/2024/04/1317_solo_ristorante_web-980x719.jpg',
-        'https://manual.co.id/wp-content/uploads/2024/06/nothing-personal_57-980x719.jpg',
-        'https://manual.co.id/wp-content/uploads/2024/05/Sando-Shop_29-980x719.jpg'
-
-    ];
-    
-    let currentIndex = 0;
-    const heroSection = document.querySelector('.bg-cover');
-
-    function changeBackgroundImage() {
-        heroSection.style.backgroundImage = `url('${images[currentIndex]}')`;
-        currentIndex = (currentIndex + 1) % images.length;
+    function scrollLeft() {
+        document.getElementById("reviews-carousel").scrollBy({
+            left: -300,
+            behavior: "smooth"
+        });
     }
 
-    setInterval(changeBackgroundImage, 5000);
+    function scrollRight() {
+        document.getElementById("reviews-carousel").scrollBy({
+            left: 300,
+            behavior: "smooth"
+        });
+    }
 </script>
 
 <style>
-    .hover-effect {
-        transition: background-color 0.3s;
+    #reviews-carousel::-webkit-scrollbar {
+        display: none;
     }
-    .hover-effect:hover {
-        background-color: #333;
-    }
-    .transition-colors {
-        transition: background-color 0.3s, color 0.3s;
+    #reviews-carousel {
+        scrollbar-width: none;
     }
 </style>
+
 {% endblock %}

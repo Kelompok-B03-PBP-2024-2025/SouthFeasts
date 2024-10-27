@@ -70,9 +70,9 @@
     </div>
 </div>
 
-<!--Tambha makanan Modal -->
-<div id="addMakananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto hidden flex items-center justify-center">
-    <div class="relative mx-auto p-5 border w-11/12 md:w-96 shadow-lg rounded-md bg-white mt-20"> 
+<!-- Add Makanan Modal -->
+<div id="addMakananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto hidden flex items-center justify-center z-50 p-4">
+    <div class="relative mx-auto p-5 border w-full max-w-md max-h-screen overflow-y-auto shadow-lg rounded-md bg-white mt-20 md:mt-0">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Menu Item</h3>
         
         <form id="addMakananForm" onsubmit="submitMakanan(event)" class="space-y-4">
@@ -137,7 +137,7 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="deleteConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
+<div id="deleteConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center z-50">
     <div class="relative p-5 border w-11/12 md:w-96 shadow-lg rounded-md bg-white">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Confirm Deletion</h3>
         <p>Are you sure you want to delete this item?</p>
