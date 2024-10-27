@@ -74,6 +74,7 @@ def menu_catalog(request):
         'min_price': min_price,
         'max_price': max_price,
         'selected_kecamatan': kecamatan,
+        'restaurant_kecamatan_choices': Restaurant.KECAMATAN_CHOICE,
     }
     
     return render(request, 'menu_catalog.html', context)

@@ -63,9 +63,9 @@
                     <select name="kecamatan" 
                             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200">
                         <option value="">All Locations</option>
-                        {% for kecamatan in kecamatans %}
-                        <option value="{{ kecamatan }}" {% if selected_kecamatan == kecamatan %}selected{% endif %}>
-                            {{ kecamatan }}
+                        {% for value,label in restaurant_kecamatan_choices %}
+                        <option value="{{ value }}" {% if selected_kecamatan == value %}selected{% endif %}>
+                            {{ label }}
                         </option>
                         {% endfor %}
                     </select>
