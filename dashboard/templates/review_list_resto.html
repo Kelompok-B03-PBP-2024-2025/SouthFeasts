@@ -10,7 +10,7 @@
                 Back
             </a>
         </div>
-
+        <!-- List review -->
         {% if reviews %}
             {% for review in reviews %}
             <div class="bg-white rounded-lg shadow p-6 mb-4" id="review-{{ review.id }}">
@@ -44,7 +44,7 @@
     </div>
 </div>
 
-<!-- Modal Structure -->
+<!-- Delete review modal -->
 <div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
     <div class="bg-white rounded-lg shadow-lg p-6">
         <h3 class="text-lg font-semibold mb-4">Confirm Deletion</h3>
@@ -60,6 +60,7 @@
 </div>
 
 <script>
+    // Handle delete modal
     function openModal(reviewId) {
         const modal = document.getElementById('deleteModal');
         const form = document.getElementById('deleteForm');

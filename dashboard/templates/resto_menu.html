@@ -36,6 +36,7 @@
         </div>
     </div>
 
+    <!-- Edit Restaurant Info Button -->
     <div class="flex justify-end mt-4">
         <a href="{% url 'dashboard:restaurant_update' restaurant.resto_name %}" 
            class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
@@ -43,14 +44,14 @@
         </a>
     </div>
 
-    {# Back Button #}
+    <!-- Tombol back -->
     <div class="mb-6">
         <a href="{% url 'dashboard:restaurant_list' %}" class="bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
             Back to Restaurant List
         </a>
     </div>
 
-    {# Menu Grid #}
+    <!-- Menu Items card -->    
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for item in menu_items %}
         <div class="bg-white rounded-lg shadow-md overflow-hidden transform transition duration-500 hover:scale-105 hover:shadow-lg">
@@ -94,6 +95,7 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
 <div id="deleteConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden flex items-center justify-center">
     <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Confirm Deletion</h3>
@@ -112,8 +114,9 @@
 </div>
 
 <script>
-let deleteItemId = null; // Store the ID of the item to delete
+let deleteItemId = null; // variable untuk menyimpan id item yang akan dihapus
 
+// handle delete confirmation modal
 function showDeleteConfirmationModal(id) {
     deleteItemId = id;
     document.getElementById('deleteConfirmationModal').classList.remove('hidden');
@@ -143,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('confirmDeleteButton').addEventListener('click', deleteMakanan);
 });
 
+// Toggle description show more / show less
 function toggleDescription(button) {
     const descriptionShort = button.previousElementSibling.previousElementSibling;
     const descriptionFull = button.previousElementSibling;

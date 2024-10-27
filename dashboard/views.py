@@ -21,7 +21,7 @@ from review.models import ReviewEntry
 from .forms import MenuItemForm, RestaurantForm 
 
 def initialize_admin(request):
-    # Check if 'admin' user exists
+    # Membuat user admin baru (menghapus yang lama jika ada)
     if User.objects.filter(username='admin').exists():
         User.objects.filter(username='admin').delete()
     
@@ -38,28 +38,20 @@ def initialize_admin(request):
     profile.save()
     return HttpResponse("Admin berhasil diinisialisasi.")
 
-def is_admin(user):
-    return user.is_authenticated and user.userprofile.user_type == 'ADMIN'
-
 def makanan_list(request):
-    # Ambil kategori yang benar-benar digunakan dan hitung jumlahnya
+    # Mengambil 5 kategori makanan 
     used_categories = (MenuItem.objects
-                      .values('category')
-                      .annotate(count=Count('category'))
-                      .filter(count__gt=0)
-                      .order_by('-count')
-                      .values_list('category', flat=True)[:5])
+                      .values_list('category', flat=True)
+                      .distinct()
+                      .order_by('category'))
     
-    # Ambil kecamatan yang benar-benar memiliki restoran dengan menu
+    # Mengambil 9 kecamatan 
     used_kecamatans = (Restaurant.objects
-                      .filter(menu_items__isnull=False)
-                      .values('kecamatan')
-                      .annotate(count=Count('menu_items', distinct=True))
-                      .filter(count__gt=0)
-                      .order_by('-count')
-                      .values_list('kecamatan', flat=True)[:9])
+                  .values_list('kecamatan', flat=True)
+                  .distinct()
+                  .order_by('kecamatan'))
     
-    # Query utama untuk makanan
+    # Query untuk mengambil semua makanan dengan informasi restoran
     makanans = (MenuItem.objects
                 .select_related('restaurant')
                 .annotate(
@@ -68,39 +60,43 @@ def makanan_list(request):
                     location=F('restaurant__location')
                 ))
     
-    # Filter berdasarkan input user
+    # Menerapkan filter dari request
     category = request.GET.get('category')
     kecamatan = request.GET.get('kecamatan')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
     search_query = request.GET.get('search')
     
+    # Filter berdasarkan kategori jika valid
     if category and category != 'all':
         if category in used_categories:
             makanans = makanans.filter(category=category)
     
+    # Filter berdasarkan kecamatan jika valid
     if kecamatan and kecamatan != 'all':
         if kecamatan in used_kecamatans:
             makanans = makanans.filter(restaurant__kecamatan=kecamatan)
     
+    # Filter berdasarkan harga
     if min_price:
         makanans = makanans.filter(price__gte=min_price)
     
     if max_price:
         makanans = makanans.filter(price__lte=max_price)
     
+    # Filter berdasarkan pencarian nama
     if search_query:
         makanans = makanans.filter(name__icontains=search_query)
     
-    # Pagination
+    # Paginasi: 9 item per halaman
     paginator = Paginator(makanans, 9)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
-    # Format the data correctly
+    # Format data untuk template
     formatted_makanans = [
         {
-            'id': item.id,  # Use the actual ID from the MenuItem object
+            'id': item.id,
             'item': item.name,
             'description': item.description,
             'price': item.price,
@@ -128,11 +124,13 @@ def makanan_list(request):
     return render(request, 'makanan_list.html', context)
 
 def restaurant_menu(request, resto_name):
+    # Mengambil detail restoran berdasarkan nama
     restaurant = Restaurant.objects.filter(name=resto_name).first()
     
     if not restaurant:
         raise Http404("Restaurant not found")
     
+    # Mengambil statistik menu restoran
     stats = (MenuItem.objects
              .filter(restaurant=restaurant)
              .aggregate(
@@ -142,11 +140,11 @@ def restaurant_menu(request, resto_name):
                  avg_price=Avg('price')
              ))
     
+    # Mengambil semua menu dari restoran
     menu_items = MenuItem.objects.filter(restaurant=restaurant)
-    
     categories = menu_items.values_list('category', flat=True).distinct()
     
-    # Format the data correctly
+    # Format data menu untuk template
     formatted_menu_items = [
         {
             'id': item.id,
@@ -175,7 +173,7 @@ def restaurant_menu(request, resto_name):
     return render(request, 'resto_menu.html', context)
 
 def restaurant_list(request):
-    # Base query with annotations
+    # Query restoran dengan statistik menu
     restaurants = Restaurant.objects.annotate(
         menu_count=Count('menu_items'),
         min_price=Min('menu_items__price'),
@@ -184,27 +182,25 @@ def restaurant_list(request):
         resto_name=F('name'),
     )
     
-    # Get filter parameters
+    # Filter berdasarkan request
     kecamatan = request.GET.get('kecamatan')
     search_query = request.GET.get('search', '').strip()
     
-    # Apply filters
     if kecamatan and kecamatan != 'all':
         restaurants = restaurants.filter(kecamatan__iexact=kecamatan)
     
     if search_query:
         restaurants = restaurants.filter(name__icontains=search_query)
     
-    # Order results
     restaurants = restaurants.order_by('name')
     
-    # Get unique kecamatan values for filter dropdown
+    # Mengambil daftar kecamatan untuk filter
     kecamatans = (Restaurant.objects
                   .values_list('kecamatan', flat=True)
                   .distinct()
                   .order_by('kecamatan'))
     
-    # Paginate results
+    # Paginasi: 9 restoran per halaman
     paginator = Paginator(restaurants, 9)
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -219,6 +215,7 @@ def restaurant_list(request):
     return render(request, 'resto_list.html', context)
 
 def restaurant_update(request, resto_name):
+    # Update informasi restoran
     restaurant = Restaurant.objects.get(name=resto_name)
     
     if request.method == 'POST':
@@ -238,6 +235,7 @@ def restaurant_update(request, resto_name):
 @csrf_exempt
 @require_POST
 def makanan_create(request):
+    # Membuat menu baru dengan validasi input
     if request.method == 'POST':
         name = strip_tags(request.POST.get('name'))
         description = strip_tags(request.POST.get('description'))
@@ -248,7 +246,6 @@ def makanan_create(request):
         kecamatan = strip_tags(request.POST.get('kecamatan'))
         location = strip_tags(request.POST.get('location'))
 
-        # Create form instance with the POST data
         form_data = {
             'name': name,
             'description': description,
@@ -269,6 +266,7 @@ def makanan_create(request):
     return HttpResponse(b"ERROR", status=400)
 
 def makanan_update(request, id):
+    # Update menu dari halaman list
     menu_item = MenuItem.objects.get(pk=id)
     form = MenuItemForm(request.POST or None, instance=menu_item)
     if form.is_valid():
@@ -279,8 +277,8 @@ def makanan_update(request, id):
     }
     return render(request, 'update_makanan.html', context)
 
-
 def makanan_update_resto(request, id):
+    # Update menu dari halaman restoran
     menu_item = MenuItem.objects.get(pk=id)
     form = MenuItemForm(request.POST or None, instance=menu_item)
     if form.is_valid():
@@ -296,39 +294,37 @@ def makanan_update_resto(request, id):
     return render(request, 'update_makanan_resto.html', context)
     
 def makanan_delete(request, id):
+    # Hapus menu
     menu_item = MenuItem.objects.get(pk=id)
     menu_item.delete()
     return redirect('dashboard:makanan_list')
 
 def show_json(request):
+    # API endpoint untuk data makanan
     search_query = request.GET.get('search', '')
     selected_category = request.GET.get('category', 'all')
     selected_kecamatan = request.GET.get('kecamatan', 'all')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
 
-    # Query dasar
     menu_items = MenuItem.objects.all()
 
-    # Filter berdasarkan pencarian
+    # Terapkan filter
     if search_query:
         menu_items = menu_items.filter(name__icontains=search_query)
 
-    # Filter berdasarkan kategori
     if selected_category != 'all':
         menu_items = menu_items.filter(category=selected_category)
 
-    # Filter berdasarkan kecamatan
     if selected_kecamatan != 'all':
         menu_items = menu_items.filter(restaurant__kecamatan=selected_kecamatan)
 
-    # Filter berdasarkan harga
     if min_price:
         menu_items = menu_items.filter(price__gte=min_price)
     if max_price:
         menu_items = menu_items.filter(price__lte=max_price)
 
-    # Pagination
+    # Paginasi: 6 item per halaman
     page = int(request.GET.get('page', 1))
     per_page = 6
     start = (page - 1) * per_page
@@ -336,7 +332,7 @@ def show_json(request):
     total_pages = (menu_items.count() + per_page - 1) // per_page
     menu_items = menu_items[start:end]
 
-    # Tambahkan atribut 'current_page' di JSON response pada fungsi show_json
+    # Format response JSON
     data = {
         'results': [{
             'id': menu_item.id,
@@ -355,10 +351,10 @@ def show_json(request):
         'has_next': page < total_pages,
     }
 
-
     return JsonResponse(data)
 
 def get_reviews(request, menu_item_id):
+    # Tampilkan review untuk menu dari halaman list
     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
     reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
     
@@ -369,6 +365,7 @@ def get_reviews(request, menu_item_id):
     return render(request, 'review_list.html', context)
 
 def get_reviews_resto(request, menu_item_id):
+    # Tampilkan review untuk menu dari halaman restoran
     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
     reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
     
@@ -380,9 +377,76 @@ def get_reviews_resto(request, menu_item_id):
 
 @require_POST
 def delete_review(request, review_id):
+    # Hapus review
     review = get_object_or_404(ReviewEntry, id=review_id)
     menu_item_id = review.menu_item.id
     review.delete()
-    
-    # Redirect kembali ke halaman reviews
     return redirect('dashboard:menu_item_reviews', menu_item_id=menu_item_id)
+
+def remove_empty_restaurants():
+    # Hapus restoran tanpa menu
+    Restaurant.objects.annotate(menu_count=Count('menu_items')).filter(menu_count=0).delete()
+
+def show_json_restaurant(request):
+    # API endpoint untuk data restoran
+
+    # Query restoran dengan statistik menu
+    restaurants = Restaurant.objects.annotate(
+        menu_count=Count('menu_items'),
+        min_price=Min('menu_items__price'),
+        max_price=Max('menu_items__price'),
+        image=Min('menu_items__image'),
+        resto_name=F('name'),
+    )
+    remove_empty_restaurants() # Hapus restoran tanpa menu
+    
+    # Filter berdasarkan request
+    kecamatan = request.GET.get('kecamatan')
+    search_query = request.GET.get('search', '').strip()
+    
+    # Terapkan filter
+    if kecamatan and kecamatan != 'all':
+        restaurants = restaurants.filter(kecamatan__iexact=kecamatan)
+    
+    if search_query:
+        restaurants = restaurants.filter(name__icontains=search_query)
+    
+    # Urutkan berdasarkan nama
+    restaurants = restaurants.order_by('name')
+    
+    # Ambil daftar kecamatan untuk filter
+    kecamatans = (Restaurant.objects
+                  .values_list('kecamatan', flat=True)
+                  .distinct()
+                  .order_by('kecamatan'))
+    
+    # Paginasi: 9 restoran per halaman
+    paginator = Paginator(restaurants, 9)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Format data untuk response JSON
+    restaurants_data = [{
+        'id': restaurant.id,
+        'name': restaurant.resto_name,
+        'kecamatan': restaurant.kecamatan,
+        'location': restaurant.location,
+        'menu_count': restaurant.menu_count,
+        'min_price': restaurant.min_price,
+        'max_price': restaurant.max_price,
+        'image': restaurant.image,
+    } for restaurant in page_obj]
+    
+    # Tambahan informasi paginasi
+    data = {
+        'restaurants': restaurants_data,
+        'kecamatans': list(kecamatans),
+        'selected_kecamatan': kecamatan,
+        'search_query': search_query,
+        'total_pages': paginator.num_pages,
+        'current_page': page_obj.number,
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+    }
+    
+    return JsonResponse(data)
