@@ -30,7 +30,7 @@
     <!-- Reviews Grid Layout -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for review in reviews %}
-        <div class="border rounded overflow-hidden shadow-lg h-full">
+        <div class="border rounded overflow-hidden shadow-lg h-full relative">
             {% if review.review_image %}
                 <img src="{{ review.review_image.url }}" alt="Review image for {{ review.menu_item.name }}" class="w-full h-48 object-cover">
             {% else %}
@@ -53,11 +53,37 @@
 
                 <p class="text-gray-700 mb-2 bg-gray-100 p-2 rounded">{{ review.review_text|truncatewords:20 }}</p>
                 <a href="{% url 'review:review_detail' review.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                
+                <!-- Delete button for staff users only -->
+                {% if user.is_staff %}
+                <button type="button" 
+                        onclick="openModal('{{ review.id }}')"
+                        class="absolute top-2 right-2 text-red-600 hover:text-red-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
     </div>
     {% endif %}
+</div>
+
+<!-- Modal Structure -->
+<div id="deleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Confirm Deletion</h3>
+        <p>Are you sure you want to delete this review?</p>
+        <div class="mt-4 flex justify-end">
+            <button id="cancelButton" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2" onclick="closeModal()">Cancel</button>
+            <form id="deleteForm" method="POST" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-600 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">Delete</button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- JavaScript to handle section toggling -->
@@ -66,6 +92,16 @@
         const reviewsSection = document.getElementById('reviews-section');
         reviewsSection.classList.toggle('hidden');
         reviewsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    function openModal(reviewId) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        form.action = `{% url 'review:delete_review' 0 %}`.replace('0', reviewId);
+        modal.classList.remove('hidden');
+    }
+    function closeModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('hidden');
     }
 </script>
 
