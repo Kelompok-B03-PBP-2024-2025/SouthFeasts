@@ -197,10 +197,10 @@
             </button>
 
             <!-- Reviews Carousel -->
-            <div id="reviews-carousel" class="grid grid-cols-4 gap-4 overflow-hidden mx-12">
+            <div id="reviews-carousel" class="flex overflow-x-hidden gap-4 mx-12">
                 {% if reviews %}
                     {% for review in reviews %}
-                        <div class="bg-white text-black rounded-lg shadow-md p-6">
+                        <div class="flex-none w-1/4 bg-white text-black rounded-lg shadow-md p-6">
                             <!-- Reviewer's Name and Rating -->
                             <div class="flex items-center mb-2">
                                 <p class="font-semibold text-lg">{{ review.user.username }}</p>
@@ -266,11 +266,11 @@
     const leftButton = document.getElementById("scroll-left-btn");
     const rightButton = document.getElementById("scroll-right-btn");
     
-    // Calculate scroll amount based on viewport
-    function getScrollAmount() {
-        const itemWidth = carousel.offsetWidth / 4; // Width for 4 items
-        return itemWidth * 4; // Scroll 4 items at once
-    }
+    // Calculate the width of a single item including gap
+    const getItemWidth = () => {
+        const containerWidth = carousel.offsetWidth;
+        return (containerWidth - (3 * 16)) / 4; // 4 items minus 3 gaps (16px each)
+    };
 
     // Function to check scroll position and update button visibility
     function updateButtonVisibility() {
@@ -284,7 +284,7 @@
         }
 
         // Check if we can scroll right
-        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 1) {
             rightButton.style.opacity = "0.5";
             rightButton.style.cursor = "not-allowed";
         } else {
@@ -295,15 +295,17 @@
 
     // Add click event listeners to buttons
     leftButton.addEventListener('click', function() {
+        const scrollAmount = getItemWidth() * 4;
         carousel.scrollBy({
-            left: -getScrollAmount(),
+            left: -scrollAmount,
             behavior: "smooth"
         });
     });
 
     rightButton.addEventListener('click', function() {
+        const scrollAmount = getItemWidth() * 4;
         carousel.scrollBy({
-            left: getScrollAmount(),
+            left: scrollAmount,
             behavior: "smooth"
         });
     });
@@ -332,30 +334,24 @@
     #reviews-carousel {
         scrollbar-width: none;
         -ms-overflow-style: none;
-        scroll-snap-type: x mandatory;
-        overflow-x: auto;
+        scroll-behavior: smooth;
     }
     
     #reviews-carousel::-webkit-scrollbar {
         display: none;
     }
     
-    #reviews-carousel > div {
-        scroll-snap-align: start;
-        min-width: calc(25% - 12px);
+    /* Smooth transition for button opacity */
+    button {
+        transition: opacity 0.3s ease;
     }
-    
+
     .line-clamp-3 {
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-    
-    /* Smooth transition for button opacity */
-    button {
-        transition: opacity 0.3s ease;
     }
 </style>
 {% endblock %}
