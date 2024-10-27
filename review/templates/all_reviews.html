@@ -129,6 +129,7 @@
         localStorage.setItem("showReviews", "false");
     }
 }
+
     // Fungsi untuk memuat ulasan melalui AJAX
     async function loadReviews() {
         const response = await fetch("{% url 'review:show_json' %}");
