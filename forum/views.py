@@ -12,19 +12,24 @@ def show_main(request):
 
     # Filter articles based on filter_type
     if filter_type == 'public_articles':
-        articles = Article.objects.exclude(user=user).order_by('-created_at') 
+        articles = Article.objects.all().order_by('-created_at')
     elif filter_type == 'your_articles':
-        articles = Article.objects.filter(user=user).order_by('-created_at')  
+        if user.is_authenticated:
+            articles = Article.objects.filter(user=user).order_by('-created_at')
+        else:
+            articles = Article.objects.all().order_by('-created_at')
     else:
-        articles = Article.objects.all().order_by('-created_at')         
-
+        articles = Article.objects.none()
+    
     # Filter questions based on filter_type
     if filter_type == 'public_qna':
-        questions = Question.objects.exclude(user=user).annotate(total_answers=Count('answers')).order_by('-created_at')  
-    elif filter_type == 'your_qna':
-        questions = Question.objects.filter(user=user).annotate(total_answers=Count('answers')).order_by('-created_at')   
+        questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
+    elif filter_type == 'your_qna' and user.is_authenticated:
+        # Filter hanya pertanyaan yang dibuat oleh pengguna
+        questions = Question.objects.filter(user=user).annotate(total_answers=Count('answers')).order_by('-created_at')
     else:
-        questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')               
+        # Default ke public QnA jika filter tidak dikenali
+        questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
 
     # Initialize forms for new article and question
     article_form = ArticleForm()
@@ -93,19 +98,36 @@ def add_article(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
+
 # View edit article
+@login_required(login_url='/auth/login/')
 def edit_article(request, article_id):
     article = get_object_or_404(Article, id=article_id)
 
     if request.method == "POST":
         form = ArticleForm(request.POST, request.FILES, instance=article)
         if form.is_valid():
-            if form.cleaned_data.get('remove_thumbnail'):
+            if 'remove_thumbnail' in request.POST:
                 article.thumbnail_file.delete(save=False)
                 article.thumbnail_file = None
             form.save()
-            return redirect('forum:article_detail', article_id=article.id)
 
+            # Check if the request is AJAX, if so, return JSON
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Article updated successfully',
+                    'article': {
+                        'id': article.id,
+                        'title': article.title,
+                        'content': article.content,
+                        'thumbnail_img': article.thumbnail_file.url if article.thumbnail_file else '/static/image/default-thumbnail.jpg',
+                        'author': article.user.username,
+                        'created_at': article.created_at.strftime('%d %b, %Y'),
+                    }
+                })
+            return redirect(reverse('forum:show_main') + '#articles-section')
+    
     else:
         form = ArticleForm(instance=article)
     
@@ -225,3 +247,4 @@ def delete_comment(request, comment_id):
         return JsonResponse({'success': True, 'message': 'Comment deleted successfully'})
     
     return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
+    
