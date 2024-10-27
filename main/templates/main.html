@@ -207,8 +207,8 @@
                                 <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
                             </div>
 
-                            <!-- Review Text Snippet -->
-                            <p class="text-gray-700 mb-4">
+                            <!-- Review Text Snippet with line-clamp -->
+                            <p class="text-gray-700 mb-4 line-clamp-3">
                                 {{ review.review_text|truncatechars:100 }}
                             </p>
 
@@ -237,6 +237,7 @@
         </div>
     </div>
 </div>
+
 
 <script>
     function scrollToContent() {
@@ -278,7 +279,7 @@
 </script>
 
 <style>
-    .hover-effect {
+     .hover-effect {
         transition: background-color 0.3s;
     }
     .hover-effect:hover {
@@ -292,6 +293,15 @@
     }
     #reviews-carousel {
         scrollbar-width: none;
+        overflow-x: auto;
+    }
+    /* CSS for limiting text overflow */
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
 {% endblock %}
