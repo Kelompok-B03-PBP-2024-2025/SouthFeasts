@@ -53,15 +53,17 @@
                 </a>
             </div>
 
-            <!-- Restaurant Name and Price -->
-            <div class="mb-4">
+            <!-- Restaurant Name -->
+            <div class="mb-2">
                 <a href="/restaurant/{{ menu_item.restaurant.id }}" 
-                   class="inline-block text-lg text-gray-600 hover:text-blue-600 mb-1">
+                   class="inline-block text-lg font-medium text-gray-600 hover:text-blue-600">
                     {{ menu_item.restaurant.name }}
                 </a>
-                <div>
-                    <span class="text-xl font-medium">Rp {{ menu_item.price }}</span>
-                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="mb-4">
+                <span class="text-xl font-medium">Rp {{ menu_item.price }}</span>
             </div>
 
             <!-- Description -->
