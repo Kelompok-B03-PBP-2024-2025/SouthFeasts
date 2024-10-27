@@ -1,35 +1,17 @@
-import csv
-import os
-from django.conf import settings
-from django.core.management.base import BaseCommand
-from django.db import transaction
-from django.http import HttpResponse
-from .models import Makanan
 from django.shortcuts import render
+from forum.models import Article  # Import the Article model from the forum app
+from review.models import ReviewEntry
+from product.models import MenuItem  # Import the MenuItem model
 
 def show_main(request):
-    context = {}
+    articles = Article.objects.all().order_by('-created_at')[:3]  # Fetch 3 latest articles
+    reviews = ReviewEntry.objects.all().order_by('-created_at')[:4]  # Fetch 4 latest reviews
+    products = MenuItem.objects.order_by('?')[:8]  # Fetch 8 random products
+
+    context = {
+        "user": request.user,
+        "articles": articles,  # Pass articles to the template
+        "reviews": reviews,  # Pass reviews to the template
+        "products": products,  # Pass random products to the template
+    }
     return render(request, "main.html", context)
-
-def initialize_makanan_data(request):
-    csv_file_path = os.path.join(settings.BASE_DIR, 'dataset/dataset_makanan.csv')
-
-    with open(csv_file_path, 'r') as file:
-        csv_reader = csv.DictReader(file)
-
-        with transaction.atomic():
-            Makanan.objects.all().delete()  # Menghapus data yang ada sebelumnya
-
-            for row in csv_reader:
-                Makanan.objects.create(
-                    item=row['Item'],
-                    image=row['Image'],
-                    description=row['Description'],
-                    categories=row['Categories'],
-                    price=int(row['Price']),
-                    resto_name=row['Resto Name'],
-                    kecamatan=row['Kecamatan'],
-                    location=row['Location']
-                )
-
-    return HttpResponse("Data makanan berhasil diinisialisasi.")

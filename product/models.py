@@ -1,35 +1,9 @@
+# product/models.py
 from django.db import models
 from django.urls import reverse
+from restaurant.models import Restaurant
 
 # Create your models here.
-
-class Restaurant(models.Model):
-    KECAMATAN_CHOICE = [
-        ("Kebayoran Lama", "Kebayoran Lama"),
-        ("Kebayoran Baru", "Kebayoran Baru"),
-        ("Cilandak", "Cilandak"),
-        ("Jagakarsa", "Mampang Prapatan"),
-        ("Pancoran", "Pancoran"),
-        ("Pasar Minggu", "Pasar Minggu"),
-        ("Pesanggrahan", "Pesanggrahan"),
-        ("Setiabudi", "Setiabudi"),
-        ("Tebet", "Tebet"),
-    ]
-    name = models.CharField(max_length=200)
-    city = models.CharField(max_length=100)
-    kecamatan = models.CharField(max_length=100, choices=KECAMATAN_CHOICE)
-    location = models.TextField(help_text="Detailed address of the restaurant")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-    def get_absolute_url(self):
-        return reverse('restaurant-detail', kwargs={'pk': self.pk})
 
 class MenuItem(models.Model):
     CATEGORY_CHOICES = [
@@ -56,4 +30,4 @@ class MenuItem(models.Model):
         return f"{self.name} at {self.restaurant.name}"
 
     def get_absolute_url(self):
-        return reverse('menu-item-detail', kwargs={'pk': self.pk})
+        return reverse('product:menu_detail', kwargs={'id': self.id})

@@ -1,56 +1,58 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
     <!-- Left side - Featured dish -->
     <div class="lg:w-1/2 relative min-h-screen">
         <!-- Dark overlay -->
-        <div class="absolute inset-0 bg-black bg-opacity-40"></div> <!-- gelapin -->
-        <img src="https://manual.co.id/wp-content/uploads/2023/12/34_kurasu_kissaten_web-980x719.jpg"
-            alt="Featured dish"
-            class="absolute inset-0 w-full h-full object-cover"/>
+        <div class="absolute inset-0 bg-black bg-opacity-40"></div>
+        <img src="https://i.pinimg.com/564x/df/9e/d0/df9ed098e77b1c2cfa86dac4205b91f5.jpg"
+             alt="Featured dish"
+             class="absolute inset-0 w-full h-full object-cover"/>
     </div>
-
+    
     <!-- Right side - Form -->
     <div class="lg:w-1/2 p-6 flex items-center justify-center">
         <div class="w-full max-w-md bg-white rounded-lg shadow p-6">
             <div class="mb-8">
-                <img src="https://your-logo-url.com/logo.png" 
-                     alt="Logo" 
-                     class="h-8 mb-6"/>
-                <h1 class="text-2xl font-serif mb-2">Welcome Back</h1>
+                <h1 class="text-3xl font-bold text-black mb-6">Welcome Back</h1>
             </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="mb-4 p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
 
             <form method="POST" class="space-y-4">
                 {% csrf_token %}
-                
-                {% for field in form %}
                 <div>
-                    <label for="{{ field.id_for_label }}" 
-                           class="block text-sm font-medium mb-1">
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <p class="mt-2 text-sm text-gray-500">{{ field.help_text }}</p>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <p class="mt-2 text-sm text-red-600">{{ error }}</p>
-                    {% endfor %}
+                    <label for="username" class="block text-sm font-medium mb-1">Username</label>
+                    <input type="text" name="username" id="username" 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your username">
                 </div>
-                {% endfor %}
-
-                <button type="submit" 
+                <div>
+                    <label for="password" class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" name="password" id="password"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                           placeholder="Enter your password">
+                </div>
+                
+                <button type="submit"
                         class="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800">
                     Sign In
                 </button>
-                <!-- Sign In Link -->
-                <p class="mt-8 text-center text-sm text-gray-600">
-                    Don't have an account?
-                    <a href="{% url 'authentication:register' %}" class="font-medium text-black hover:text-gray-800">
-                        Register
-                    </a>
-                </p>
+            </form>
+
+            <!-- Sign Up Link -->
+            <p class="mt-8 text-center text-sm text-gray-600">
+                Don't have an account?
+                <a href="{% url 'authentication:register' %}" class="font-medium text-black hover:text-gray-800">
+                    Register
+                </a>
+            </p>
         </div>
     </div>
 </div>

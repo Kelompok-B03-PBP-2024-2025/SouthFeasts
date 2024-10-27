@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ menu_item.name }} - SouthFeast{% endblock %}
+
+{% block content %}
+<div class="relative">
+    <div class="md:flex">
+        <!-- Left Content - Image with sticky positioning -->
+        <div class="md:w-1/2 relative">
+            <div class="sticky top-0 w-full" style="height: 100vh;">
+                <img src="{{ menu_item.image }}" 
+                     alt="{{ menu_item.name }}" 
+                     class="w-full h-full object-cover">
+            </div>
+        </div>
+
+        <!-- Right Content with padding -->
+        <div class="md:w-1/2 px-8 lg:px-16 py-8 max-w-3xl">
+            <!-- Category -->
+            <div class="mb-2">
+                <span class="uppercase tracking-widest text-sm font-medium text-gray-500">{{ menu_item.get_category_display }}</span>
+            </div>
+
+            <!-- Title, Rating Average, and Wishlist -->
+            <div class="flex justify-between items-start gap-4 mb-4">
+                <div>
+                    <h1 class="py-1 text-3xl md:text-4xl font-bold leading-tight">
+                        {{ menu_item.name }}
+                    </h1>
+                    {% if average_rating > 0 %}
+                        <p class="text-gray-700 font-medium text-base mt-1">
+                            Rating: {{ average_rating|floatformat:1 }}/5 (based on {{ reviews|length }} reviews)
+                        </p>
+                    {% else %}
+                        <p class="text-gray-600 mt-1">No ratings yet</p>
+                    {% endif %}
+                </div>
+                <a href="{% url 'wishlist:create' %}?menu_item={{ menu_item.id }}" 
+                   class="wishlist-link text-red-500 hover:text-red-700 mt-3">
+                    {% if menu_item.is_in_wishlist %}
+                    <!-- Filled Heart -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                    {% else %}
+                    <!-- Outline Heart -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" 
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" 
+                              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                    </svg>
+                    {% endif %}
+                </a>
+            </div>
+
+            <!-- Restaurant Name -->
+            <div class="mb-2">
+                <a href="/restaurant/{{ menu_item.restaurant.id }}" 
+                   class="inline-block text-lg font-medium text-gray-600 hover:text-blue-600">
+                    {{ menu_item.restaurant.name }}
+                </a>
+            </div>
+
+            <!-- Price -->
+            <div class="mb-4">
+                <span class="text-xl font-medium">Rp {{ menu_item.price }}</span>
+            </div>
+
+            <!-- Description -->
+            <div class="prose prose-lg mb-6">
+                <p>{{ menu_item.description }}</p>
+            </div>
+
+            <!-- Restaurant Info Section -->
+            <div class="border-t pt-4 mt-6">
+                <h2 class="text-xl font-bold mb-3">Restaurant</h2>
+                <div class="space-y-1 text-gray-700">
+                    <p><strong>Location:</strong> {{ menu_item.restaurant.location }}</p>
+                    <p><strong>Area:</strong> {{ menu_item.restaurant.kecamatan }}</p>
+                    <p><strong>City:</strong> {{ menu_item.restaurant.city }}</p>
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="border-t pt-4 mt-10">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Reviews</h2>
+                    <a href="#" id="open-review-form-btn"
+                       class="text-gray-600 underline hover:text-black transition duration-200">
+                        Write a Review
+                    </a>
+                </div>
+                
+                <div id="reviews-list" class="grid grid-cols-1 gap-8">
+                    {% for review in reviews %}
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-medium">{{ review.user.username }}</p>
+                                <p class="text-sm text-gray-500">{{ review.created_at|date:"F j, Y" }}</p>
+                            </div>
+                            <p class="text-gray-700 font-semibold">{{ review.rating }}/5</p>
+                        </div>
+                        <p class="text-gray-700">{{ review.review_text }}</p>
+                        {% if review.review_image %}
+                        <img src="{{ review.review_image.url }}" alt="Review Image" 
+                             class="mt-4 rounded-lg w-full h-48 object-cover">
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-600">No reviews yet. Be the first to review this item!</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for submitting a review -->
+<div id="reviewFormModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white p-6 rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Submit Your Review</h3>
+            <span class="text-2xl cursor-pointer" onclick="closeModal('reviewFormModal')">&times;</span>
+        </div>
+        <form id="reviewForm" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="review_text" class="block text-lg font-semibold text-gray-700">Write Your Review</label>
+                <textarea name="review_text" id="review_text" class="w-full px-4 py-2 border rounded-md" placeholder="Write your review..." required></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="rating" class="block text-lg font-semibold text-gray-700">Rating (1.0-5.0)</label>
+                <input type="number" name="rating" id="rating" class="w-full px-4 py-2 border rounded-md" min="1" max="5" step="0.1" placeholder="Rating (1-5)" required>
+            </div>
+            <div class="mb-4">
+                <label for="review_image" class="block text-lg font-semibold text-gray-700">Add Photo</label>
+                <input type="file" name="review_image" id="review_image" class="w-full">
+            </div>
+            <div class="text-right">
+                <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg uppercase hover:bg-blue-700 transition duration-300">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Open modal
+    document.getElementById("open-review-form-btn").addEventListener("click", function(event) {
+        event.preventDefault();
+        document.getElementById("reviewFormModal").classList.remove("hidden");
+    });
+
+    // Close modal function
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    // AJAX submission for the review form
+    document.getElementById("reviewForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch("{% url 'review:create_review' menu_item.id %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const reviewsList = document.getElementById('reviews-list');
+                const newReviewDiv = document.createElement('div');
+                newReviewDiv.className = 'border-t pt-4';
+                newReviewDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-medium">${data.user}</p>
+                            <p class="text-sm text-gray-500">Just now</p>
+                        </div>
+                        <p class="text-gray-700 font-semibold">${data.rating}/5</p>
+                    </div>
+                    <p class="text-gray-700">${data.review_text}</p>
+                    ${data.review_image ? `<img src="${data.review_image}" alt="Review image" class="mt-4 rounded-lg w-full h-48 object-cover">` : ""}
+                `;
+                reviewsList.prepend(newReviewDiv);
+
+                document.getElementById("reviewForm").reset();
+                closeModal("reviewFormModal");
+            } else {
+                alert('Failed to submit review. Please check your input.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while adding the review.');
+        }
+    });
+</script>
+{% endblock %}

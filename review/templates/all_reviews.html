@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Culinary Insights - Reviews{% endblock %}
+
+{% block content %}
+<!-- Hero Section with See Reviews Button -->
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2020/07/roma_osteria_sequis-4-980x719.jpg');">
+    <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
+        <h1 class="text-4xl font-bold text-white">REVIEWS</h1>
+        <p class="text-lg text-gray-200">These reviews don’t lie – this place won’t disappoint!</p>
+        <div class="mt-4">
+            <!-- Button to show Reviews -->
+            <button id="see-reviews-btn" onclick="showReviews()" class="bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                See Reviews
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reviews Section -->
+<div id="reviews-section" class="container mx-auto px-4 py-8 hidden">
+    <h2 class="text-3xl font-bold text-center mb-4">Reviews</h2>
+
+    <!-- Search Bar -->
+    <div class="flex flex-col md:flex-row gap-4 mb-8 justify-center">
+        <form method="get" class="flex flex-col md:flex-row w-full max-w-3xl gap-4">
+            <div class="flex-1">
+                <input type="text" 
+                    name="search" 
+                    placeholder="Search for reviews by food or content..." 
+                    value="{{ search_query }}" 
+                    class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" 
+                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                Search
+            </button>
+        </form>
+    </div>
+
+    {% if not reviews %}
+    <div class="text-center text-gray-500 mt-6">
+        <p class="text-lg">No reviews found for "{{ search_query }}"</p>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for review in reviews %}
+        <div class="border rounded overflow-hidden shadow-lg h-full review-card">
+            {% if review.review_image %}
+                <img src="{{ review.review_image.url }}" alt="Review image for {{ review.menu_item.name }}" class="w-full h-48 object-cover">
+            {% else %}
+                <img src="/static/image/default-review.jpg" alt="Default Review Image" class="w-full h-48 object-cover">
+            {% endif %}
+            <div class="p-4 review-content">
+                <div class="flex items-center justify-between mb-2">
+                    <strong class="text-lg font-semibold">{{ review.user.username }}</strong>
+                    <span class="text-blue-800 font-bold" style="font-size: 18px;">Rating: <strong>{{ review.rating }}/5</strong></span>
+                </div>
+                
+                {% if review.menu_item %}
+                    <h3 class="text-xl font-semibold mb-2">{{ review.menu_item.name }}</h3>
+                    <p class="text-gray-600 italic mb-4 truncate-single-line">{{ review.menu_item.description }}</p> <!-- Single line for description -->
+                    <p class="text-gray-800 mb-4"><strong>Price:</strong> ${{ review.menu_item.price }}</p>
+                {% else %}
+                    <p class="text-gray-500 italic mb-4">No product information available for this review.</p>
+                {% endif %}
+
+                <p class="text-gray-700 mb-2 bg-gray-100 p-2 rounded truncate-multiple-lines">{{ review.review_text }}</p> <!-- 2-3 lines for review text -->
+                
+                <!-- Inline Buttons -->
+                <div class="flex justify-between items-center mt-4">
+                    <a href="{% url 'review:review_detail' review.id %}" class="text-blue-600 underline hover:text-blue-800">View More</a>
+                    
+                    {% if review.user == request.user %}
+                        <a href="{% url 'review:edit_review' review.id %}" class="bg-blue-500 text-white text-center py-1 px-4 rounded-md hover:bg-blue-700 transition-colors duration-300 text-sm">Edit Review</a>
+                    {% endif %}
+                </div>
+                
+                {% if user.is_staff %}
+                <button type="button" onclick="openModal('{{ review.id }}')" class="absolute top-2 right-2 text-red-600 hover:text-red-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .review-card {
+        width: 100%;
+        max-width: 320px;
+        margin: auto;
+    }
+
+    .review-content {
+        min-height: 350px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* Description limited to 1 line */
+    .truncate-single-line {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+    /* Review text limited to 2-3 lines */
+    .truncate-multiple-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* Adjust number of lines as needed */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .border {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .block {
+        width: 100%;
+    }
+
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .text-blue-800 {
+        color: #1e3a8a;
+    }
+
+    .bg-gray-100 {
+        background-color: #f3f4f6;
+    }
+
+    .mb-4 {
+        margin-bottom: 1rem;
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const reviewsSection = document.getElementById('reviews-section');
+        const showReviews = localStorage.getItem("showReviews") === "true";
+
+        // Jika pengguna sebelumnya telah melihat "Reviews Section"
+        if (showReviews) {
+            reviewsSection.classList.remove('hidden');
+            localStorage.removeItem("scrollDone"); // Reset scroll position untuk kembali ke atas
+        }
+    });
+
+    function showReviews() {
+        const reviewsSection = document.getElementById('reviews-section');
+        const showReviews = !reviewsSection.classList.contains('hidden');
+
+        // Tampilkan atau sembunyikan berdasarkan kondisi saat ini
+        reviewsSection.classList.toggle('hidden', showReviews);
+
+        // Jika ditampilkan, simpan scroll dan gulirkan ke atas
+        if (!showReviews) {
+            localStorage.setItem("showReviews", "true");
+
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 100);
+        } else {
+            // Sembunyikan dan bersihkan `showReviews`
+            localStorage.setItem("showReviews", "false");
+        }
+    }
+</script>
+
+{% endblock %}

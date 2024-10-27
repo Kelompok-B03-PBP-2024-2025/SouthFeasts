@@ -1,23 +1,261 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% load static %}  <!-- Untuk mengakses file statis -->
-
-{% block meta %}
-<title>LiteraSea</title>
-{% endblock meta %}
+{% block title %}Culinary Insights{% endblock %}
 
 {% block content %}
-<div class="relative">
-    <!-- Gambar Background -->
-    <img src="{% static 'image/header.png' %}" alt="Header Image" class="w-full h-screen object-cover">
-    
-    <!-- Konten Teks -->
-    <div class="absolute inset-0 flex items-center justify-center">
-        <div class="text-white text-center" style="font-family: 'Merriweather', serif; font-size: 125px;">
-            GET LOST &rarr; <br> IN SOUTH JAKARTA.
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=La+Belle+Aurore&display=swap">
+<div class="bg-cover bg-center h-screen" style="background-image: url('https://manual.co.id/wp-content/uploads/2023/10/2_kama_230-980x719.jpg');">
+    <div class="flex flex-col justify-center items-center h-full bg-black bg-opacity-50">
+        <p class="text-sm text-gray-200 mb-2 tracking-wide">Food & Drink</p>
+        <h1 class="text-7xl font-bold text-white text-center" style="font-family: Helvetica, Arial, sans-serif;">
+            <span style="font-family: 'La Belle Aurore', cursive;">get Lost.</span> Find South Jakarta.
+        </h1>
+        <button onclick="scrollToContent()" class="mt-4 bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+            See More
+        </button>
+    </div>
+</div>
+
+<!-- Content Section Below the Hero Section -->
+<div id="content-section" class="bg-white py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-8">Explore South Jakarta's Culinary Delights</h2>
+        <p class="text-lg text-center text-gray-600">Discover the hidden gems and popular spots that make South Jakarta a food paradise.</p>
+        
+        <!-- Articles Section -->
+        <div class="articles mt-12">
+            {% if articles %}
+                {% for article in articles|slice:":3" %}
+                    <div class="flex flex-col md:flex-row items-center bg-black text-white mb-8 p-6 rounded-md">
+                        <!-- Thumbnail Image -->
+                        <div class="md:w-1/2 mb-4 md:mb-0">
+                            <img src="{{ article.get_thumbnail }}" alt="{{ article.title }}" class="w-full h-full object-cover rounded-md">
+                        </div>
+                        <!-- Article Content -->
+                        <div class="md:w-1/2 md:ml-8">
+                            <p class="text-sm uppercase mb-2 tracking-wide">Food and Beverage</p>
+                            <h3 class="text-2xl font-bold mb-2">{{ article.title }}</h3>
+                            <p class="text-gray-300 mb-4 overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; text-overflow: ellipsis; overflow: hidden;">
+                                {{ article.content|truncatechars:100 }}
+                            </p>
+                            
+                            <a href="{% url 'forum:article_detail' article.id %}" class="inline-block bg-transparent border border-white text-white py-2 px-4 rounded-md hover:bg-white hover:text-black">
+                                Learn More →
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-gray-600">No articles available</p>
+            {% endif %}
         </div>
     </div>
 </div>
 
-{% include "footer.html" %}
-{% endblock content %}
+<!-- Explore the Neighborhood Section -->
+<div class="bg-black text-white py-16">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-4xl font-bold pl-4">Explore The Neighborhood</h2> <!-- Adjust padding here -->
+            {% if user.is_staff %}
+                <a href="/dashboard/resto-list" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+            {% else %}
+                <a href="/restaurant/" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+            {% endif %}
+        </div>
+        <p class="text-lg text-gray-300 mb-8 pl-4">Discover local hotspots in the area, from cozy cafes to cultural landmarks.</p> <!-- Add padding to paragraph as well -->
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Restaurant 1 -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://manual.co.id/wp-content/uploads/2023/12/scarlett_461-980x719.jpg" alt="Scarlett House" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Scarlett House" class="text-black hover:text-gray-600">
+                                Scarlett House
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/46/" class="text-black hover:text-gray-600">
+                                Scarlett House
+                            </a>
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Sultan Hasanudin Dalam, Blok M, Kebayoran Baru, Jakarta Selatan</p>
+                </div>
+            </div>            
+            <!-- Restaurant 2 (same content for now) -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://manual.co.id/wp-content/uploads/2020/01/LawlessMenteng_Di-4-980x719.jpg" alt="Lawless Burger" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Lawless Burger" class="text-black hover:text-gray-600">
+                                Lawless Burger
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/36/" class="text-black hover:text-gray-600">
+                                Lawless Burger
+                            </a>
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Kemang Selatan VIII No.67K 7, RT.7/RW.2, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12730</p>
+                </div>
+            </div>
+            <!-- Restaurant 3 (same content for now) -->
+            <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
+                <img src="https://lh3.googleusercontent.com/p/AF1QipPBOBazDd1VtTo_AWYMPlzDEdeO6NTvMpeAJxq6=s1360-w1360-h1020" alt="Saigon Street Food" class="w-full h-64 object-cover">
+                <div class="p-4">
+                    <h3 class="text-xl font-semibold mb-2">
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Saigon Street Food" class="text-black hover:text-gray-600">
+                                Saigon Street Food
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/26/" class="text-black hover:text-gray-600">
+                                Saigon Street Food
+                            </a>
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Tebet Barat I No.A5, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12810</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% if not user.is_staff %}
+<div class="container mx-auto px-4 py-8 flex flex-wrap">
+    <!-- Left Directory Sidebar -->
+    <div class="w-full lg:w-1/4 pr-4">
+        <!-- Directory Sidebar with Tab -->
+        <div class="relative bg-black text-white shadow-lg rounded-b-lg mt-8 mb-8">
+            <!-- Tab Header -->
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-t-lg px-4 py-1 w-3/4 text-center shadow-md">
+                <h2 class="text-sm font-semibold uppercase text-black">Directory</h2>
+            </div>
+            
+            <!-- Directory Content -->
+            <div class="pt-8 px-6 pb-6">
+                <!-- Description -->
+                <p class="text-gray-300 text-sm mb-6 leading-relaxed">Find the best local cafes, bars, restaurants, shops, and more in Jakarta with our Directory.</p>
+                
+                <!-- Category Links with Spacing and Border Styling -->
+                <div class="space-y-4">
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Laut&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Laut</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Tradisional&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Tradisional</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Sehat&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Sehat</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Cepat+Saji&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Cepat Saji</a>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-500 pb-1">
+                        <a href="http://127.0.0.1:8000/product/?search=&category=Makanan+Penutup&min_price=&max_price=&kecamatan=" class="text-white hover:text-gray-300 font-medium">Makanan Penutup</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="w-full lg:w-3/4 pl-4">
+        <h2 class="text-xl font-semibold mb-4">Related Products</h2>
+        <div class="grid grid-cols-4 gap-4">
+            {% for product in products %}
+                <div class="bg-white rounded-lg overflow-hidden shadow-md">
+                    <a href="{{ product.get_absolute_url }}">
+                        <img src="{{ product.image }}" alt="{{ product.name }}" class="w-full h-24 object-cover">
+                        <p class="text-center text-black font-semibold py-2">{{ product.name }}</p>
+                    </a>
+                </div>
+            {% empty %}
+                <p class="text-center text-gray-500">No related products available.</p>
+            {% endfor %}
+        </div>
+    
+        <div class="text-center mt-4">
+            <a href="/product/" class="text-blue-500 text-sm underline hover:text-blue-700">See All Products →</a>
+        </div>
+    </div>
+</div> 
+{% endif %}   
+
+<!-- Reviews Section -->
+<div id="review-section" class="bg-gray-100 py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-8">User Reviews</h2>
+        <p class="text-lg text-center text-gray-600 mb-12">See what others are saying about our menu items.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% if reviews %}
+                {% for review in reviews %}
+                    <div class="bg-white text-black rounded-lg shadow-md p-6">
+                        <!-- Reviewer's Name and Rating -->
+                        <div class="flex items-center mb-2">
+                            <p class="font-semibold text-lg">{{ review.user.username }}</p>
+                            <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+                        </div>
+                        
+                        <!-- Review Text Snippet -->
+                        <p class="text-gray-700 mb-4">
+                            {{ review.review_text|truncatechars:100 }}
+                        </p>
+                        
+                        <!-- Review Image (if available) -->
+                        {% if review.review_image %}
+                            <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
+                        {% else %}
+                            <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
+                        {% endif %}
+                        
+                        <!-- Link to Full Review -->
+                        <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
+                            Read Full Review →
+                        </a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-gray-600">No reviews available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function scrollToContent() {
+        document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
+    }
+    // Changing background images in the hero section
+    const images = [
+        'https://manual.co.id/wp-content/uploads/2024/04/1317_solo_ristorante_web-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/06/nothing-personal_57-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/05/Sando-Shop_29-980x719.jpg'
+
+    ];
+    
+    let currentIndex = 0;
+    const heroSection = document.querySelector('.bg-cover');
+
+    function changeBackgroundImage() {
+        heroSection.style.backgroundImage = `url('${images[currentIndex]}')`;
+        currentIndex = (currentIndex + 1) % images.length;
+    }
+
+    setInterval(changeBackgroundImage, 5000);
+</script>
+
+<style>
+    .hover-effect {
+        transition: background-color 0.3s;
+    }
+    .hover-effect:hover {
+        background-color: #333;
+    }
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
+</style>
+{% endblock %}

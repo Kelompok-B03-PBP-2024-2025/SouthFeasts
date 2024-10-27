@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8 flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-black">My Collections</h1>
+        
+        <button id="openModalButton" 
+                class="group p-2 hover:bg-gray-100 rounded-lg transition-all duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 width="24" 
+                 height="24" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2" 
+                 stroke-linecap="round" 
+                 stroke-linejoin="round"
+                 class="group-hover:rotate-90 transition-transform duration-200">
+                <path d="M12 5l0 14" />
+                <path d="M5 12l14 0" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for collection in collections %}
+        <div class="border rounded-xl bg-white shadow-sm hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+            <div class="p-4">
+                {% with items=collection.sorted_items|slice:":4" %} 
+                {% if items %} 
+                {% if collection.is_default %}
+                
+                <div class="grid grid-cols-2 gap-2 mb-4">
+                    {% for item in items %}
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        {% if item.menu_item.image %} 
+                        <img src="{{ item.menu_item.image }}" 
+                             alt="{{ item.menu_item.name }}" 
+                             class="w-full h-full object-cover">
+                        {% if forloop.first %}
+                        <span class="absolute top-2 left-2 text-sm bg-yellow-300 text-black px-5 py-1.5 rounded-full text-sm font-medium z-10">Default</span>
+                        {% endif %}
+                        {% else %}
+                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <span class="text-gray-400 text-sm">{{ item.menu_item.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% with total_items=items|length %}
+                    {% if total_items == 1 %}
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    {% elif total_items == 2 %}
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    {% elif total_items == 3 %}
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        <div class="w-full h-full bg-gray-100"></div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% else %}
+
+                <div class="mb-4">
+                    <div class="aspect-square overflow-hidden rounded relative">
+                        {% if items.0.menu_item.image %} 
+                        <img src="{{ items.0.menu_item.image }}" 
+                             alt="{{ items.0.menu_item.name }}" 
+                             class="w-full h-full object-cover">
+                        {% else %}
+                        <div class="w-full h-full bg-gray-100 flex items-center justify-center">
+                            <span class="text-gray-400 text-sm">{{ items.0.menu_item.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% endif %} 
+                {% else %}
+
+                <div class="mb-4">
+                    <div class="aspect-square overflow-hidden rounded bg-gray-50">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <span class="text-gray-300 text-sm">No item yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                {% endif %} 
+                {% endwith %}
+
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <a href="{% url 'wishlist:collection-detail' collection.id %}" 
+                           class="text-xl font-bold text-center mb-4 hover:text-gray-600 transition-colors duration-300">
+                            {{ collection.name }}
+                        </a>
+                    </div>
+
+                    {% if not collection.is_default %}
+                    <div class="flex gap-2">
+                        <a href="{% url 'wishlist:collection-edit' collection.id %}" 
+                           class="text-gray-600 hover:text-black transition-colors duration-300">
+                            Edit
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {{ collection.description|default:"" }}
+
+                <div class="text-sm text-gray-500 mt-2">
+                    {{ collection.items.count }} items saved
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-8 text-gray-500 font-sans">
+            You don't have any collections yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Collection Modal -->
+<div id="collectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden justify-center items-center">
+    <div class="bg-white w-full max-w-2xl p-6 rounded-lg shadow-lg relative">
+        <button type="button" id="closeModalButton" class="absolute top-7 right-7 text-gray-500 hover:text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <h2 class="text-xl font-bold mb-4">New Collection</h2>
+        <form id="modalCollectionForm">
+            {% csrf_token %}
+
+            <!-- name -->
+            <div class="py-2">
+                <label for="name" class="text-5lg text-center mb-4">Collection Name</label>
+                <input type="text" name="name" id="name" class="border border-gray-300 rounded-lg p-3 w-full">
+                <p class="text-red-500 text-sm mt-2 hidden" id="nameError"></p>
+            </div>
+
+            <!-- description -->
+            <div class="py-2">
+                <label for="description" class="text-5lg text-center mb-4">Description (Optional)</label>
+                <textarea name="description" id="description" rows="4" class="border border-gray-300 rounded-lg p-3 w-full"></textarea>
+                <p class="text-red-500 text-sm mt-2 hidden" id="descriptionError"></p>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <button type="submit" class="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-md">
+                    Create Collection
+                </button>
+            </div>
+        </form>
+        <div id="errorMessages" class="text-red-500 mt-4"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('collectionModal');
+    const openModalButton = document.getElementById('openModalButton');
+    const closeModalButton = document.getElementById('closeModalButton');
+    const form = document.getElementById('modalCollectionForm');
+    const errorMessages = document.getElementById('errorMessages');
+    const nameError = document.getElementById('nameError');
+
+    openModalButton.addEventListener('click', function () {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    });
+
+    closeModalButton.addEventListener('click', function () {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const name = form.querySelector('#name').value.trim();
+        const description = form.querySelector('#description').value.trim();
+
+        // Clear previous error messages
+        errorMessages.textContent = '';
+        nameError.textContent = '';
+        nameError.classList.add('hidden');
+
+        let isValid = true;
+
+        // Client-side validation
+        if (!name) {
+            nameError.textContent = 'Collection name cannot be empty.';
+            nameError.classList.remove('hidden');
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // CSRF token handling
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const formData = new FormData(form);
+
+        fetch("{% url 'wishlist:create-collection-ajax' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                // close and clear modal
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                form.reset();
+                location.reload();
+            } else if (data.errors) {
+                if (data.errors.name) {
+                    nameError.textContent = data.errors.name[0];
+                    nameError.classList.remove('hidden');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+});
+</script>
+{% endblock %}
