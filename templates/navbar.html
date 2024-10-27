@@ -12,9 +12,9 @@
             <!-- Desktop Menu -->
             <div class="hidden lg:flex items-center space-x-8">
                 {% if user.is_authenticated %}
-                <div class="mr-8">
-                    <span class="text-white text-lg">Welcome, {{ user.username|title }}!</span>
-                </div>
+                <div class="ml-auto mr-2">
+                  <span class="text-white text-lg">Welcome, {{ user.username|title }}!</span>
+              </div>              
                 {% endif %}
                 
                 {% if user.is_authenticated and user.is_staff %}
@@ -23,6 +23,11 @@
                         DASHBOARD
                         <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
                     </a>
+                    <a href="/review" 
+                           class="relative text-lg {% if navigation_items == '/review' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
+                            REVIEW
+                            <span class="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                        </a>
                     <a href="/forum" 
                         class="relative text-lg {% if navigation_items == '/forum' %}text-gray-300{% else %}text-white{% endif %} hover:text-gray-300 transition-colors duration-300 group">
                          CULINARY INSIGHTS
@@ -121,6 +126,10 @@
                     <a href="/dashboard" 
                        class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
                         DASHBOARD
+                    </a>
+                    <a href="/review" 
+                       class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
+                        REVIEW
                     </a>
                     <a href="/forum" 
                        class="block text-white text-lg text-center py-3 hover:bg-gray-800 rounded transition-colors duration-300">
