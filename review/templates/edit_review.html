@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Review{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-10 flex justify-center font-merriweather relative">
+    
+    <!-- Back to All Reviews Link -->
+    <div class="absolute top-0 left-0 mt-4 ml-6">
+        <a href="{% url 'review:all_reviews' %}" class="text-gray-500 underline hover:text-gray-800">← Back to All Reviews</a>
+    </div>
+
+    <div class="w-full max-w-2xl bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+        
+        <div class="bg-gray-200 p-6 rounded-t-lg text-center">
+            <h1 class="text-3xl font-bold text-gray-700">Edit Your Review</h1>
+        </div>
+        
+        <div class="flex items-center border rounded-lg mt-6 p-4 bg-gray-50 shadow-sm">
+            {% if review.menu_item.image %}
+                <img src="{{ review.menu_item.image }}" alt="{{ review.menu_item.name }}" class="w-24 h-24 object-cover rounded-md mr-4">
+            {% endif %}
+            <div>
+                <!-- Display Restaurant Name -->
+                <p class="text-lg font-semibold text-gray-500">{{ review.menu_item.restaurant.name }}</p>
+                <!-- Display Menu Item Name -->
+                <h2 class="text-xl font-bold text-gray-800">{{ review.menu_item.name }}</h2>
+                <p class="text-gray-600">{{ review.menu_item.description }}</p>
+                <a href="{% url 'product:menu_detail' review.menu_item.id %}" class="text-sm text-gray-500 hover:underline mt-2 inline-block">Menu Description</a>
+            </div>
+        </div>
+
+        <form method="post" class="text-left mt-6">
+            {% csrf_token %}
+
+            <!-- Review Text Area -->
+            <div class="mb-4">
+                <label class="block text-lg font-semibold text-gray-700 mb-1">Edit Your Review</label>
+                <textarea name="review_text" rows="4" maxlength="250" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300">{{ review.review_text }}</textarea>
+                <div class="text-right text-sm text-gray-400 mt-1">max 250</div>
+            </div>
+
+            <!-- Rating Input -->
+            <div class="mb-4">
+                <label class="block text-lg font-semibold text-gray-700 mb-1">Rating (1-5)</label>
+                <input type="number" step="0.1" min="1" max="5" name="rating" value="{{ review.rating }}" class="w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300">
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-gray-800 text-white font-bold rounded-lg hover:bg-blue-800 transition duration-200">Save Changes</button>
+        </form>
+        
+        <div class="text-center mt-6">
+            <a href="{% url 'product:menu_detail' review.menu_item.id %}" class="text-gray-500 hover:text-gray-800">Back to Product</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+    .container, .font-merriweather {
+        font-family: 'Merriweather', serif;
+    }
+    .shadow-sm {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+</style>

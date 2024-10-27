@@ -30,4 +30,4 @@ class MenuItem(models.Model):
         return f"{self.name} at {self.restaurant.name}"
 
     def get_absolute_url(self):
-        return reverse('menu-item-detail', kwargs={'pk': self.pk})
+        return reverse('product:menu_detail', kwargs={'id': self.id})

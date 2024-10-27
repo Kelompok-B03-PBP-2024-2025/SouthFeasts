@@ -86,10 +86,14 @@
             </div>
             <!-- Restaurant 3 (same content for now) -->
             <div class="bg-white text-black rounded-lg overflow-hidden shadow-md">
-                <img src="https://manual.co.id/wp-content/uploads/2023/12/scarlett_461-980x719.jpg" alt="Scarlett House" class="w-full h-64 object-cover">
+                <img src="https://lh3.googleusercontent.com/p/AF1QipPBOBazDd1VtTo_AWYMPlzDEdeO6NTvMpeAJxq6=s1360-w1360-h1020" alt="Saigon Street Food" class="w-full h-64 object-cover">
                 <div class="p-4">
-                    <h3 class="text-xl font-semibold mb-2">Scarlett House</h3>
-                    <p class="text-sm text-gray-600">Jl. Sultan Hasanudin Dalam, Blok M, Kebayoran Baru, Jakarta Selatan</p>
+                    <h3 class="text-xl font-semibold mb-2">
+                        <a href="/restaurant/26/" class="text-black hover:text-gray-600">
+                            Saigon Street Food
+                        </a>
+                    </h3>
+                    <p class="text-sm text-gray-600">Jl. Tebet Barat I No.A5, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12810</p>
                 </div>
             </div>
         </div>
@@ -132,39 +136,26 @@
             </div>
         </div>
     </div>
-
-    <!-- Right Product Grid Sidebar -->
     <div class="w-full lg:w-3/4 pl-4">
         <h2 class="text-xl font-semibold mb-4">Related Products</h2>
-        <!-- Product Grid with 4x2 layout -->
         <div class="grid grid-cols-4 gap-4">
-            <!-- Product 1 -->
-            <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                <a href="/menu/83/">
-                    <img src="https://assets-pergikuliner.com/pvidG9v_YDsAKkj-zaWxSzb5sno=/624x0/smart/filters:watermark(https://assets-pergikuliner.com/uploads/image/picture/401639/picture-1481204613.png,-0,-3,20):no_upscale()/https://assets-pergikuliner.com/uploads/image/picture/3155320/picture-1704968481.jpg" alt="Cookie D'OH Gelato" class="w-full h-24 object-cover">
-                    <p class="text-center text-black font-semibold py-2">Cookie D'OH Gelato</p>
-                </a>
-            </div>
-            <!-- Repeat product elements for additional items to reach 8 products -->
-            <div class="bg-white rounded-lg overflow-hidden shadow-md">
-                <a href="/menu/84/">
-                    <img src="https://assets-pergikuliner.com/path-to-image-2.jpg" alt="Product 2" class="w-full h-24 object-cover">
-                    <p class="text-center text-black font-semibold py-2">Product 2</p>
-                </a>
-            </div>
-            <!-- Add more product divs to reach 8 products in a 4x2 layout -->
-
-            <!-- Product 3 to Product 8 here... -->
-
+            {% for product in products %}
+                <div class="bg-white rounded-lg overflow-hidden shadow-md">
+                    <a href="{{ product.get_absolute_url }}">
+                        <img src="{{ product.image }}" alt="{{ product.name }}" class="w-full h-24 object-cover">
+                        <p class="text-center text-black font-semibold py-2">{{ product.name }}</p>
+                    </a>
+                </div>
+            {% empty %}
+                <p class="text-center text-gray-500">No related products available.</p>
+            {% endfor %}
         </div>
-
-        <!-- See All Link -->
+    
         <div class="text-center mt-4">
             <a href="/product/" class="text-blue-500 text-sm underline hover:text-blue-700">See All Products →</a>
         </div>
     </div>
-</div>
-
+</div>    
 
 <!-- Reviews Section -->
 <div id="review-section" class="bg-gray-100 py-16">
