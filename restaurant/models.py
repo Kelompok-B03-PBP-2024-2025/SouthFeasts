@@ -1,12 +1,14 @@
 # restaurant/ models.py
 from django.db import models
+from django.urls import reverse
 
 class Restaurant(models.Model):
     KECAMATAN_CHOICE = [
         ("Kebayoran Lama", "Kebayoran Lama"),
         ("Kebayoran Baru", "Kebayoran Baru"),
         ("Cilandak", "Cilandak"),
-        ("Jagakarsa", "Mampang Prapatan"),
+        ("Mampang Prapatan", "Mampang Prapatan"),
+        ("Jagakarsa","Jagakarsa"),        
         ("Pancoran", "Pancoran"),
         ("Pasar Minggu", "Pasar Minggu"),
         ("Pesanggrahan", "Pesanggrahan"),
