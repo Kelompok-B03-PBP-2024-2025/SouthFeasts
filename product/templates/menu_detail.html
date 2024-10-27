@@ -3,79 +3,113 @@
 {% block title %}{{ menu_item.name }} - SouthFeast{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4">
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="md:flex">
-            <!-- Image Section -->
-            <div class="md:w-1/2">
-                <img src="{{ menu_item.image }}" alt="{{ menu_item.name }}" class="w-full h-96 object-cover">
-            </div>
-            
-            <!-- Content Section -->
-            <div class="md:w-1/2 p-8">
-                <div class="flex items-center justify-between">
-                    <h1 class="text-3xl font-bold">{{ menu_item.name }}</h1>
-                    
-                    <!-- Add Wishlist Button -->
-                    <a href="{% url 'wishlist:create' %}?menu_item={{ menu_item.id }}" 
-                       class="wishlist-link text-red-500 hover:text-red-700 transition duration-200">
-                        {% if menu_item.is_in_wishlist %}
-                            <!-- Filled Heart -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
-                            </svg>
-                        {% else %}
-                            <!-- Outline Heart -->
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" 
-                                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-                            </svg>
-                        {% endif %}
-                    </a>
-                </div>
-                
-                <a href="/restaurant/{{ menu_item.restaurant.id }}" 
-                   class="inline-block mt-2 text-xl text-gray-600 hover:text-blue-600">
-                    {{ menu_item.restaurant.name }}
-                </a>
-                
-                <div class="mt-4 space-y-4">
-                    <p class="text-gray-600">{{ menu_item.description }}</p>
-                    <p class="text-3xl font-bold text-green-600">Rp {{ menu_item.price }}</p>
-                </div>
-
-                <!-- Add Review Button to open the modal -->
-                <div class="mt-6">
-                    <a href="#" 
-                       id="open-review-form-btn" 
-                       class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
-                        Add Review
-                    </a>
-                </div>
+<div class="relative">
+    <div class="md:flex">
+        <!-- Left Content - Image with sticky positioning -->
+        <div class="md:w-1/2 relative">
+            <div class="sticky top-0 w-full" style="height: 100vh;">
+                <img src="{{ menu_item.image }}" 
+                     alt="{{ menu_item.name }}" 
+                     class="w-full h-full object-cover">
             </div>
         </div>
-    </div>
 
-    <!-- Reviews Section -->
-    <div class="mt-10">
-        <h2 class="text-2xl font-bold mb-4">Reviews</h2>
-        <div id="reviews-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for review in reviews %}
-                <div class="border p-4 rounded-lg shadow-md mb-6">
-                    <p class="text-lg font-semibold">{{ review.user.username }}</p>
-                    <p class="text-gray-600">{{ review.review_text }}</p>
-                    <p class="mt-2">Rating: <span class="font-bold">{{ review.rating }}</span>/5</p>
-                    <p class="text-sm text-gray-400">Posted on {{ review.created_at|date:"F j, Y, g:i a" }}</p>
-                    
-                    {% if review.review_image %}
-                        <div class="mt-4">
-                            <img src="{{ review.review_image.url }}" alt="Review Image" class="max-w-full h-auto rounded-lg">
-                        </div>
+        <!-- Right Content with padding -->
+        <div class="md:w-1/2 px-8 lg:px-16 py-8 max-w-3xl">
+            <!-- Category -->
+            <div class="mb-2">
+                <span class="uppercase tracking-widest text-sm font-medium text-gray-500">{{ menu_item.get_category_display }}</span>
+            </div>
+
+            <!-- Title, Rating Average, and Wishlist -->
+            <div class="flex justify-between items-start gap-4 mb-4">
+                <div>
+                    <h1 class="py-1 text-3xl md:text-4xl font-bold leading-tight">
+                        {{ menu_item.name }}
+                    </h1>
+                    {% if average_rating > 0 %}
+                        <p class="text-gray-700 font-medium text-base mt-1">
+                            Rating: {{ average_rating|floatformat:1 }}/5 (based on {{ reviews|length }} reviews)
+                        </p>
+                    {% else %}
+                        <p class="text-gray-600 mt-1">No ratings yet</p>
                     {% endif %}
                 </div>
-            {% empty %}
-                <p class="text-gray-600">No reviews yet. Be the first to review this product!</p>
-            {% endfor %}
+                <a href="{% url 'wishlist:create' %}?menu_item={{ menu_item.id }}" 
+                   class="wishlist-link text-red-500 hover:text-red-700 mt-3">
+                    {% if menu_item.is_in_wishlist %}
+                    <!-- Filled Heart -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                    {% else %}
+                    <!-- Outline Heart -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" 
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" 
+                              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                    </svg>
+                    {% endif %}
+                </a>
+            </div>
+
+            <!-- Restaurant Name and Price -->
+            <div class="mb-4">
+                <a href="/restaurant/{{ menu_item.restaurant.id }}" 
+                   class="inline-block text-lg text-gray-600 hover:text-blue-600 mb-1">
+                    {{ menu_item.restaurant.name }}
+                </a>
+                <div>
+                    <span class="text-xl font-medium">Rp {{ menu_item.price }}</span>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="prose prose-lg mb-6">
+                <p>{{ menu_item.description }}</p>
+            </div>
+
+            <!-- Restaurant Info Section -->
+            <div class="border-t pt-4 mt-6">
+                <h2 class="text-xl font-bold mb-3">Restaurant</h2>
+                <div class="space-y-1 text-gray-700">
+                    <p><strong>Location:</strong> {{ menu_item.restaurant.location }}</p>
+                    <p><strong>Area:</strong> {{ menu_item.restaurant.kecamatan }}</p>
+                    <p><strong>City:</strong> {{ menu_item.restaurant.city }}</p>
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="border-t pt-4 mt-10">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Reviews</h2>
+                    <a href="#" id="open-review-form-btn"
+                       class="text-gray-600 underline hover:text-black transition duration-200">
+                        Write a Review
+                    </a>
+                </div>
+                
+                <div id="reviews-list" class="grid grid-cols-1 gap-8">
+                    {% for review in reviews %}
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-medium">{{ review.user.username }}</p>
+                                <p class="text-sm text-gray-500">{{ review.created_at|date:"F j, Y" }}</p>
+                            </div>
+                            <p class="text-gray-700 font-semibold">{{ review.rating }}/5</p>
+                        </div>
+                        <p class="text-gray-700">{{ review.review_text }}</p>
+                        {% if review.review_image %}
+                        <img src="{{ review.review_image.url }}" alt="Review Image" 
+                             class="mt-4 rounded-lg w-full h-48 object-cover">
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-600">No reviews yet. Be the first to review this item!</p>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -94,7 +128,7 @@
                 <textarea name="review_text" id="review_text" class="w-full px-4 py-2 border rounded-md" placeholder="Write your review..." required></textarea>
             </div>
             <div class="mb-4">
-                <label for="rating" class="block text-lg font-semibold text-gray-700">Rating (1-5)</label>
+                <label for="rating" class="block text-lg font-semibold text-gray-700">Rating (1.0-5.0)</label>
                 <input type="number" name="rating" id="rating" class="w-full px-4 py-2 border rounded-md" min="1" max="5" step="0.1" placeholder="Rating (1-5)" required>
             </div>
             <div class="mb-4">
@@ -137,25 +171,22 @@
             const data = await response.json();
 
             if (data.success) {
-                // Display new review in the reviews list
                 const reviewsList = document.getElementById('reviews-list');
                 const newReviewDiv = document.createElement('div');
-                newReviewDiv.className = 'border p-4 rounded-lg shadow-md mb-6';
+                newReviewDiv.className = 'border-t pt-4';
                 newReviewDiv.innerHTML = `
-                    <p class="text-lg font-semibold">${data.user}</p>
-                    <p class="text-gray-600">${data.review_text}</p>
-                    <p class="mt-2">Rating: <span class="font-bold">${data.rating}</span>/5</p>
-                    <p class="text-sm text-gray-400">Just now</p>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-medium">${data.user}</p>
+                            <p class="text-sm text-gray-500">Just now</p>
+                        </div>
+                        <p class="text-gray-700 font-semibold">${data.rating}/5</p>
+                    </div>
+                    <p class="text-gray-700">${data.review_text}</p>
+                    ${data.review_image ? `<img src="${data.review_image}" alt="Review image" class="mt-4 rounded-lg w-full h-48 object-cover">` : ""}
                 `;
-                if (data.review_image) {
-                    const imageDiv = document.createElement('div');
-                    imageDiv.className = 'mt-4';
-                    imageDiv.innerHTML = `<img src="${data.review_image}" alt="Review image" class="max-w-full h-auto rounded-lg">`;
-                    newReviewDiv.appendChild(imageDiv);
-                }
                 reviewsList.prepend(newReviewDiv);
 
-                // Reset form and close modal
                 document.getElementById("reviewForm").reset();
                 closeModal("reviewFormModal");
             } else {

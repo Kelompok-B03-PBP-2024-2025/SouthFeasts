@@ -10,11 +10,11 @@ from restaurant.models import Restaurant
 import csv
 import pandas as pd
 from decimal import Decimal
-from django.shortcuts import render, get_object_or_404
 from product.models import MenuItem
 from review.models import ReviewEntry
 from review.forms import ReviewForm
 from wishlist.models import WishlistItem 
+from django.db.models import Avg
 
 def menu_catalog(request):
     """View untuk menampilkan katalog menu dengan fitur filter dan search"""
@@ -105,22 +105,26 @@ def menu_detail(request, id):
     else:
         menu_item.is_in_wishlist = False
 
+    # Jika ada review baru yang disubmit
     if request.method == 'POST' and form.is_valid():
         review = form.save(commit=False)
         review.user = request.user
-        review.product = menu_item
+        review.menu_item = menu_item  # Pastikan untuk mengisi field 'menu_item'
         review.save()
         return redirect('product:menu_detail', id=menu_item.id)
 
+    # Menghitung rata-rata rating dari semua review terkait menu_item
+    average_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0  # Default ke 0 jika belum ada review
+    
     context = {
         'menu_item': menu_item,
         'restaurant': menu_item.restaurant,
-        'reviews' : reviews,
+        'reviews': reviews,
         'form': form,
+        'average_rating': round(average_rating, 1)  # Tambahkan rata-rata rating ke context
     }
     
     return render(request, 'menu_detail.html', context)
-
 
 def restaurant_menu(request, restaurant_id):
     """View untuk menampilkan semua menu dari restoran tertentu"""
