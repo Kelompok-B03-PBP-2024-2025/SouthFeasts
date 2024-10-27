@@ -200,7 +200,7 @@
             <div id="reviews-carousel" class="flex overflow-x-auto gap-4 scroll-smooth">
                 {% if reviews %}
                     {% for review in reviews %}
-                        <div class="bg-white text-black rounded-lg shadow-md p-6 min-w-[250px]">
+                        <div class="bg-white text-black rounded-lg shadow-md p-6 min-w-[250px] max-w-[250px]">
                             <!-- Reviewer's Name and Rating -->
                             <div class="flex items-center mb-2">
                                 <p class="font-semibold text-lg">{{ review.user.username }}</p>
@@ -239,8 +239,7 @@
 </div>
 
 <script>
-
-function scrollToContent() {
+    function scrollToContent() {
         document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
     }
     // Changing background images in the hero section
@@ -250,80 +249,44 @@ function scrollToContent() {
         'https://manual.co.id/wp-content/uploads/2024/05/Sando-Shop_29-980x719.jpg'
 
     ];
-
+    
     let currentIndex = 0;
     const heroSection = document.querySelector('.bg-cover');
 
     function changeBackgroundImage() {
-        heroSection.style.backgroundImage = url('${images[currentIndex]}');
+        heroSection.style.backgroundImage = `url('${images[currentIndex]}')`;
         currentIndex = (currentIndex + 1) % images.length;
     }
 
     setInterval(changeBackgroundImage, 5000);
 
-// First, define the carousel and buttons
-<!-- Left Button -->
-<button id="scroll-left-btn" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
-&lt;
-</button>
-<!-- Right Button -->
-<button id="scroll-right-btn" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
-    &gt;
-</button>
-document.addEventListener('DOMContentLoaded', function() {
-    const carousel = document.getElementById("reviews-carousel");
-    const leftButton = document.getElementById("scroll-left-btn");
-    const rightButton = document.getElementById("scroll-right-btn");
+    const scrollAmount = 1000; // Scroll 4 kotak (4 * 250px)
 
-    // Function to check scroll position and update button visibility
-    function updateButtonVisibility() {
-        // Check if we can scroll left
-        if (carousel.scrollLeft <= 0) {
-            leftButton.style.opacity = "0.5";
-            leftButton.style.cursor = "not-allowed";
-        } else {
-            leftButton.style.opacity = "1";
-            leftButton.style.cursor = "pointer";
-        }
-
-        // Check if we can scroll right
-        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
-            rightButton.style.opacity = "0.5";
-            rightButton.style.cursor = "not-allowed";
-        } else {
-            rightButton.style.opacity = "1";
-            rightButton.style.cursor = "pointer";
-        }
+    function scrollLeft() {
+        document.getElementById("reviews-carousel").scrollBy({
+            left: -scrollAmount,
+            behavior: "smooth"
+        });
     }
 
-    // Add click event listeners to buttons
-    leftButton.addEventListener('click', function() {
-        carousel.scrollBy({
-            left: -300,
+    function scrollRight() {
+        document.getElementById("reviews-carousel").scrollBy({
+            left: scrollAmount,
             behavior: "smooth"
         });
-    });
-
-    rightButton.addEventListener('click', function() {
-        carousel.scrollBy({
-            left: 300,
-            behavior: "smooth"
-        });
-    });
-
-    // Add scroll event listener to update button visibility
-    carousel.addEventListener('scroll', updateButtonVisibility);
-
-    // Initial button visibility check
-    updateButtonVisibility();
-
-    // Add resize event listener to handle window resizing
-    window.addEventListener('resize', updateButtonVisibility);
-});
-
+    }
 </script>
 
 <style>
+    .hover-effect {
+        transition: background-color 0.3s;
+    }
+    .hover-effect:hover {
+        background-color: #333;
+    }
+    .transition-colors {
+        transition: background-color 0.3s, color 0.3s;
+    }
     #reviews-carousel::-webkit-scrollbar {
         display: none;
     }
