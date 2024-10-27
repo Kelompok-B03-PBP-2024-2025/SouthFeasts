@@ -239,60 +239,88 @@
 </div>
 
 <script>
+
+function scrollToContent() {
+        document.getElementById("content-section").scrollIntoView({ behavior: "smooth" });
+    }
+    // Changing background images in the hero section
+    const images = [
+        'https://manual.co.id/wp-content/uploads/2024/04/1317_solo_ristorante_web-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/06/nothing-personal_57-980x719.jpg',
+        'https://manual.co.id/wp-content/uploads/2024/05/Sando-Shop_29-980x719.jpg'
+
+    ];
+
+    let currentIndex = 0;
+    const heroSection = document.querySelector('.bg-cover');
+
+    function changeBackgroundImage() {
+        heroSection.style.backgroundImage = url('${images[currentIndex]}');
+        currentIndex = (currentIndex + 1) % images.length;
+    }
+
+    setInterval(changeBackgroundImage, 5000);
+
 // First, define the carousel and buttons
-const carousel = document.getElementById("reviews-carousel");
-const leftButton = document.querySelector('button[onclick="scrollLeft()"]');
-const rightButton = document.querySelector('button[onclick="scrollRight()"]');
+<!-- Left Button -->
+<button id="scroll-left-btn" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+&lt;
+</button>
+<!-- Right Button -->
+<button id="scroll-right-btn" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+    &gt;
+</button>
+document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById("reviews-carousel");
+    const leftButton = document.getElementById("scroll-left-btn");
+    const rightButton = document.getElementById("scroll-right-btn");
 
-// Function to check scroll position and update button visibility
-function updateButtonVisibility() {
-    // Check if we can scroll left
-    if (carousel.scrollLeft <= 0) {
-        leftButton.style.opacity = "0.5";
-        leftButton.style.cursor = "not-allowed";
-    } else {
-        leftButton.style.opacity = "1";
-        leftButton.style.cursor = "pointer";
+    // Function to check scroll position and update button visibility
+    function updateButtonVisibility() {
+        // Check if we can scroll left
+        if (carousel.scrollLeft <= 0) {
+            leftButton.style.opacity = "0.5";
+            leftButton.style.cursor = "not-allowed";
+        } else {
+            leftButton.style.opacity = "1";
+            leftButton.style.cursor = "pointer";
+        }
+
+        // Check if we can scroll right
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+            rightButton.style.opacity = "0.5";
+            rightButton.style.cursor = "not-allowed";
+        } else {
+            rightButton.style.opacity = "1";
+            rightButton.style.cursor = "pointer";
+        }
     }
 
-    // Check if we can scroll right
-    if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
-        rightButton.style.opacity = "0.5";
-        rightButton.style.cursor = "not-allowed";
-    } else {
-        rightButton.style.opacity = "1";
-        rightButton.style.cursor = "pointer";
-    }
-}
-
-// Scroll left function
-function scrollLeft() {
-    if (carousel.scrollLeft > 0) {
+    // Add click event listeners to buttons
+    leftButton.addEventListener('click', function() {
         carousel.scrollBy({
             left: -300,
             behavior: "smooth"
         });
-    }
-}
+    });
 
-// Scroll right function
-function scrollRight() {
-    if (carousel.scrollLeft < carousel.scrollWidth - carousel.clientWidth) {
+    rightButton.addEventListener('click', function() {
         carousel.scrollBy({
             left: 300,
             behavior: "smooth"
         });
-    }
-}
+    });
 
-// Add scroll event listener to update button visibility
-carousel.addEventListener('scroll', updateButtonVisibility);
+    // Add scroll event listener to update button visibility
+    carousel.addEventListener('scroll', updateButtonVisibility);
 
-// Initial button visibility check
-document.addEventListener('DOMContentLoaded', updateButtonVisibility);
+    // Initial button visibility check
+    updateButtonVisibility();
 
-// Add resize event listener to handle window resizing
-window.addEventListener('resize', updateButtonVisibility);
+    // Add resize event listener to handle window resizing
+    window.addEventListener('resize', updateButtonVisibility);
+});
+
 </script>
 
 <style>
