@@ -233,52 +233,6 @@ def item_remove(request, item_id):
         
     return redirect('wishlist:collection-detail', collection_id=collection_id)
 
-# @login_required(login_url='authentication:login')
-# def add_to_wishlist_from_menu(request):
-#     if not request.user.is_authenticated:
-#         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#             return JsonResponse({
-#                 'error': 'Authentication required',
-#                 'login_url': reverse('authentication:login')
-#             }, status=401)
-#         return redirect('authentication:login')
-
-#     menu_item_id = request.GET.get('menu_item')
-#     if not menu_item_id:
-#         return JsonResponse({'error': 'No menu item ID provided.'}, status=400)
-        
-#     # Get default collection
-#     default_collection = WishlistCollection.objects.filter(
-#         user=request.user,
-#         name="My Wishlist"
-#     ).first()
-    
-#     if not default_collection:
-#         default_collection = WishlistCollection.objects.create(
-#             user=request.user,
-#             name="My Wishlist",
-#             description="Your default wishlist collection",
-#             is_default=True
-#         )
-    
-#     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
-    
-#     # Add to default collection
-#     wishlist_item, created = WishlistItem.objects.get_or_create(
-#         collection=default_collection,
-#         menu_item=menu_item
-#     )
-    
-#     if created:
-#         response = {'message': 'Item added to wishlist!'}
-#     else:
-#         response = {'message': 'Item is already in your wishlist.'}
-
-#     # Check if it's an AJAX request
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         return JsonResponse(response)
-    
-#     return redirect('product:menu_catalog')
 @login_required(login_url='authentication:login')
 def add_to_wishlist_from_menu(request):
     if not request.user.is_authenticated:
@@ -365,92 +319,7 @@ def add_item_to_collection(request, item_id, collection_id):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
-# @login_required(login_url='authentication:login')
-# def create_collection_ajax(request):
-#     if not request.user.is_authenticated:
-#         return JsonResponse({
-#             'error': 'Authentication required',
-#             'login_url': reverse('authentication:login')
-#         }, status=401)
 
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             name = data.get('name')
-#             description = data.get('description', '')
-            
-#             if not name:
-#                 return JsonResponse({
-#                     'status': 'error',
-#                     'message': 'Collection name is required'
-#                 }, status=400)
-                
-#             if WishlistCollection.objects.filter(user=request.user, name=name).exists():
-#                 return JsonResponse({
-#                     'status': 'error',
-#                     'message': 'You already have a collection with this name'
-#                 }, status=400)
-            
-#             collection = WishlistCollection.objects.create(
-#                 user=request.user,
-#                 name=name,
-#                 description=description,
-#                 is_default=False
-#             )
-            
-#             return JsonResponse({
-#                 'status': 'success',
-#                 'id': collection.id,
-#                 'name': collection.name
-#             })
-            
-#         except json.JSONDecodeError:
-#             return JsonResponse({
-#                 'status': 'error',
-#                 'message': 'Invalid JSON data'
-#             }, status=400)
-            
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-# @login_required
-# def create_collection_ajax(request):
-#     if request.method == 'POST':
-#         try:
-#             data = json.loads(request.body)
-#             name = data.get('name')
-#             description = data.get('description', '')
-            
-#             if not name:
-#                 return JsonResponse({
-#                     'status': 'error',
-#                     'message': 'Collection name is required'
-#                 }, status=400)
-                
-#             if WishlistCollection.objects.filter(user=request.user, name=name).exists():
-#                 return JsonResponse({
-#                     'status': 'error',
-#                     'message': 'You already have a collection with this name'
-#                 }, status=400)
-            
-#             collection = WishlistCollection.objects.create(
-#                 user=request.user,
-#                 name=name,
-#                 description=description,
-#                 is_default=False
-#             )
-            
-#             return JsonResponse({
-#                 'status': 'success',
-#                 'id': collection.id,
-#                 'name': collection.name
-#             })
-            
-#         except json.JSONDecodeError:
-#             return JsonResponse({
-#                 'status': 'error',
-#                 'message': 'Invalid JSON data'
-#             }, status=400)
-            
-#     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 @login_required(login_url='authentication:login')
 def create_collection_ajax(request):
     if not request.user.is_authenticated:
