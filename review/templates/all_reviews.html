@@ -149,7 +149,7 @@
             data.reviews.forEach((item) => {
                 htmlString += `
                 <div class="border rounded overflow-hidden shadow-lg h-full relative">
-                    <img src="${item.review_image ? item.review_image : '/static/image/default-thumbnail.jpg'}" alt="Review image for ${item.menu_item}" class="w-full h-48 object-cover">
+                    <img src="${item.review_image ? item.review_image : '/static/image/default-review.jpg'}" alt="Review image for ${item.menu_item}" class="w-full h-48 object-cover">
                     <div class="p-4 review-content">
                         <div class="flex items-center justify-between mb-2">
                             <strong class="text-lg font-semibold">${item.user}</strong>
