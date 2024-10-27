@@ -1,4 +1,5 @@
-from pyexpat.errors import messages
+
+from django.contrib import messages 
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from product.models import MenuItem
@@ -103,15 +104,14 @@ def edit_review(request, review_id):
 
 @login_required(login_url='/auth/login/')
 def delete_review(request, review_id):
-    """View to handle deletion of a review. Only accessible by staff members."""
-    if not request.user.is_staff:
-        return HttpResponseForbidden("You don't have permission to delete reviews.")
-    
-    review = get_object_or_404(ReviewEntry, pk=review_id)
-    menu_item_id = review.menu_item.id
-    review.delete()
-    messages.success(request, 'Review has been successfully deleted.')
-    return redirect('review:all_reviews')
+    if request.method == "POST":
+        review = get_object_or_404(ReviewEntry, id=review_id)
+        if review.user == request.user:
+            review.delete()
+            messages.success(request, 'Review has been successfully deleted.')
+            return redirect('review:all_reviews')
+        else:
+            return HttpResponseForbidden("You are not allowed to delete this review.")
 
 def show_json(request):
     search_query = request.GET.get('search', '')  # Get search query from URL
