@@ -63,7 +63,7 @@
                 {% if review.menu_item %}
                     <h3 class="text-xl font-semibold mb-2">{{ review.menu_item.name }}</h3>
                     <p class="text-gray-600 italic mb-4 truncate-single-line">{{ review.menu_item.description }}</p> <!-- Single line for description -->
-                    <p class="text-gray-800 mb-4"><strong>Price:</strong> ${{ review.menu_item.price }}</p>
+                    <p class="text-gray-800 mb-4"><strong>Price:</strong> Rp{{ review.menu_item.price }}</p>
                 {% else %}
                     <p class="text-gray-500 italic mb-4">No product information available for this review.</p>
                 {% endif %}
