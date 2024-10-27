@@ -6,11 +6,27 @@ from forum.forms import ArticleForm, CommentForm, QuestionForm, AnswerForm
 from django.urls import reverse
 from django.db.models import Count
 
-# View main page (Culinary Insights)
 def show_main(request):
-    articles = Article.objects.all().order_by('-created_at')
-    questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
+    user = request.user
+    filter_type = request.GET.get('filter', 'public_articles')
 
+    # Filter articles based on filter_type
+    if filter_type == 'public_articles':
+        articles = Article.objects.exclude(user=user).order_by('-created_at') 
+    elif filter_type == 'your_articles':
+        articles = Article.objects.filter(user=user).order_by('-created_at')  
+    else:
+        articles = Article.objects.all().order_by('-created_at')         
+
+    # Filter questions based on filter_type
+    if filter_type == 'public_qna':
+        questions = Question.objects.exclude(user=user).annotate(total_answers=Count('answers')).order_by('-created_at')  
+    elif filter_type == 'your_qna':
+        questions = Question.objects.filter(user=user).annotate(total_answers=Count('answers')).order_by('-created_at')   
+    else:
+        questions = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')               
+
+    # Initialize forms for new article and question
     article_form = ArticleForm()
     question_form = QuestionForm()
 
@@ -19,6 +35,7 @@ def show_main(request):
         'questions': questions,
         'article_form': article_form,
         'question_form': question_form,
+        'current_filter': filter_type,
     }
     return render(request, 'culinary_insights.html', context)
 
