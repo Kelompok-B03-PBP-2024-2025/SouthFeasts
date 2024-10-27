@@ -190,24 +190,24 @@
         <p class="text-lg text-center text-gray-600 mb-12">See what others are saying about our menu items.</p>
 
         <!-- Carousel Wrapper -->
-        <div class="relative">
+        <div class="relative max-w-7xl mx-auto">
             <!-- Left Button -->
-            <button onclick="scrollLeft()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+            <button id="scroll-left-btn" class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
                 &lt;
             </button>
 
             <!-- Reviews Carousel -->
-            <div id="reviews-carousel" class="flex overflow-x-auto gap-4 scroll-smooth">
+            <div id="reviews-carousel" class="grid grid-cols-4 gap-4 overflow-hidden mx-12">
                 {% if reviews %}
                     {% for review in reviews %}
-                        <div class="bg-white text-black rounded-lg shadow-md p-6 min-w-[250px] max-w-[250px]">
+                        <div class="bg-white text-black rounded-lg shadow-md p-6">
                             <!-- Reviewer's Name and Rating -->
                             <div class="flex items-center mb-2">
                                 <p class="font-semibold text-lg">{{ review.user.username }}</p>
                                 <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
                             </div>
 
-                            <!-- Review Text Snippet with line-clamp -->
+                            <!-- Review Text Snippet -->
                             <p class="text-gray-700 mb-4 line-clamp-3">
                                 {{ review.review_text|truncatechars:100 }}
                             </p>
@@ -231,7 +231,7 @@
             </div>
 
             <!-- Right Button -->
-            <button onclick="scrollRight()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+            <button id="scroll-right-btn" class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
                 &gt;
             </button>
         </div>
@@ -261,21 +261,62 @@
 
     setInterval(changeBackgroundImage, 5000);
 
-    const scrollAmount = 1000; // Scroll 4 kotak (4 * 250px)
-
-    function scrollLeft() {
-        document.getElementById("reviews-carousel").scrollBy({
-            left: -scrollAmount,
-            behavior: "smooth"
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById("reviews-carousel");
+    const leftButton = document.getElementById("scroll-left-btn");
+    const rightButton = document.getElementById("scroll-right-btn");
+    
+    // Calculate scroll amount based on viewport
+    function getScrollAmount() {
+        const itemWidth = carousel.offsetWidth / 4; // Width for 4 items
+        return itemWidth * 4; // Scroll 4 items at once
     }
 
-    function scrollRight() {
-        document.getElementById("reviews-carousel").scrollBy({
-            left: scrollAmount,
+    // Function to check scroll position and update button visibility
+    function updateButtonVisibility() {
+        // Check if we can scroll left
+        if (carousel.scrollLeft <= 0) {
+            leftButton.style.opacity = "0.5";
+            leftButton.style.cursor = "not-allowed";
+        } else {
+            leftButton.style.opacity = "1";
+            leftButton.style.cursor = "pointer";
+        }
+
+        // Check if we can scroll right
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth) {
+            rightButton.style.opacity = "0.5";
+            rightButton.style.cursor = "not-allowed";
+        } else {
+            rightButton.style.opacity = "1";
+            rightButton.style.cursor = "pointer";
+        }
+    }
+
+    // Add click event listeners to buttons
+    leftButton.addEventListener('click', function() {
+        carousel.scrollBy({
+            left: -getScrollAmount(),
             behavior: "smooth"
         });
-    }
+    });
+
+    rightButton.addEventListener('click', function() {
+        carousel.scrollBy({
+            left: getScrollAmount(),
+            behavior: "smooth"
+        });
+    });
+
+    // Add scroll event listener to update button visibility
+    carousel.addEventListener('scroll', updateButtonVisibility);
+
+    // Initial button visibility check
+    updateButtonVisibility();
+
+    // Update on window resize
+    window.addEventListener('resize', updateButtonVisibility);
+});
 </script>
 
 <style>
@@ -288,20 +329,33 @@
     .transition-colors {
         transition: background-color 0.3s, color 0.3s;
     }
+    #reviews-carousel {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-snap-type: x mandatory;
+        overflow-x: auto;
+    }
+    
     #reviews-carousel::-webkit-scrollbar {
         display: none;
     }
-    #reviews-carousel {
-        scrollbar-width: none;
-        overflow-x: auto;
+    
+    #reviews-carousel > div {
+        scroll-snap-align: start;
+        min-width: calc(25% - 12px);
     }
-    /* CSS for limiting text overflow */
+    
     .line-clamp-3 {
         display: -webkit-box;
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    
+    /* Smooth transition for button opacity */
+    button {
+        transition: opacity 0.3s ease;
     }
 </style>
 {% endblock %}
