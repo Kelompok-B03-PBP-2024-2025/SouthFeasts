@@ -38,13 +38,11 @@
         </form>
     </div>
 
-    <!-- If there are no reviews -->
     {% if not reviews %}
     <div class="text-center text-gray-500 mt-6">
         <p class="text-lg">No reviews found for "{{ search_query }}"</p>
     </div>
     {% else %}
-    <!-- Reviews Grid Layout -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {% for review in reviews %}
         <div class="border rounded overflow-hidden shadow-lg h-full relative">
@@ -59,7 +57,6 @@
                     <span class="text-blue-800 font-bold" style="font-size: 18px;">Rating: <strong>{{ review.rating }}/5</strong></span>
                 </div>
                 
-                <!-- Display the product (menu item) information -->
                 {% if review.menu_item %}
                     <h3 class="text-xl font-semibold mb-2">{{ review.menu_item.name }}</h3>
                     <p class="text-gray-600 italic mb-4">{{ review.menu_item.description }}</p>
@@ -70,15 +67,22 @@
 
                 <p class="text-gray-700 mb-2 bg-gray-100 p-2 rounded">{{ review.review_text|truncatewords:20 }}</p>
                 <a href="{% url 'review:review_detail' review.id %}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
-                 {% if review.user == request.user %}
+                {% if review.user == request.user %}                    
                     <a href="{% url 'review:edit_review' review.id %}" class="block bg-blue-500 text-white text-center py-2 mt-4 rounded-md hover:bg-blue-700 transition-colors duration-300">Edit Review</a>
-=======
                 
                 <!-- Delete button for staff users only -->
                 {% if user.is_staff %}
                 <button type="button" 
                         onclick="openModal('{{ review.id }}')"
                         class="absolute top-2 right-2 text-red-600 hover:text-red-800">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+                {% endif %}
+                
+                {% if user.is_staff %}
+                <button type="button" onclick="openModal('{{ review.id }}')" class="absolute top-2 right-2 text-red-600 hover:text-red-800">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -106,40 +110,87 @@
     </div>
 </div>
 
-<!-- JavaScript to handle section toggling -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const reviewsSection = document.getElementById('reviews-section');
-        
-        // Periksa apakah "showReviews" diaktifkan di localStorage
         if (localStorage.getItem("showReviews") === "true") {
-            reviewsSection.classList.remove('hidden'); // Tampilkan bagian review
+            reviewsSection.classList.remove('hidden');
+            loadReviews(); // Memuat ulasan saat halaman dimuat jika "showReviews" aktif
         }
-
-        // Periksa jika scroll sudah dilakukan sebelumnya
         if (localStorage.getItem("scrollDone") === "true") {
             reviewsSection.scrollIntoView({ behavior: 'smooth' });
         }
     });
 
     function showReviews() {
-        const reviewsSection = document.getElementById('reviews-section');
+    const reviewsSection = document.getElementById('reviews-section');
+    reviewsSection.classList.toggle('hidden');
+    
+    if (!reviewsSection.classList.contains('hidden')) {
+        localStorage.setItem("showReviews", "true");
+        loadReviews(); // Memuat ulasan saat tombol "See Reviews" ditekan
         
-        // Toggle visibilitas dari bagian review
-        reviewsSection.classList.toggle('hidden');
+        // Tambahkan ini untuk menggulir ke bagian ulasan setelah ditampilkan
+        setTimeout(() => {
+            reviewsSection.scrollIntoView({ behavior: 'smooth' });
+        }, 100); // Tambahkan sedikit delay untuk memastikan elemen sudah terlihat sebelum scroll
+    } else {
+        localStorage.setItem("showReviews", "false");
+    }
+}
 
-        // Jika bagian review terlihat dan scroll belum dilakukan
-        if (!reviewsSection.classList.contains('hidden')) {
-            localStorage.setItem("showReviews", "true"); // Tandai bagian review sebagai terlihat
-            
-            if (localStorage.getItem("scrollDone") !== "true") {
-                reviewsSection.scrollIntoView({ behavior: 'smooth' }); // Scroll ke bagian review
-                localStorage.setItem("scrollDone", "true"); // Tandai bahwa scroll sudah dilakukan
-            }
+
+    // Fungsi untuk memuat ulasan melalui AJAX
+    async function loadReviews() {
+        const response = await fetch("{% url 'review:show_json' %}");
+        const data = await response.json();
+        const reviewsContainer = document.getElementById("review_cards");
+        
+        reviewsContainer.innerHTML = ""; // Kosongkan kontainer ulasan
+        let htmlString = "";
+
+        if (data.reviews.length === 0) {
+            htmlString = `
+                <div class="text-center text-gray-500 mt-6">
+                    <p class="text-lg">There are no reviews yet.</p>
+                </div>
+            `;
         } else {
-            localStorage.setItem("showReviews", "false"); // Sembunyikan bagian review
-            localStorage.removeItem("scrollDone"); // Reset status scroll
+            data.reviews.forEach((item) => {
+                htmlString += `
+                <div class="border rounded overflow-hidden shadow-lg h-full relative">
+                    <img src="${item.review_image ? item.review_image : '/static/image/default-thumbnail.jpg'}" alt="Review image for ${item.menu_item}" class="w-full h-48 object-cover">
+                    <div class="p-4 review-content">
+                        <div class="flex items-center justify-between mb-2">
+                            <strong class="text-lg font-semibold">${item.user}</strong>
+                            <span class="text-blue-800 font-bold" style="font-size: 18px;">Rating: <strong>${item.rating}/5</strong></span>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-2">${item.menu_item}</h3>
+                        <p class="text-gray-700 mb-2 bg-gray-100 p-2 rounded">${item.review_text.substring(0, 100)}...</p>
+                        <a href="/review/${item.id}" class="block bg-white border border-black text-black text-center py-2 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">View More</a>
+                        
+                        ${item.user === currentUser ? `
+                            <a href="/review/edit/${item.id}" class="block bg-blue-500 text-white text-center py-2 mt-4 rounded-md hover:bg-blue-700 transition-colors duration-300">Edit Review</a>
+                            <button type="button" onclick="openModal(${item.id})" class="block bg-red-500 text-white text-center py-2 mt-4 rounded-md hover:bg-red-700 transition-colors duration-300">Delete</button>
+                        ` : ""}
+                    </div>
+                </div>
+                `;
+            });
         }
+        reviewsContainer.innerHTML = htmlString;
+    }
+
+    function openModal(reviewId) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        form.action = `/review/delete/${reviewId}/`; // Set form action dengan URL delete
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('hidden');
     }
     function openModal(reviewId) {
         const modal = document.getElementById('deleteModal');
@@ -154,15 +205,13 @@
 </script>
 
 <style>
-    /* Review Content Styling */
     .review-content {
-        min-height: 350px; /* Set minimum height for consistency */
+        min-height: 350px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
     }
 
-    /* Ensuring the entire grid is aligned */
     .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -172,10 +221,9 @@
     .border {
         display: flex;
         flex-direction: column;
-        height: 100%; /* Ensure all elements stretch full height */
+        height: 100%;
     }
 
-    /* Button and text alignment */
     .block {
         width: 100%;
     }
@@ -184,17 +232,16 @@
         transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Additional styling for gap and color enhancements */
     .text-blue-800 {
-        color: #1e3a8a; /* dark blue color for rating */
+        color: #1e3a8a;
     }
 
     .bg-gray-100 {
-        background-color: #f3f4f6; /* light gray background for review text */
+        background-color: #f3f4f6;
     }
 
     .mb-4 {
-        margin-bottom: 1rem; /* add margin between price and review */
+        margin-bottom: 1rem;
     }
 </style>
 {% endblock %}
