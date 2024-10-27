@@ -1,15 +1,12 @@
 {% load static %}
 <nav class="bg-black w-full sticky top-0 z-50 shadow-lg">
     <div class="container mx-auto px-4 sm:px-6">
-        <div class="flex justify-between items-center h-20">
+        <div class="flex justify-between items-center py-2">
             <!-- Logo Section -->
             <div class="flex-shrink-0">
-                <a href="{% url 'main:show_main' %}" 
-                   class="flex items-center space-x-2 group">
-                    <span class="text-white text-2xl font-bold group-hover:text-gray-300 transition-colors duration-300">
-                        SouthFeast
-                    </span>
-                </a>
+              <a href="{% url 'main:show_main' %}" class="hover:text-gray-300 transition duration-300">
+                <img src="{% static 'image/logo.png' %}" alt="SouthFeast Logo" style="height: 80px; width: auto;">
+              </a>
             </div>
 
             <!-- Desktop Menu -->
