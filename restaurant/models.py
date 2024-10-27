@@ -1,5 +1,6 @@
 # restaurant/ models.py
 from django.db import models
+from django.urls import reverse
 
 class Restaurant(models.Model):
     KECAMATAN_CHOICE = [
