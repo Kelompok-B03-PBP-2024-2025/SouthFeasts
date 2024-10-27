@@ -6,6 +6,7 @@
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
 {% endblock meta %}
 
+<!-- Tombol balik ke resto views -->
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-end mb-4">
         <a href="{% url 'dashboard:restaurant_list' %}" 
@@ -14,6 +15,7 @@
         </a>
     </div>
 
+    <!-- Filter -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
         <h2 class="text-2xl font-bold mb-4">Filter Makanan</h2>
         <form id="filterForm" class="space-y-4">
@@ -29,7 +31,7 @@
                 </select>
 
                 <select id="kecamatan" class="w-full p-2 border rounded">
-                    <option value="all">All Locations</option>
+                    <option value="all">All Kecamatan</option>
                     {% for kecamatan in kecamatans %}
                         <option value="{{ kecamatan }}">{{ kecamatan }}</option>
                     {% endfor %}
@@ -51,6 +53,7 @@
         </form>
     </div>
 
+    <!-- Tambah makanan -->
     <div class="flex justify-end mb-4">
         <button onclick="showAddMakananModal()" 
                 class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
@@ -58,14 +61,16 @@
         </button>
     </div>
 
+    <!-- Makanan Container -->
     <div id="makananContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     </div>
 
+    <!-- Pagination -->
     <div id="paginationContainer" class="flex justify-center mt-8">
     </div>
 </div>
 
-<!-- Add Makanan Modal -->
+<!--Tambha makanan Modal -->
 <div id="addMakananModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto hidden flex items-center justify-center">
     <div class="relative mx-auto p-5 border w-11/12 md:w-96 shadow-lg rounded-md bg-white mt-20"> 
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Add New Menu Item</h3>
@@ -118,7 +123,7 @@
             </div>
 
             <div class="items-center px-4 py-3 flex justify-end space-x-4">
-                <button type="button" onclick="hideAddMakananModal()"
+                <button type="button" onclick="hideAddMakananModal()" 
                         class="block bg-white border border-red-700 text-red-700 text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-red-900 hover:text-white transition-colors duration-300">
                     Close
                 </button>
@@ -150,18 +155,20 @@
 </div>
 
 <script>
-let currentPage = 1; // Global variable to store the current page number
-let deleteItemId = null; // Global variable to store the ID of the item to be deleted
+let currentPage = 1; // Global variable untuk menyimpan halaman saat ini
+let deleteItemId = null; // Global variable untuk menyimpan ID item yang akan dihapus
 
-// Handle filtering and pagination
+// Load makanan dari data
 function loadMakanan(page = 1) {
-    currentPage = page; // Update the current page number
+    currentPage = page; // Simpan halaman saat ini ke variabel global
+    // Ambil data dari form filter
     const searchQuery = document.getElementById('search').value;
     const category = document.getElementById('category').value;
     const kecamatan = document.getElementById('kecamatan').value;
     const minPrice = document.getElementById('minPrice').value;
     const maxPrice = document.getElementById('maxPrice').value;
 
+    // Buat query parameter untuk fetch data
     const queryParams = new URLSearchParams({
         page: page,
         search: searchQuery,
@@ -171,19 +178,23 @@ function loadMakanan(page = 1) {
         max_price: maxPrice
     });
 
+    // Fetch data endpoint json 
     fetch(`/dashboard/show-json/?${queryParams}`)
         .then(response => response.json())
         .then(data => {
-            updateMakananDisplay(data.results);
-            updatePagination(data);
+            updateMakananDisplay(data.results); // Update tampilan makanan
+            updatePagination(data); // Update pagination
         })
         .catch(error => console.error('Error:', error));
 }
 
+// Update tampilan makanan
 function updateMakananDisplay(makanan) {
+    // Ambil container makanan
     const container = document.getElementById('makananContainer');
     container.innerHTML = '';
 
+    // Jika tidak ada makanan yang ditemukan
     if (makanan.length === 0) {
         container.classList.remove('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3');
         container.classList.add('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
@@ -199,10 +210,12 @@ function updateMakananDisplay(makanan) {
     container.classList.remove('flex', 'flex-col', 'items-center', 'justify-center', 'h-96');
     container.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'lg:grid-cols-3', 'gap-6');
     
+    // loop makanan dan buat card makanan
     makanan.forEach(item => {
         const card = document.createElement('div');
         card.className = 'bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out';
     
+        // Sanitize data
         const itemName = DOMPurify.sanitize(item.name);
         const itemDescription = DOMPurify.sanitize(item.description);
         const itemRestaurantName = DOMPurify.sanitize(item.restaurant_name || 'N/A');
@@ -252,8 +265,7 @@ function updateMakananDisplay(makanan) {
     });
 }
 
-
-
+// Toggle description untuk show more/less
 function toggleDescription(button) {
     const descriptionShort = button.previousElementSibling.previousElementSibling;
     const descriptionFull = button.previousElementSibling;
@@ -270,6 +282,7 @@ function toggleDescription(button) {
     }
 }
 
+// Update pagination 
 function updatePagination(data) {
     const container = document.getElementById('paginationContainer');
     container.innerHTML = '';
@@ -312,7 +325,7 @@ function updatePagination(data) {
 }
 
 
-// Handle adding new makanan
+// Handle tambah makanan
 function showAddMakananModal() {
     document.getElementById('addMakananModal').classList.remove('hidden');
 }
@@ -341,7 +354,7 @@ function submitMakanan(event) {
     .then(response => {
         if (response.ok) {
             hideAddMakananModal();
-            loadMakanan(currentPage); // Reload the list using the current page
+            loadMakanan(currentPage); // reload list dengan halaman saat ini
             document.getElementById('addMakananForm').reset();
         } else {
             throw new Error('Failed to create item');
@@ -356,6 +369,8 @@ function submitMakanan(event) {
         document.getElementById('addMakananForm').appendChild(errorContainer);
     });
 }
+
+// Handle edit makanan
 function editMakanan(id) {
     window.location.href = `/dashboard/makanan-update/${id}/`;
 }
@@ -381,14 +396,14 @@ function deleteMakanan() {
         .then(response => {
             if (response.ok) {
                 hideDeleteConfirmationModal();
-                loadMakanan(currentPage); // Reload the list using the current page
+                loadMakanan(currentPage); // Reload 
             }
         })
         .catch(error => console.error('Error:', error));
     }
 }
 
-// Initialize on page load
+// Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     loadMakanan();
 

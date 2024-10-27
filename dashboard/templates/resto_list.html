@@ -1,139 +1,194 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 {% block content %}
+
+<!-- Tombol back -->
 <div class="container mx-auto px-4 py-8">
-    <!-- Back to Makanan Views Button -->
     <div class="mb-6">
         <a href="{% url 'dashboard:makanan_list' %}" 
            class="bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
             Back to Makanan Views
         </a>
     </div>
-
-    <!-- Filter Section -->
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-        <form method="GET" action="">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Kecamatan Filter -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Kecamatan
-                    </label>
-                    <select name="kecamatan" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500">
-                        <option value="all" {% if not selected_kecamatan %}selected{% endif %}>All Kecamatan</option>
-                        {% for kecamatan in kecamatans %}
-                            <option value="{{ kecamatan }}" 
-                                    {% if selected_kecamatan == kecamatan %}selected{% endif %}>
-                                {{ kecamatan }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-    
-                <!-- Search Filter -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                        Search Restaurant
-                    </label>
-                    <input type="text" 
-                           name="search" 
-                           value="{{ search_query|default:'' }}"
-                           placeholder="Search by name..." 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500">
-                </div>
+        <!-- Filter -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Kecamatan</label>
+                <select id="kecamatan-filter" class="w-full p-2 border rounded">
+                    <option value="all">All Kecamatan</option>
+                    {% for kecamatan in kecamatans %}
+                        <option value="{{ kecamatan }}" {% if selected_kecamatan == kecamatan %}selected{% endif %}>
+                            {{ kecamatan }}
+                        </option>
+                    {% endfor %}
+                </select>
             </div>
     
-            <!-- Submit Button -->
-            <div class="flex justify-end mt-4">
-                <button type="submit" 
-                        class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
-                    Apply Filters
-                </button>
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">Search Restaurant</label>
+                <input type="text" id="search-input" 
+                       class="w-full p-2 border rounded"
+                       placeholder="Search restaurants..."
+                       value="{{ search_query }}">
             </div>
-        </form>
+        </div>
+    
+        <div class="flex justify-end mt-4">
+            <button id="apply-filters" 
+                    class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
+                Apply Filters
+            </button>
+        </div>
     </div>
-        
 
-    <!-- Restaurant Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for restaurant in restaurants %}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <img src="{{ restaurant.image }}" 
-                 alt="{{ restaurant.resto_name }}" 
-                 class="w-full h-48 object-cover">
-            
-            <div class="p-6">
-                <h3 class="text-xl font-bold mb-2">{{ restaurant.resto_name }}</h3>
-                <p class="text-gray-700">{{ restaurant.location }}</p>
-                
-                <div class="space-y-2 mt-4">
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-700 font-bold">Kecamatan</span>
-                        <span class="text-sm font-medium">{{ restaurant.kecamatan }}</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-700 font-bold">Menu Items</span>
-                        <span class="text-sm font-medium">{{ restaurant.menu_count }}</span>
-                    </div>
-                    
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-700 font-bold">Price Range</span>
-                        <span class="text-sm font-medium">
-                            Rp {{ restaurant.min_price|floatformat:0 }} - 
-                            Rp {{ restaurant.max_price|floatformat:0 }}
-                        </span>
-                    </div>
-                </div>
+    <div id="restaurantContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Restaurants akan ada di sini -->
+    </div>
 
-                <div class="mt-4">
-                    <a href="{% url 'dashboard:restaurant_menu' restaurant.resto_name %}"
+    <div id="paginationContainer" class="flex justify-center mt-8">
+        <!-- Pagination akan ada di sini -->
+    </div>
+</div>
+
+<script>
+let currentPage = 1; // Global variable untuk menyimpan halaman saat ini
+
+// Fungsi untuk memuat data restoran
+function loadRestaurants(page = 1) {
+    // Ambil nilai dari filter dan search input
+    const kecamatan = document.getElementById('kecamatan-filter').value;
+    const search = document.getElementById('search-input').value;
+
+    // Buat query parameters
+    const queryParams = new URLSearchParams({ 
+        page: page, 
+        kecamatan: kecamatan, 
+        search: search 
+    });
+    // Fetch data
+    fetch(`/dashboard/show-json-restaurant/?${queryParams}`)
+        .then(response => response.json())
+        .then(data => {
+            updateRestaurants(data.restaurants || []); 
+            updatePagination(data); // Update pagination
+            currentPage = data.current_page; // Update current page
+        })
+        .catch(error => console.error("Error:", error));
+}
+
+
+function updateRestaurants(restaurants = []) {
+    const container = document.getElementById('restaurantContainer');
+    
+    // Periksa apakah restaurants ada dan tidak kosong
+    if (!restaurants || restaurants.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center h-96">
+                <img src="https://i.pinimg.com/736x/e3/57/ea/e357ea1f87ec8694411bc18ecfbe3b9a.jpg" 
+                     class="mb-4" style="width: 150px; height: auto;" alt="No Results Found">
+                <p class="text-gray-500">No restaurants found matching your criteria. Please try again with different filters.</p>
+            </div>`;
+        return;
+    }
+    
+    container.innerHTML = ''; 
+
+    // Loop setiap restaurant dan buat card nya
+    restaurants.forEach(restaurant => {
+        const restaurantHTML = `
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <img src="${restaurant.image}" alt="${restaurant.name}" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2">${restaurant.name}</h3>
+                    <p>${restaurant.location}</p>
+                    <div class="space-y-2 mt-4">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-700 font-bold">Kecamatan</span>
+                            <span class="text-sm font-medium">${restaurant.kecamatan}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-700 font-bold">Menu Items</span>
+                            <span class="text-sm font-medium">${restaurant.menu_count}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-700 font-bold">Price Range</span>
+                            <span class="text-sm font-medium">
+                                Rp ${Number(restaurant.min_price).toLocaleString()} - Rp ${Number(restaurant.max_price).toLocaleString()}
+                            </span>
+                        </div>
+                    </div>
+                    <a href="/dashboard/resto-menu/${restaurant.name}" 
                        class="block bg-white border border-black text-black text-center font-bold py-2 px-4 mt-4 rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                         View Menu
                     </a>
                 </div>
             </div>
-        </div>
-        {% empty %}
-        <div class="col-span-full flex flex-col items-center justify-center h-96">
-            <img src= "https://i.pinimg.com/736x/e3/57/ea/e357ea1f87ec8694411bc18ecfbe3b9a.jpg"
-                alt="No Results Found" class="mb-4" style="width: 150px; height: auto;">
-            <p class="text-gray-600 text-center">No restaurants found matching your criteria. Please try again with different filters.</p>
-        </div>
-        {% endfor %}
-    </div>
+        `;
+        container.innerHTML += restaurantHTML;
+    });
+}
 
-    <!-- Pagination -->
-    {% if restaurants.paginator.num_pages > 1 %}
-    <div class="flex justify-center mt-8">
-        <div class="flex gap-2">
-            {% if restaurants.has_previous %}
-            <a href="?page={{ restaurants.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
-                Previous
-            </a>
-            {% endif %}
+// Fungsi untuk update pagination
+function updatePagination(data) {
+    const container = document.getElementById('paginationContainer');
+    let paginationHTML = '<div class="flex gap-2">';
     
-            {% for num in restaurants.paginator.page_range %}
-                {% if num == restaurants.number %}
-                <span class="px-4 py-2 bg-black text-white rounded-lg rounded-md">{{ num }}</span>
-                {% elif num > restaurants.number|add:'-3' and num < restaurants.number|add:'3' %}
-                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+    // Tambahkan tombol previous jika ada
+    if (data.has_previous) {
+        paginationHTML += `
+            <button onclick="loadRestaurants(${data.current_page - 1})" 
                     class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
-                    {{ num }}
-                </a>
-                {% endif %}
-            {% endfor %}
+                Previous
+            </button>`;
+    }
     
-            {% if restaurants.has_next %}
-            <a href="?page={{ restaurants.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
+    // Nomor halaman
+    for (let i = 1; i <= data.total_pages; i++) {
+        if (i === data.current_page) {
+            paginationHTML += `
+                <button class="px-4 py-2 bg-black text-white rounded-md">
+                    ${i}
+                </button>`;
+        } else if (i > data.current_page - 3 && i < data.current_page + 3) {
+            paginationHTML += `
+                <button onclick="loadRestaurants(${i})" 
+                        class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
+                    ${i}
+                </button>`;
+        }
+    }
+    
+    // Tambahkan tombol next jika ada
+    if (data.has_next) {
+        paginationHTML += `
+            <button onclick="loadRestaurants(${data.current_page + 1})" 
+                    class="px-4 py-2 bg-white border border-black text-black text-center font-bold rounded-md hover:bg-black hover:text-white transition-colors duration-300">
                 Next
-            </a>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
+            </button>`;
+    }
+    
+    paginationHTML += '</div>';
+    container.innerHTML = paginationHTML;
+}
 
-</div>
+// Event listener untuk tombol Apply Filters
+document.getElementById('apply-filters').addEventListener('click', () => {
+    currentPage = 1;
+    loadRestaurants(currentPage);
+});
+
+// Event listener untuk search input
+document.getElementById('search-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        currentPage = 1;
+        loadRestaurants(currentPage);
+    }
+});
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
+    loadRestaurants(currentPage);
+});
+</script>
+
 {% endblock %}
