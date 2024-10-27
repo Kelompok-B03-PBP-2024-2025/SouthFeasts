@@ -55,7 +55,11 @@
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center mb-8">
             <h2 class="text-4xl font-bold pl-4">Explore The Neighborhood</h2> <!-- Adjust padding here -->
-            <a href="http://127.0.0.1:8000/restaurant/" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+            {% if user.is_staff %}
+                <a href="/dashboard/resto-list" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+            {% else %}
+                <a href="/restaurant/" class="text-white text-sm underline hover:text-gray-400">See All →</a>
+            {% endif %}
         </div>
         <p class="text-lg text-gray-300 mb-8 pl-4">Discover local hotspots in the area, from cozy cafes to cultural landmarks.</p> <!-- Add padding to paragraph as well -->
         
@@ -65,9 +69,15 @@
                 <img src="https://manual.co.id/wp-content/uploads/2023/12/scarlett_461-980x719.jpg" alt="Scarlett House" class="w-full h-64 object-cover">
                 <div class="p-4">
                     <h3 class="text-xl font-semibold mb-2">
-                        <a href="/restaurant/46/" class="text-black hover:text-gray-600">
-                            Scarlett House
-                        </a>
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Scarlett House" class="text-black hover:text-gray-600">
+                                Scarlett House
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/46/" class="text-black hover:text-gray-600">
+                                Scarlett House
+                            </a>
+                        {% endif %}
                     </h3>
                     <p class="text-sm text-gray-600">Jl. Sultan Hasanudin Dalam, Blok M, Kebayoran Baru, Jakarta Selatan</p>
                 </div>
@@ -77,9 +87,15 @@
                 <img src="https://manual.co.id/wp-content/uploads/2020/01/LawlessMenteng_Di-4-980x719.jpg" alt="Lawless Burger" class="w-full h-64 object-cover">
                 <div class="p-4">
                     <h3 class="text-xl font-semibold mb-2">
-                        <a href="/restaurant/36/" class="text-black hover:text-gray-600">
-                            Lawless Burger
-                        </a>
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Lawless Burger" class="text-black hover:text-gray-600">
+                                Lawless Burger
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/36/" class="text-black hover:text-gray-600">
+                                Lawless Burger
+                            </a>
+                        {% endif %}
                     </h3>
                     <p class="text-sm text-gray-600">Jl. Kemang Selatan VIII No.67K 7, RT.7/RW.2, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12730</p>
                 </div>
@@ -89,9 +105,15 @@
                 <img src="https://lh3.googleusercontent.com/p/AF1QipPBOBazDd1VtTo_AWYMPlzDEdeO6NTvMpeAJxq6=s1360-w1360-h1020" alt="Saigon Street Food" class="w-full h-64 object-cover">
                 <div class="p-4">
                     <h3 class="text-xl font-semibold mb-2">
-                        <a href="/restaurant/26/" class="text-black hover:text-gray-600">
-                            Saigon Street Food
-                        </a>
+                        {% if user.is_staff %}
+                            <a href="/dashboard/resto-menu/Saigon Street Food" class="text-black hover:text-gray-600">
+                                Saigon Street Food
+                            </a>
+                        {% else %}
+                            <a href="/restaurant/26/" class="text-black hover:text-gray-600">
+                                Saigon Street Food
+                            </a>
+                        {% endif %}
                     </h3>
                     <p class="text-sm text-gray-600">Jl. Tebet Barat I No.A5, Tebet Bar., Kec. Tebet, Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12810</p>
                 </div>
@@ -99,7 +121,7 @@
         </div>
     </div>
 </div>
-
+{% if not user.is_staff %}
 <div class="container mx-auto px-4 py-8 flex flex-wrap">
     <!-- Left Directory Sidebar -->
     <div class="w-full lg:w-1/4 pr-4">
@@ -109,7 +131,7 @@
             <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-t-lg px-4 py-1 w-3/4 text-center shadow-md">
                 <h2 class="text-sm font-semibold uppercase text-black">Directory</h2>
             </div>
-
+            
             <!-- Directory Content -->
             <div class="pt-8 px-6 pb-6">
                 <!-- Description -->
@@ -155,7 +177,8 @@
             <a href="/product/" class="text-blue-500 text-sm underline hover:text-blue-700">See All Products →</a>
         </div>
     </div>
-</div>    
+</div> 
+{% endif %}   
 
 <!-- Reviews Section -->
 <div id="review-section" class="bg-gray-100 py-16">
@@ -182,7 +205,7 @@
                         {% if review.review_image %}
                             <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
                         {% else %}
-                            <img src="/static/image/default-review.jpg" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
+                            <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
                         {% endif %}
                         
                         <!-- Link to Full Review -->
