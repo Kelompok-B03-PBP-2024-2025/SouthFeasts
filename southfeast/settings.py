@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-l&u+mzdyn#f#j2qz5voo#rvlqxiono8&syilaf#!$h+)8o1_^u
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "gnade-yuka-southfeast.pbp.cs.ui.ac.id", "southfeast-production.up.railway.app"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "gnade-yuka-southfeast.pbp.cs.ui.ac.id", "southfeast-production.up.railway.app", "10.0.2.2"]
 
 
 # Application definition
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'main',
     'authentication',
     'forum',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -83,11 +85,17 @@ WSGI_APPLICATION = 'southfeast.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# settings.py - Add this fallback database configuration
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://postgres:GbteyuqvsEBucPaFKJPEDOZpRWgSyBvM@junction.proxy.rlwy.net:28555/railway',
         conn_max_age=600,
     )
+} if not DEBUG else {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
@@ -144,5 +152,16 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CSRF_TRUSTED_ORIGINS = [
     'https://southfeast-production.up.railway.app',
     'http://localhost:3000',
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1',
+    'http://10.0.2.2',
+    'http://localhost',
+
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'

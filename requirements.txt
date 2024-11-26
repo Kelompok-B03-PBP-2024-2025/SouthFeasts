@@ -7,3 +7,4 @@ urllib3
 pandas
 dj-database-url
 Pillow
+django-cors-headers
