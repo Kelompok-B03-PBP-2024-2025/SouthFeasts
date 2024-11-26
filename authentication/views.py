@@ -1,10 +1,99 @@
+
+from .forms import UserRegistrationForm
+from .models import UserProfile
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 from .forms import UserRegistrationForm
-from .models import UserProfile
+import json
+from django.contrib.auth import logout as auth_logout
+from django.contrib.auth import authenticate, login as auth_login
 
+# API views for Flutter
+@csrf_exempt
+def api_register(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            password = data.get('password')
+            
+            if User.objects.filter(username=username).exists():
+                return JsonResponse({
+                    'status': False,
+                    'message': 'Username already exists'
+                }, status=400)
+            
+            user = User.objects.create_user(username=username, password=password)
+            return JsonResponse({
+                'status': True,
+                'message': 'Registration successful',
+                'user': {
+                    'id': user.id,
+                    'username': user.username
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': False,
+                'message': str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        'status': False,
+        'message': 'Invalid request method'
+    }, status=405)
+
+@csrf_exempt
+def api_login(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        if user.is_active:
+            auth_login(request, user)
+            # Status login sukses.
+            return JsonResponse({
+                "username": user.username,
+                "is_staff": user.is_staff,
+                "status": True,
+                "message": "Login sukses!"
+                # Tambahkan data lainnya jika ingin mengirim data ke Flutter.
+            }, status=200)
+            
+        else:
+            return JsonResponse({
+                "status": False,
+                "message": "Login gagal, akun dinonaktifkan."
+            }, status=401)
+
+    else:
+        return JsonResponse({
+            "status": False,
+            "message": "Login gagal, periksa kembali email atau kata sandi."
+        }, status=401)
+
+@csrf_exempt
+def api_logout(request):
+    username = request.user.username
+
+    try:
+        auth_logout(request)
+        return JsonResponse({
+            "username": username,
+            "status": True,
+            "message": "Logout berhasil!"
+        }, status=200)
+    except:
+        return JsonResponse({
+        "status": False,
+        "message": "Logout gagal."
+        }, status=401)
+    
 def register(request):
     if request.user.is_authenticated:
         return redirect('main:show_main')
@@ -50,3 +139,4 @@ def logout_user(request):
     response.delete_cookie('user_logged_in')
     messages.info(request, 'You have been logged out.')
     return response
+
