@@ -188,41 +188,56 @@
     <div class="container mx-auto px-4">
         <h2 class="text-3xl font-bold text-center mb-8">User Reviews</h2>
         <p class="text-lg text-center text-gray-600 mb-12">See what others are saying about our menu items.</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {% if reviews %}
-                {% for review in reviews %}
-                    <div class="bg-white text-black rounded-lg shadow-md p-6">
-                        <!-- Reviewer's Name and Rating -->
-                        <div class="flex items-center mb-2">
-                            <p class="font-semibold text-lg">{{ review.user.username }}</p>
-                            <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+
+        <!-- Carousel Wrapper -->
+        <div class="relative max-w-7xl mx-auto">
+            <!-- Left Button -->
+            <button id="scroll-left-btn" class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+                &lt;
+            </button>
+
+            <!-- Reviews Carousel -->
+            <div id="reviews-carousel" class="flex overflow-x-hidden gap-4 mx-12">
+                {% if reviews %}
+                    {% for review in reviews %}
+                        <div class="flex-none w-1/4 bg-white text-black rounded-lg shadow-md p-6">
+                            <!-- Reviewer's Name and Rating -->
+                            <div class="flex items-center mb-2">
+                                <p class="font-semibold text-lg">{{ review.user.username }}</p>
+                                <span class="ml-auto text-yellow-500 font-semibold">{{ review.rating }}/5</span>
+                            </div>
+
+                            <!-- Review Text Snippet -->
+                            <p class="text-gray-700 mb-4 line-clamp-3">
+                                {{ review.review_text|truncatechars:100 }}
+                            </p>
+
+                            <!-- Review Image (if available) -->
+                            {% if review.review_image %}
+                                <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
+                            {% else %}
+                                <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
+                            {% endif %}
+
+                            <!-- Link to Full Review -->
+                            <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
+                                Read Full Review →
+                            </a>
                         </div>
-                        
-                        <!-- Review Text Snippet -->
-                        <p class="text-gray-700 mb-4">
-                            {{ review.review_text|truncatechars:100 }}
-                        </p>
-                        
-                        <!-- Review Image (if available) -->
-                        {% if review.review_image %}
-                            <img src="{{ review.review_image.url }}" alt="Review Image" class="w-full h-32 object-cover rounded-md mb-4">
-                        {% else %}
-                            <img src="/static/images/placeholder.png" alt="Placeholder Image" class="w-full h-32 object-cover rounded-md mb-4">
-                        {% endif %}
-                        
-                        <!-- Link to Full Review -->
-                        <a href="{% url 'review:review_detail' review.id %}" class="text-blue-500 hover:underline">
-                            Read Full Review →
-                        </a>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-center text-gray-600">No reviews available</p>
-            {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-gray-600">No reviews available</p>
+                {% endif %}
+            </div>
+
+            <!-- Right Button -->
+            <button id="scroll-right-btn" class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-800 text-white p-2 rounded-full shadow-md hover:bg-gray-600 focus:outline-none">
+                &gt;
+            </button>
         </div>
     </div>
 </div>
+
 
 <script>
     function scrollToContent() {
@@ -245,10 +260,69 @@
     }
 
     setInterval(changeBackgroundImage, 5000);
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const carousel = document.getElementById("reviews-carousel");
+    const leftButton = document.getElementById("scroll-left-btn");
+    const rightButton = document.getElementById("scroll-right-btn");
+    
+    // Calculate the width of a single item including gap
+    const getItemWidth = () => {
+        const containerWidth = carousel.offsetWidth;
+        return (containerWidth - (3 * 16)) / 4; // 4 items minus 3 gaps (16px each)
+    };
+
+    // Function to check scroll position and update button visibility
+    function updateButtonVisibility() {
+        // Check if we can scroll left
+        if (carousel.scrollLeft <= 0) {
+            leftButton.style.opacity = "0.5";
+            leftButton.style.cursor = "not-allowed";
+        } else {
+            leftButton.style.opacity = "1";
+            leftButton.style.cursor = "pointer";
+        }
+
+        // Check if we can scroll right
+        if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 1) {
+            rightButton.style.opacity = "0.5";
+            rightButton.style.cursor = "not-allowed";
+        } else {
+            rightButton.style.opacity = "1";
+            rightButton.style.cursor = "pointer";
+        }
+    }
+
+    // Add click event listeners to buttons
+    leftButton.addEventListener('click', function() {
+        const scrollAmount = getItemWidth() * 4;
+        carousel.scrollBy({
+            left: -scrollAmount,
+            behavior: "smooth"
+        });
+    });
+
+    rightButton.addEventListener('click', function() {
+        const scrollAmount = getItemWidth() * 4;
+        carousel.scrollBy({
+            left: scrollAmount,
+            behavior: "smooth"
+        });
+    });
+
+    // Add scroll event listener to update button visibility
+    carousel.addEventListener('scroll', updateButtonVisibility);
+
+    // Initial button visibility check
+    updateButtonVisibility();
+
+    // Update on window resize
+    window.addEventListener('resize', updateButtonVisibility);
+});
 </script>
 
 <style>
-    .hover-effect {
+     .hover-effect {
         transition: background-color 0.3s;
     }
     .hover-effect:hover {
@@ -256,6 +330,28 @@
     }
     .transition-colors {
         transition: background-color 0.3s, color 0.3s;
+    }
+    #reviews-carousel {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        scroll-behavior: smooth;
+    }
+    
+    #reviews-carousel::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Smooth transition for button opacity */
+    button {
+        transition: opacity 0.3s ease;
+    }
+
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
 {% endblock %}
