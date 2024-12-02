@@ -143,4 +143,3 @@ def logout_user(request):
     response.delete_cookie('user_logged_in')
     messages.info(request, 'You have been logged out.')
     return response
-
