@@ -1,5 +1,6 @@
 # views.py
 import csv
+import json
 import os
 from django.core.paginator import Paginator
 from django.shortcuts import redirect
@@ -309,6 +310,10 @@ def show_json(request):
 
     menu_items = MenuItem.objects.all()
 
+    # Get distinct categories and kecamatans
+    categories = list(MenuItem.objects.values_list('category', flat=True).distinct())
+    kecamatans = list(MenuItem.objects.values_list('restaurant__kecamatan', flat=True).distinct())
+
     # Terapkan filter
     if search_query:
         menu_items = menu_items.filter(name__icontains=search_query)
@@ -349,9 +354,12 @@ def show_json(request):
         'current_page': page,
         'has_previous': page > 1,
         'has_next': page < total_pages,
+        'categories': categories,  # Add categories list
+        'kecamatans': kecamatans  # Add kecamatans list
     }
 
     return JsonResponse(data)
+
 
 def get_reviews(request, menu_item_id):
     # Tampilkan review untuk menu dari halaman list
@@ -450,3 +458,119 @@ def show_json_restaurant(request):
     }
     
     return JsonResponse(data)
+
+@csrf_exempt
+def create_makanan_flutter(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Get or create restaurant
+            restaurant, created = Restaurant.objects.get_or_create(
+                name=data['restaurant_name'],
+                defaults={
+                    'kecamatan': data['kecamatan'],
+                    'location': data['location']
+                }
+            )
+            
+            # Create menu item
+            menu_item = MenuItem.objects.create(
+                name=data['name'],
+                description=data['description'],
+                price=int(data['price']),
+                image=data['image'],
+                category=data['category'],
+                restaurant=restaurant
+            )
+            
+            return JsonResponse({
+                "status": "success",
+                "message": "Menu item created successfully"
+            }, status=201)
+            
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=405)
+
+@csrf_exempt
+def edit_makanan_flutter(request, id):
+    if request.method == 'POST':
+        try:
+            menu_item = MenuItem.objects.get(pk=id)
+            data = json.loads(request.body)
+            
+            # Update restaurant info if provided
+            if all(key in data for key in ['restaurant_name', 'kecamatan', 'location']):
+                restaurant = menu_item.restaurant
+                restaurant.name = data['restaurant_name']
+                restaurant.kecamatan = data['kecamatan']
+                restaurant.location = data['location']
+                restaurant.save()
+            
+            # Update menu item fields
+            menu_item.name = data.get('name', menu_item.name)
+            menu_item.description = data.get('description', menu_item.description)
+            menu_item.price = float(data.get('price', menu_item.price))
+            menu_item.image = data.get('image', menu_item.image)
+            menu_item.category = data.get('category', menu_item.category)
+            menu_item.save()
+            
+            return JsonResponse({
+                "status": "success",
+                "message": "Menu item updated successfully"
+            }, status=200)
+            
+        except MenuItem.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "Menu item not found"
+            }, status=404)
+            
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=405)
+
+@csrf_exempt
+def delete_makanan_flutter(request, id):
+    if request.method == 'GET':
+        try:
+            menu_item = MenuItem.objects.get(pk=id)
+            menu_item.delete()
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Menu item deleted successfully"
+            }, status=200)
+            
+        except MenuItem.DoesNotExist:
+            return JsonResponse({
+                "status": "error", 
+                "message": "Menu item not found"
+            }, status=404)
+            
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=400)
+            
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=405)
+

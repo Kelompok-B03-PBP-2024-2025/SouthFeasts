@@ -17,36 +17,40 @@ from django.contrib.auth import authenticate, login as auth_login
 @csrf_exempt
 def api_register(request):
     if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
-            
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({
-                    'status': False,
-                    'message': 'Username already exists'
-                }, status=400)
-            
-            user = User.objects.create_user(username=username, password=password)
+        data = json.loads(request.body)
+        username = data['username']
+        password1 = data['password1']
+        password2 = data['password2']
+
+        # Check if the passwords match
+        if password1 != password2:
             return JsonResponse({
-                'status': True,
-                'message': 'Registration successful',
-                'user': {
-                    'id': user.id,
-                    'username': user.username
-                }
-            })
-        except Exception as e:
-            return JsonResponse({
-                'status': False,
-                'message': str(e)
+                "status": False,
+                "message": "Passwords do not match."
             }, status=400)
+        
+        # Check if the username is already taken
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({
+                "status": False,
+                "message": "Username already exists."
+            }, status=400)
+        
+        # Create the new user
+        user = User.objects.create_user(username=username, password=password1)
+        user.save()
+        
+        return JsonResponse({
+            "username": user.username,
+            "status": 'success',
+            "message": "User created successfully!"
+        }, status=200)
     
-    return JsonResponse({
-        'status': False,
-        'message': 'Invalid request method'
-    }, status=405)
+    else:
+        return JsonResponse({
+            "status": False,
+            "message": "Invalid request method."
+        }, status=400)
 
 @csrf_exempt
 def api_login(request):

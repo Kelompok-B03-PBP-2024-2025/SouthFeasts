@@ -91,6 +91,11 @@ DATABASES = {
         default='postgresql://postgres:GbteyuqvsEBucPaFKJPEDOZpRWgSyBvM@junction.proxy.rlwy.net:28555/railway',
         conn_max_age=600,
     )
+} if not DEBUG else {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
