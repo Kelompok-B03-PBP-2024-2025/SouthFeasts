@@ -48,8 +48,8 @@
     <!-- Restaurants Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {% for restaurant in restaurants %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform transform hover:scale-105">
-            <div class="p-6">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-transform transform hover:scale-105 flex flex-col h-full">
+            <div class="p-6 flex flex-col justify-between h-full">
                 <!-- Area -->
                 <div class="uppercase text-sm text-gray-500 mb-2">{{ restaurant.kecamatan }}</div>
                 
@@ -61,12 +61,12 @@
                 </h2>
                 
                 <!-- Location with Background -->
-                <div class="bg-gray-200 p-2 rounded-lg mb-4">
+                <div class="bg-gray-200 p-2 rounded-lg mb-4 h-24 flex items-center">
                     <p class="text-gray-800 text-sm">{{ restaurant.location }}</p>
                 </div>
                 
-                <!-- View Menu Link -->
-                <div class="flex justify-between items-center">
+                <!-- View Menu Link - positioned at the bottom -->
+                <div class="mt-auto">
                     <a href="{% url 'restaurant:restaurant_detail' restaurant.pk %}" 
                        class="text-gray-600 underline hover:text-black transition duration-200 text-sm">
                         View Menu
