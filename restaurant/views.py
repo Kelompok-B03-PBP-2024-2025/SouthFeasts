@@ -141,3 +141,71 @@ def restaurant_detail(request, pk):
     }
     
     return render(request, 'restaurant_detail.html', context)
+
+def remove_empty_restaurants():
+    # Hapus restoran tanpa menu
+    Restaurant.objects.annotate(menu_count=Count('menu_items')).filter(menu_count=0).delete()
+
+def show_json_restaurant(request):
+    # API endpoint untuk data restoran
+
+    # Query restoran dengan statistik menu
+    restaurants = Restaurant.objects.annotate(
+        menu_count=Count('menu_items'),
+        min_price=Min('menu_items__price'),
+        max_price=Max('menu_items__price'),
+        image=Min('menu_items__image'),
+        resto_name=F('name'),
+    )
+    remove_empty_restaurants() # Hapus restoran tanpa menu
+    
+    # Filter berdasarkan request
+    kecamatan = request.GET.get('kecamatan')
+    search_query = request.GET.get('search', '').strip()
+    
+    # Terapkan filter
+    if kecamatan and kecamatan != 'all':
+        restaurants = restaurants.filter(kecamatan__iexact=kecamatan)
+    
+    if search_query:
+        restaurants = restaurants.filter(name__icontains=search_query)
+    
+    # Urutkan berdasarkan nama
+    restaurants = restaurants.order_by('name')
+    
+    # Ambil daftar kecamatan untuk filter
+    kecamatans = (Restaurant.objects
+                  .values_list('kecamatan', flat=True)
+                  .distinct()
+                  .order_by('kecamatan'))
+    
+    # Paginasi: 9 restoran per halaman
+    paginator = Paginator(restaurants, 9)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Format data untuk response JSON
+    restaurants_data = [{
+        'id': restaurant.id,
+        'name': restaurant.resto_name,
+        'kecamatan': restaurant.kecamatan,
+        'location': restaurant.location,
+        'menu_count': restaurant.menu_count,
+        'min_price': restaurant.min_price,
+        'max_price': restaurant.max_price,
+        'image': restaurant.image,
+    } for restaurant in page_obj]
+    
+    # Tambahan informasi paginasi
+    data = {
+        'restaurants': restaurants_data,
+        'kecamatans': list(kecamatans),
+        'selected_kecamatan': kecamatan,
+        'search_query': search_query,
+        'total_pages': paginator.num_pages,
+        'current_page': page_obj.number,
+        'has_previous': page_obj.has_previous(),
+        'has_next': page_obj.has_next(),
+    }
+    
+    return JsonResponse(data)
