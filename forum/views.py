@@ -248,7 +248,6 @@ def delete_comment(request, comment_id):
     
     return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
 
-# Show json buat flutter
 def show_json(request):
     # Filter query parameters
     filter_type = request.GET.get('filter', 'public_articles')
@@ -476,6 +475,3 @@ def delete_question_flutter(request, question_id):
             return JsonResponse({"success": False, "message": str(e)}, status=400)
 
     return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-
-
-   

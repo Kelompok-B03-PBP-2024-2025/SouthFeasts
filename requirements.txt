@@ -1,8 +1,8 @@
 django
 gunicorn
 whitenoise
-psycopg2-binary
 requests
+psycopg2-binary
 urllib3
 pandas
 dj-database-url
