@@ -15,4 +15,12 @@ urlpatterns = [
     path('question/<int:question_id>/', question_detail, name='question_detail'),
     path('answer/<int:answer_id>/delete/', delete_answer, name='delete_answer'),
     path('comment/delete/<int:comment_id>/', delete_comment, name='delete_comment'),
+    # API for Flutter
+    path('api/show_json/', show_json, name='show_json'),
+    path('api/article/create/', create_article_flutter, name='create_article_flutter'),
+    path('api/article/edit/<int:article_id>/', edit_article_flutter, name='edit_article_flutter'),
+    path('api/article/delete/<int:article_id>/', delete_article_flutter, name='delete_article_flutter'),
+    path('api/question/create/', create_question_flutter, name='create_question_flutter'),
+    path('api/question/edit/<int:question_id>/', edit_question_flutter, name='edit_question_flutter'),
+    path('api/question/delete/<int:question_id>/', delete_question_flutter, name='delete_question_flutter'),
 ]
