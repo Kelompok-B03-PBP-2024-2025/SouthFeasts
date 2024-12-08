@@ -4,6 +4,7 @@ from . import views
 app_name = 'wishlist'
 
 urlpatterns = [
+   path('json/', views.show_json, name='show-json'),
     # Collection URLs
     path('', views.collection_list, name='collection-list'),
     path('collection/add/', views.collection_add, name='collection-add'),
@@ -21,4 +22,12 @@ urlpatterns = [
     path('item/<int:item_id>/move/<int:collection_id>/', views.item_move, name='item-move'),
     path('item/<int:item_id>/add-to/<int:collection_id>/', views.add_item_to_collection, name='add-item-to-collection'),
     path('product/', include('product.urls', namespace='product')),
+
+    # Flutter
+    path('flutter/collections/', views.get_collections_flutter, name='flutter-collections'),
+    path('flutter/collections/create/', views.create_collection_flutter, name='flutter-create-collection'),
+    path('flutter/collections/<int:collection_id>/delete/', views.delete_collection_flutter, name='flutter-delete-collection'),
+    path('flutter/wishlist/add/', views.add_to_wishlist_flutter, name='flutter-add-wishlist'),
+    path('flutter/wishlist/<int:item_id>/remove/', views.remove_from_wishlist_flutter, name='flutter-remove-wishlist'),
+    path('flutter/wishlist/move/', views.move_item_flutter, name='flutter-move-item'),
 ]
