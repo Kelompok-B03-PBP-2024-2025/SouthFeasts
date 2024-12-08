@@ -13,6 +13,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 @login_required(login_url='authentication:login')
 def collection_list(request):
@@ -400,3 +402,256 @@ def new_collection_ajax(request):
         "collection_id": new_collection.id,
         "collection_name": new_collection.name,
     }, status=201)
+
+# **FLUTTER**
+@login_required
+def show_json(request):
+    """Returns JSON data of all wishlist collections and their items"""
+    collections = WishlistCollection.objects.filter(
+        user=request.user
+    ).exclude(name="All Wishlist")
+    
+    data = []
+    for collection in collections:
+        # Get items for each collection
+        items_data = []
+        for item in collection.items.all().select_related('menu_item'):
+            item_data = {
+                'id': item.id,
+                'menu_item': {
+                    'id': item.menu_item.id,
+                    'name': item.menu_item.name,
+                    'description': item.menu_item.description,
+                    'price': str(item.menu_item.price),
+                    'image': str(item.menu_item.image.url) if item.menu_item.image else None,
+                    'category': item.menu_item.category.name if item.menu_item.category else None,
+                },
+                'created_at': item.created_at.isoformat(),
+                'updated_at': item.updated_at.isoformat() if hasattr(item, 'updated_at') else None
+            }
+            items_data.append(item_data)
+            
+        # Create collection data
+        collection_data = {
+            'id': collection.id,
+            'name': collection.name,
+            'description': collection.description,
+            'is_default': collection.is_default,
+            'created_at': collection.created_at.isoformat() if hasattr(collection, 'created_at') else None,
+            'updated_at': collection.updated_at.isoformat() if hasattr(collection, 'updated_at') else None,
+            'items_count': len(items_data),
+            'items': items_data
+        }
+        data.append(collection_data)
+    
+    return JsonResponse(
+        {
+            'status': True,
+            'message': 'Success fetching wishlist data',
+            'data': data
+        }, 
+        safe=False
+    )
+
+@login_required
+def get_collections_flutter(request):
+    """Mendapatkan semua koleksi user untuk Flutter"""
+    collections = WishlistCollection.objects.filter(
+        user=request.user
+    ).exclude(name="All Wishlist")
+    
+    data = []
+    for collection in collections:
+        items_data = []
+        for item in collection.items.all().select_related('menu_item'):
+            items_data.append({
+                'id': item.id,
+                'menu_item': {
+                    'id': item.menu_item.id,
+                    'name': item.menu_item.name,
+                    'price': str(item.menu_item.price),
+                    'image': str(item.menu_item.image.url) if item.menu_item.image else None,
+                },
+                'created_at': item.created_at.isoformat()
+            })
+            
+        data.append({
+            'id': collection.id,
+            'name': collection.name,
+            'description': collection.description,
+            'is_default': collection.is_default,
+            'items': items_data
+        })
+    
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
+@login_required
+def create_collection_flutter(request):
+    """Membuat koleksi baru dari Flutter"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        
+        if not name:
+            return JsonResponse({'error': 'Collection name is required'}, status=400)
+            
+        if WishlistCollection.objects.filter(user=request.user, name=name).exists():
+            return JsonResponse({'error': 'Collection name already exists'}, status=400)
+            
+        collection = WishlistCollection.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            is_default=False
+        )
+        
+        return JsonResponse({
+            'id': collection.id,
+            'name': collection.name,
+            'description': collection.description,
+            'is_default': collection.is_default,
+            'items': []
+        }, status=201)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+@csrf_exempt
+@login_required
+def delete_collection_flutter(request, collection_id):
+    """Menghapus koleksi dari Flutter"""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
+    
+    if collection.is_default:
+        return JsonResponse({'error': 'Cannot delete default collection'}, status=400)
+        
+    collection.delete()
+    return JsonResponse({'message': 'Collection deleted successfully'})
+
+@csrf_exempt
+@login_required
+def add_to_wishlist_flutter(request):
+    """Menambahkan item ke wishlist dari Flutter"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        menu_item_id = data.get('menu_item_id')
+        collection_id = data.get('collection_id')
+        
+        if not menu_item_id:
+            return JsonResponse({'error': 'Menu item ID is required'}, status=400)
+            
+        menu_item = get_object_or_404(MenuItem, id=menu_item_id)
+        
+        if not collection_id:
+            collection = WishlistCollection.objects.filter(
+                user=request.user,
+                is_default=True
+            ).first()
+            
+            if not collection:
+                collection = WishlistCollection.objects.create(
+                    user=request.user,
+                    name="My Wishlist",
+                    description="Your default wishlist collection",
+                    is_default=True
+                )
+        else:
+            collection = get_object_or_404(
+                WishlistCollection, 
+                id=collection_id,
+                user=request.user
+            )
+            
+        if WishlistItem.objects.filter(collection=collection, menu_item=menu_item).exists():
+            return JsonResponse({'error': 'Item already in collection'}, status=400)
+            
+        item = WishlistItem.objects.create(
+            collection=collection,
+            menu_item=menu_item
+        )
+        
+        return JsonResponse({
+            'id': item.id,
+            'menu_item': {
+                'id': menu_item.id,
+                'name': menu_item.name,
+                'price': str(menu_item.price),
+                'image': str(menu_item.image.url) if menu_item.image else None,
+            },
+            'created_at': item.created_at.isoformat()
+        }, status=201)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+@csrf_exempt
+@login_required
+def remove_from_wishlist_flutter(request, item_id):
+    """Menghapus item dari wishlist dari Flutter"""
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    item = get_object_or_404(WishlistItem, id=item_id, collection__user=request.user)
+    
+    if item.collection.is_default:
+        WishlistItem.objects.filter(
+            collection__user=request.user,
+            menu_item=item.menu_item
+        ).delete()
+    else:
+        item.delete()
+        
+    return JsonResponse({'message': 'Item removed successfully'})
+
+@csrf_exempt
+@login_required
+def move_item_flutter(request):
+    """Memindahkan item antar koleksi dari Flutter"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        target_collection_id = data.get('target_collection_id')
+        
+        if not all([item_id, target_collection_id]):
+            return JsonResponse({'error': 'Item ID and target collection ID are required'}, status=400)
+            
+        item = get_object_or_404(WishlistItem, id=item_id, collection__user=request.user)
+        target_collection = get_object_or_404(
+            WishlistCollection,
+            id=target_collection_id,
+            user=request.user
+        )
+        
+        if target_collection.is_default:
+            return JsonResponse({'error': 'Cannot move items to default collection'}, status=400)
+            
+        if item.collection.is_default:
+            return JsonResponse({'error': 'Cannot move items from default collection'}, status=400)
+            
+        if WishlistItem.objects.filter(
+            collection=target_collection,
+            menu_item=item.menu_item
+        ).exists():
+            return JsonResponse({'error': 'Item already exists in target collection'}, status=400)
+            
+        item.collection = target_collection
+        item.save()
+        
+        return JsonResponse({'message': 'Item moved successfully'})
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
