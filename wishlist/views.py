@@ -406,60 +406,80 @@ def new_collection_ajax(request):
 # **FLUTTER**
 @login_required
 def show_json(request):
-    """Returns JSON data of all wishlist collections and their items"""
+    """API endpoint untuk data wishlist collections"""
     try:
+        # Get filter parameters
+        collection_type = request.GET.get('type', 'all')  # Filter by collection type (all/default/custom)
+        search_query = request.GET.get('search', '').strip()
+        page = int(request.GET.get('page', 1))
+        per_page = 6  # Items per page
+
+        # Base queryset
         collections = WishlistCollection.objects.filter(
             user=request.user
         ).exclude(name="All Wishlist")
+
+        # Apply filters
+        if search_query:
+            collections = collections.filter(name__icontains=search_query)
+            
+        if collection_type == 'default':
+            collections = collections.filter(is_default=True)
+        elif collection_type == 'custom':
+            collections = collections.filter(is_default=False)
+
+        # Pagination
+        total_items = collections.count()
+        total_pages = (total_items + per_page - 1) // per_page
+        start = (page - 1) * per_page
+        end = start + per_page
         
-        data = []
+        collections = collections[start:end]
+
+        # Format response data
+        results = []
         for collection in collections:
             # Get items for each collection
-            items_data = []
-            for item in collection.items.all().select_related('menu_item'):
-                item_data = {
-                    'id': item.id,
-                    'menu_item': {
-                        'id': item.menu_item.id,
-                        'name': item.menu_item.name,
-                        'description': item.menu_item.description,
-                        'price': str(item.menu_item.price),
-                        # Mengecek apakah category ada dan merupakan objek sebelum mengakses name
-                        'category': item.menu_item.category.name if hasattr(item.menu_item, 'category') and item.menu_item.category else None
-                    },
-                    'created_at': item.created_at.isoformat()
-                }
-                items_data.append(item_data)
-                
-            # Create collection data
+            items = collection.items.all().select_related('menu_item')
+            
+            items_data = [{
+                'id': item.id,
+                'menu_item': {
+                    'id': item.menu_item.id,
+                    'name': item.menu_item.name,
+                    'price': str(item.menu_item.price)
+                },
+                'created_at': item.created_at.strftime('%d %b, %Y')
+            } for item in items]
+
+            # Collection data
             collection_data = {
                 'id': collection.id,
                 'name': collection.name,
-                'description': collection.description,
+                'description': collection.description or "",
                 'is_default': collection.is_default,
-                'created_at': collection.created_at.isoformat(), # Menggunakan collection.created_at bukan item.created_at
-                'items_count': len(items_data),
-                'items': items_data
+                'items': items_data,
+                'items_count': len(items_data)
             }
-            data.append(collection_data)
-        
-        return JsonResponse(
-            {
-                'status': True,
-                'message': 'Success fetching wishlist data',
-                'data': data
-            }, 
-            safe=False
-        )
-    
+            results.append(collection_data)
+
+        # Return formatted response
+        return JsonResponse({
+            'results': results,
+            'total_pages': total_pages,
+            'current_page': page,
+            'has_previous': page > 1,
+            'has_next': page < total_pages,
+            'total_items': total_items,
+            'filter_type': collection_type,
+            'search_query': search_query
+        })
+
     except Exception as e:
-        return JsonResponse(
-            {
-                'status': False,
-                'message': str(e)
-            }, 
-            status=500
-        )
+        return JsonResponse({
+            'status': False,
+            'message': str(e)
+        }, status=500)
 
 @login_required
 def get_collections_flutter(request):
