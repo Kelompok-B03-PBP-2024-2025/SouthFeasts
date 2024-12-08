@@ -407,51 +407,58 @@ def new_collection_ajax(request):
 @login_required
 def show_json(request):
     """Returns JSON data of all wishlist collections and their items"""
-    collections = WishlistCollection.objects.filter(
-        user=request.user
-    ).exclude(name="All Wishlist")
-    
-    data = []
-    for collection in collections:
-        # Get items for each collection
-        items_data = []
-        for item in collection.items.all().select_related('menu_item'):
-            item_data = {
-                'id': item.id,
-                'menu_item': {
-                    'id': item.menu_item.id,
-                    'name': item.menu_item.name,
-                    'description': item.menu_item.description,
-                    'price': str(item.menu_item.price),
-                    'image': str(item.menu_item.image.url) if item.menu_item.image else None,
-                    'category': item.menu_item.category.name if item.menu_item.category else None,
-                },
+    try:
+        collections = WishlistCollection.objects.filter(
+            user=request.user
+        ).exclude(name="All Wishlist")
+        
+        data = []
+        for collection in collections:
+            # Get items for each collection
+            items_data = []
+            for item in collection.items.all().select_related('menu_item'):
+                item_data = {
+                    'id': item.id,
+                    'menu_item': {
+                        'id': item.menu_item.id,
+                        'name': item.menu_item.name,
+                        'description': item.menu_item.description,
+                        'price': str(item.menu_item.price),
+                        'category': item.menu_item.category.name if item.menu_item.category else None,
+                    },
+                    'created_at': item.created_at.isoformat()
+                }
+                items_data.append(item_data)
+                
+            # Create collection data
+            collection_data = {
+                'id': collection.id,
+                'name': collection.name,
+                'description': collection.description,
+                'is_default': collection.is_default,
                 'created_at': item.created_at.isoformat(),
-                'updated_at': item.updated_at.isoformat() if hasattr(item, 'updated_at') else None
+                'items_count': len(items_data),
+                'items': items_data
             }
-            items_data.append(item_data)
-            
-        # Create collection data
-        collection_data = {
-            'id': collection.id,
-            'name': collection.name,
-            'description': collection.description,
-            'is_default': collection.is_default,
-            'created_at': collection.created_at.isoformat() if hasattr(collection, 'created_at') else None,
-            'updated_at': collection.updated_at.isoformat() if hasattr(collection, 'updated_at') else None,
-            'items_count': len(items_data),
-            'items': items_data
-        }
-        data.append(collection_data)
+            data.append(collection_data)
+        
+        return JsonResponse(
+            {
+                'status': True,
+                'message': 'Success fetching wishlist data',
+                'data': data
+            }, 
+            safe=False
+        )
     
-    return JsonResponse(
-        {
-            'status': True,
-            'message': 'Success fetching wishlist data',
-            'data': data
-        }, 
-        safe=False
-    )
+    except Exception as e:
+        return JsonResponse(
+            {
+                'status': False,
+                'message': str(e)
+            }, 
+            status=500
+        )
 
 @login_required
 def get_collections_flutter(request):
