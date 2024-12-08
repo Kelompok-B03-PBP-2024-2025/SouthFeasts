@@ -424,7 +424,8 @@ def show_json(request):
                         'name': item.menu_item.name,
                         'description': item.menu_item.description,
                         'price': str(item.menu_item.price),
-                        'category': item.menu_item.category.name if item.menu_item.category else None,
+                        # Mengecek apakah category ada dan merupakan objek sebelum mengakses name
+                        'category': item.menu_item.category.name if hasattr(item.menu_item, 'category') and item.menu_item.category else None
                     },
                     'created_at': item.created_at.isoformat()
                 }
@@ -436,7 +437,7 @@ def show_json(request):
                 'name': collection.name,
                 'description': collection.description,
                 'is_default': collection.is_default,
-                'created_at': item.created_at.isoformat(),
+                'created_at': collection.created_at.isoformat(), # Menggunakan collection.created_at bukan item.created_at
                 'items_count': len(items_data),
                 'items': items_data
             }
