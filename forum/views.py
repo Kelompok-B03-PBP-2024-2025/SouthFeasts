@@ -247,9 +247,8 @@ def delete_comment(request, comment_id):
         return JsonResponse({'success': True, 'message': 'Comment deleted successfully'})
     
     return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-
-def show_json(request):
-    # Filter query parameters
+    
+def show_json_article(request):
     filter_type = request.GET.get('filter', 'public_articles')
     search_query = request.GET.get('search', '').strip()
     page = int(request.GET.get('page', 1))
@@ -260,12 +259,12 @@ def show_json(request):
         queryset = Article.objects.all().order_by('-created_at')
     elif filter_type == 'your_articles' and request.user.is_authenticated:
         queryset = Article.objects.filter(user=request.user).order_by('-created_at')
-    elif filter_type == 'public_qna':
-        queryset = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
-    elif filter_type == 'your_qna' and request.user.is_authenticated:
-        queryset = Question.objects.filter(user=request.user).annotate(total_answers=Count('answers')).order_by('-created_at')
     else:
         queryset = Article.objects.none()
+
+    # Apply search if provided
+    if search_query:
+        queryset = queryset.filter(title__icontains=search_query)
 
     # Pagination logic
     start = (page - 1) * per_page
@@ -274,26 +273,16 @@ def show_json(request):
     total_pages = (total_items + per_page - 1) // per_page
     queryset = queryset[start:end]
 
-    # Format JSON response
-    if filter_type in ['public_articles', 'your_articles']:
-        results = [{
-            'id': item.id,
-            'title': item.title,
-            'content': item.content[:100],  # Truncate content for preview
-            'thumbnail_img': item.get_thumbnail() or '/static/image/default-thumbnail.jpg',
-            'author': item.user.username,
-            'created_at': item.created_at.strftime('%d %b, %Y'),
-            'url': reverse('forum:article_detail', args=[item.id])
-        } for item in queryset]
-    else:
-        results = [{
-            'id': item.id,
-            'title': item.title,
-            'question': item.question[:100],  # Truncate question for preview
-            'total_answers': item.total_answers,
-            'created_at': item.created_at.strftime('%d %b, %Y'),
-            'url': reverse('forum:question_detail', args=[item.id])
-        } for item in queryset]
+    # Format results
+    results = [{
+        'id': item.id,
+        'title': item.title,
+        'content': item.content[:100],
+        'thumbnail_img': item.get_thumbnail() or '/static/image/default-thumbnail.jpg',
+        'author': item.user.username,
+        'created_at': item.created_at.strftime('%d %b, %Y'),
+        'url': reverse('forum:article_detail', args=[item.id])
+    } for item in queryset]
 
     return JsonResponse({
         'results': results,
@@ -303,7 +292,53 @@ def show_json(request):
         'has_next': page < total_pages,
         'filter_type': filter_type,
         'search_query': search_query
-    })
+    }, json_dumps_params={'ensure_ascii': False})
+
+def show_json_qna(request):
+    filter_type = request.GET.get('filter', 'public_qna')
+    search_query = request.GET.get('search', '').strip()
+    page = int(request.GET.get('page', 1))
+    per_page = 6
+
+    # Initialize queryset based on filter type
+    if filter_type == 'public_qna':
+        queryset = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
+    elif filter_type == 'your_qna' and request.user.is_authenticated:
+        queryset = Question.objects.filter(user=request.user).annotate(total_answers=Count('answers')).order_by('-created_at')
+    else:
+        queryset = Question.objects.none()
+
+    # Apply search if provided
+    if search_query:
+        queryset = queryset.filter(title__icontains=search_query)
+
+    # Pagination logic
+    start = (page - 1) * per_page
+    end = start + per_page
+    total_items = queryset.count()
+    total_pages = (total_items + per_page - 1) // per_page
+    queryset = queryset[start:end]
+
+    # Format results
+    results = [{
+        'id': item.id,
+        'title': item.title,
+        'question': item.question[:100],
+        'total_answers': item.total_answers,
+        'author': item.user.username,
+        'created_at': item.created_at.strftime('%d %b, %Y'),
+        'url': reverse('forum:question_detail', args=[item.id])
+    } for item in queryset]
+
+    return JsonResponse({
+        'results': results,
+        'total_pages': total_pages,
+        'current_page': page,
+        'has_previous': page > 1,
+        'has_next': page < total_pages,
+        'filter_type': filter_type,
+        'search_query': search_query
+    }, json_dumps_params={'ensure_ascii': False})
 
 from django.views.decorators.csrf import csrf_exempt
 import json
