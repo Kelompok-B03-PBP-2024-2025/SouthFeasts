@@ -510,3 +510,20 @@ def delete_question_flutter(request, question_id):
             return JsonResponse({"success": False, "message": str(e)}, status=400)
 
     return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def get_article_by_id_flutter(request, article_id):
+    try:
+        article = Article.objects.get(pk=article_id)
+        return JsonResponse({
+            "id": article.id,
+            "title": article.title,
+            "content": article.content,
+            "thumbnail_img": article.get_thumbnail() or '/static/image/default-thumbnail.jpg',
+            "author": article.user.username,
+            "created_at": article.created_at.strftime('%d %b, %Y'),
+        })
+    except Article.DoesNotExist:
+        return JsonResponse({"error": "Article not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
