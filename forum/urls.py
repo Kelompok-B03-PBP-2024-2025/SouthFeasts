@@ -24,4 +24,5 @@ urlpatterns = [
     path('api/question/create/', create_question_flutter, name='create_question_flutter'),
     path('api/question/edit/<int:question_id>/', edit_question_flutter, name='edit_question_flutter'),
     path('api/question/delete/<int:question_id>/', delete_question_flutter, name='delete_question_flutter'),
+    path('article/<int:article_id>/', get_article_by_id_flutter, name='get_article_by_id_flutter'),
 ]
