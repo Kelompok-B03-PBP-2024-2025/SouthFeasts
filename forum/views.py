@@ -277,7 +277,7 @@ def show_json_article(request):
     results = [{
         'id': item.id,
         'title': item.title,
-        'content': item.content[:100],
+        'content': item.content,
         'thumbnail_img': item.get_thumbnail() or '/static/image/default-thumbnail.jpg',
         'author': item.user.username,
         'created_at': item.created_at.strftime('%d %b, %Y'),
@@ -323,7 +323,7 @@ def show_json_qna(request):
     results = [{
         'id': item.id,
         'title': item.title,
-        'question': item.question[:100],
+        'question': item.question,
         'total_answers': item.total_answers,
         'author': item.user.username,
         'created_at': item.created_at.strftime('%d %b, %Y'),
