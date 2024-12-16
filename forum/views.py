@@ -5,6 +5,9 @@ from forum.models import Article, Comment, Question, Answer
 from forum.forms import ArticleForm, CommentForm, QuestionForm, AnswerForm
 from django.urls import reverse
 from django.db.models import Count
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def show_main(request):
     user = request.user
@@ -247,119 +250,160 @@ def delete_comment(request, comment_id):
         return JsonResponse({'success': True, 'message': 'Comment deleted successfully'})
     
     return JsonResponse({'success': False, 'message': 'Unauthorized'}, status=403)
-    
+
 def show_json_article(request):
     filter_type = request.GET.get('filter', 'public_articles')
-    search_query = request.GET.get('search', '').strip()
-    page = int(request.GET.get('page', 1))
-    per_page = 6
-
-    # Initialize queryset based on filter type
+    
     if filter_type == 'public_articles':
-        queryset = Article.objects.all().order_by('-created_at')
+        queryset = Article.objects.all()
     elif filter_type == 'your_articles' and request.user.is_authenticated:
-        queryset = Article.objects.filter(user=request.user).order_by('-created_at')
+        queryset = Article.objects.filter(user=request.user)
     else:
         queryset = Article.objects.none()
 
-    # Apply search if provided
-    if search_query:
-        queryset = queryset.filter(title__icontains=search_query)
+    # Optimize query
+    queryset = queryset.prefetch_related('comments__user').order_by('-created_at')
 
-    # Pagination logic
-    start = (page - 1) * per_page
-    end = start + per_page
-    total_items = queryset.count()
-    total_pages = (total_items + per_page - 1) // per_page
-    queryset = queryset[start:end]
+    articles = []
+    for article in queryset:
+        comments = []
+        for comment in article.comments.all():
+            comments.append({
+                "id": comment.id,
+                "content": comment.content,
+                "author": comment.user.username,
+                "created_at": comment.created_at.isoformat()  # Gunakan ISO format
+            })
+            
+        article_data = {
+            "model": "article",
+            "pk": str(article.id),
+            "fields": {
+                "title": article.title,
+                "content": article.content,
+                "thumbnail_img": article.get_thumbnail(),
+                "author": article.user.username,
+                "created_at": article.created_at.isoformat(),  # Gunakan ISO format
+                "comments": comments,
+                "can_edit": request.user == article.user if request.user.is_authenticated else False
+            }
+        }
+        articles.append(article_data)
 
-    # Format results
-    results = [{
-        'id': item.id,
-        'title': item.title,
-        'content': item.content,
-        'thumbnail_img': item.get_thumbnail() or '/static/image/default-thumbnail.jpg',
-        'author': item.user.username,
-        'created_at': item.created_at.strftime('%d %b, %Y'),
-        'url': reverse('forum:article_detail', args=[item.id])
-    } for item in queryset]
-
-    return JsonResponse({
-        'results': results,
-        'total_pages': total_pages,
-        'current_page': page,
-        'has_previous': page > 1,
-        'has_next': page < total_pages,
-        'filter_type': filter_type,
-        'search_query': search_query
-    }, json_dumps_params={'ensure_ascii': False})
+    return JsonResponse(articles, safe=False, json_dumps_params={
+        'ensure_ascii': False,
+        'indent': 2
+    })
 
 def show_json_qna(request):
     filter_type = request.GET.get('filter', 'public_qna')
-    search_query = request.GET.get('search', '').strip()
     page = int(request.GET.get('page', 1))
+    question_id = request.GET.get('question_id')
     per_page = 6
 
-    # Initialize queryset based on filter type
+    if question_id:
+        try:
+            question = Question.objects.get(pk=question_id)
+            answers = question.answers.select_related('user').order_by('-created_at')
+            
+            formatted_answers = [{
+                'model': 'answer',
+                'pk': str(answer.id),
+                'fields': {
+                    'content': answer.content,
+                    'author': answer.user.username,
+                    'created_at': answer.created_at.strftime('%d %b, %Y'),
+                    'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                }
+            } for answer in answers]
+
+            return JsonResponse({
+                'model': 'question',
+                'pk': str(question.id),
+                'fields': {
+                    'title': question.title,
+                    'question': question.question,
+                    'author': question.user.username,
+                    'created_at': question.created_at.strftime('%d %b, %Y'),
+                    'answered': question.answered,
+                    'can_edit': request.user == question.user if request.user.is_authenticated else False,
+                    'answers': formatted_answers,
+                    'total_answers': len(formatted_answers)
+                }
+            }, json_dumps_params={'ensure_ascii': False})
+        except Question.DoesNotExist:
+            return JsonResponse({'error': 'Question not found'}, status=404)
+
     if filter_type == 'public_qna':
-        queryset = Question.objects.annotate(total_answers=Count('answers')).order_by('-created_at')
+        queryset = Question.objects.all()
     elif filter_type == 'your_qna' and request.user.is_authenticated:
-        queryset = Question.objects.filter(user=request.user).annotate(total_answers=Count('answers')).order_by('-created_at')
+        queryset = Question.objects.filter(user=request.user)
     else:
         queryset = Question.objects.none()
 
-    # Apply search if provided
-    if search_query:
-        queryset = queryset.filter(title__icontains=search_query)
+    # Optimize query with prefetch_related
+    queryset = queryset.prefetch_related('answers__user').annotate(
+        answer_count=Count('answers')
+    ).order_by('-created_at')
 
-    # Pagination logic
-    start = (page - 1) * per_page
-    end = start + per_page
-    total_items = queryset.count()
-    total_pages = (total_items + per_page - 1) // per_page
-    queryset = queryset[start:end]
+    paginator = Paginator(queryset, per_page)
+    current_page = paginator.get_page(page)
 
-    # Format results
     results = [{
-        'id': item.id,
-        'title': item.title,
-        'question': item.question,
-        'total_answers': item.total_answers,
-        'author': item.user.username,
-        'created_at': item.created_at.strftime('%d %b, %Y'),
-        'url': reverse('forum:question_detail', args=[item.id])
-    } for item in queryset]
+        'model': 'question',
+        'pk': str(question.id),
+        'fields': {
+            'title': question.title,
+            'question': question.question,
+            'author': question.user.username,
+            'created_at': question.created_at.strftime('%d %b, %Y'),
+            'answered': question.answered,
+            'answer_count': question.answer_count,
+            'url': reverse('forum:question_detail', args=[question.id]),
+            'can_edit': request.user == question.user if request.user.is_authenticated else False,
+            'answers': [{
+                'model': 'answer',
+                'pk': str(answer.id),
+                'fields': {
+                    'content': answer.content,
+                    'author': answer.user.username,
+                    'created_at': answer.created_at.strftime('%d %b, %Y'),
+                    'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                }
+            } for answer in question.answers.all()]
+        }
+    } for question in current_page]
 
     return JsonResponse({
         'results': results,
-        'total_pages': total_pages,
+        'total_pages': paginator.num_pages,
         'current_page': page,
-        'has_previous': page > 1,
-        'has_next': page < total_pages,
-        'filter_type': filter_type,
-        'search_query': search_query
+        'has_previous': current_page.has_previous(),
+        'has_next': current_page.has_next(),
+        'filter_type': filter_type
     }, json_dumps_params={'ensure_ascii': False})
 
-from django.views.decorators.csrf import csrf_exempt
-import json
-
 @csrf_exempt
-def create_article_flutter(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user = request.user
-
-            if not user.is_authenticated:
+def article_flutter(request, article_id=None):
+    try:
+        # CREATE
+        if request.method == 'POST' and not article_id:
+            if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
 
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            thumbnail = request.FILES.get('thumbnail')
+
             article = Article.objects.create(
-                title=data['title'],
-                content=data['content'],
-                user=user,
-                thumbnail_file=data.get('thumbnail_file')  # Optional thumbnail
+                title=title,
+                content=content,
+                user=request.user,
+                thumbnail_file=thumbnail if thumbnail else None
             )
 
+            base_url = request.build_absolute_uri('/').rstrip('/')
+            
             return JsonResponse({
                 "success": True,
                 "message": "Article created successfully",
@@ -367,31 +411,32 @@ def create_article_flutter(request):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
+                    "thumbnail_img": base_url + article.get_thumbnail(),
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
 
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-
-@csrf_exempt
-def edit_article_flutter(request, article_id):
-    if request.method == 'POST':
-        try:
+        # EDIT
+        elif request.method == 'POST' and article_id:
             article = Article.objects.get(pk=article_id)
-
+            
             if request.user != article.user:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            data = json.loads(request.body)
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            thumbnail = request.FILES.get('thumbnail')
 
-            article.title = data.get('title', article.title)
-            article.content = data.get('content', article.content)
-            if 'thumbnail_file' in data:
-                article.thumbnail_file = data['thumbnail_file']
-
+            if title:
+                article.title = title
+            if content:
+                article.content = content
+            if thumbnail:
+                article.thumbnail_file = thumbnail
+            
             article.save()
+
+            base_url = request.build_absolute_uri('/').rstrip('/')
 
             return JsonResponse({
                 "success": True,
@@ -400,49 +445,41 @@ def edit_article_flutter(request, article_id):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
+                    "thumbnail_img": base_url + article.get_thumbnail(),
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
-            }, status=200)
-        except Article.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Article not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
+            })
 
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-
-@csrf_exempt
-def delete_article_flutter(request, article_id):
-    if request.method == 'DELETE':
-        try:
+        # DELETE
+        elif request.method == 'DELETE' and article_id:
             article = Article.objects.get(pk=article_id)
-
+            
             if request.user != article.user and not request.user.is_staff:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
             article.delete()
+            return JsonResponse({"success": True, "message": "Article deleted successfully"})
 
-            return JsonResponse({"success": True, "message": "Article deleted successfully"}, status=200)
-        except Article.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Article not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+        return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+        
+    except Article.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Article not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
 
 @csrf_exempt
-def create_question_flutter(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            user = request.user
-
-            if not user.is_authenticated:
+def question_flutter(request, question_id=None):
+    try:
+        # CREATE
+        if request.method == 'POST' and not question_id:
+            if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
 
+            data = json.loads(request.body)
             question = Question.objects.create(
                 title=data['title'],
                 question=data['question'],
-                user=user
+                user=request.user
             )
 
             return JsonResponse({
@@ -455,22 +492,15 @@ def create_question_flutter(request):
                     "created_at": question.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
 
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-
-@csrf_exempt
-def edit_question_flutter(request, question_id):
-    if request.method == 'POST':
-        try:
+        # EDIT
+        elif request.method == 'POST' and question_id:
             question = Question.objects.get(pk=question_id)
-
+            
             if request.user != question.user:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
             data = json.loads(request.body)
-
             question.title = data.get('title', question.title)
             question.question = data.get('question', question.question)
             question.save()
@@ -484,46 +514,124 @@ def edit_question_flutter(request, question_id):
                     "question": question.question,
                     "created_at": question.created_at.strftime('%d %b, %Y')
                 }
-            }, status=200)
-        except Question.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Question not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
+            })
 
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-
-@csrf_exempt
-def delete_question_flutter(request, question_id):
-    if request.method == 'DELETE':
-        try:
+        # DELETE
+        elif request.method == 'DELETE' and question_id:
             question = Question.objects.get(pk=question_id)
-
+            
             if request.user != question.user and not request.user.is_staff:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
             question.delete()
+            return JsonResponse({"success": True, "message": "Question deleted successfully"})
 
-            return JsonResponse({"success": True, "message": "Question deleted successfully"}, status=200)
-        except Question.DoesNotExist:
-            return JsonResponse({"success": False, "message": "Question not found"}, status=404)
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=400)
+    except Question.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Question not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
 
     return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
 
 @csrf_exempt
-def get_article_by_id_flutter(request, article_id):
+def comment_flutter(request, comment_id=None):
     try:
-        article = Article.objects.get(pk=article_id)
-        return JsonResponse({
-            "id": article.id,
-            "title": article.title,
-            "content": article.content,
-            "thumbnail_img": article.get_thumbnail() or '/static/image/default-thumbnail.jpg',
-            "author": article.user.username,
-            "created_at": article.created_at.strftime('%d %b, %Y'),
-        })
-    except Article.DoesNotExist:
-        return JsonResponse({"error": "Article not found"}, status=404)
+        # CREATE
+        if request.method == 'POST' and not comment_id:
+            if not request.user.is_authenticated:
+                return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
+
+            data = json.loads(request.body)
+            article = Article.objects.get(pk=data['article_id'])
+
+            comment = Comment.objects.create(
+                article=article,
+                user=request.user,
+                content=data['content']
+            )
+
+            return JsonResponse({
+                "success": True,
+                "message": "Comment created successfully",
+                "comment": {
+                    "id": comment.id,
+                    "content": comment.content,
+                    "author": comment.user.username,
+                    "created_at": comment.created_at.strftime('%d %b, %Y'),
+                    "can_edit": True
+                }
+            }, status=201)
+
+        # DELETE
+        elif request.method == 'DELETE' and comment_id:
+            comment = Comment.objects.get(pk=comment_id)
+            
+            if request.user != comment.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+
+            comment.delete()
+            return JsonResponse({"success": True, "message": "Comment deleted successfully"})
+
+    except Comment.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Comment not found"}, status=404)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def answer_flutter(request, answer_id=None):
+    try:
+        # CREATE
+        if request.method == 'POST' and not answer_id:
+            if not request.user.is_authenticated:
+                return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
+
+            data = json.loads(request.body)
+            question = Question.objects.get(pk=data['question_id'])
+
+            answer = Answer.objects.create(
+                question=question,
+                user=request.user,
+                content=data['content']
+            )
+
+            # Update question answered status
+            question.answered = True
+            question.save()
+
+            return JsonResponse({
+                "success": True,
+                "message": "Answer created successfully",
+                "answer": {
+                    "id": answer.id,
+                    "content": answer.content,
+                    "author": answer.user.username,
+                    "created_at": answer.created_at.strftime('%d %b, %Y'),
+                    "can_edit": True
+                }
+            }, status=201)
+
+        # DELETE
+        elif request.method == 'DELETE' and answer_id:
+            answer = Answer.objects.get(pk=answer_id)
+            
+            if request.user != answer.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+
+            question = answer.question
+            answer.delete()
+
+            # Update question answered status if no answers remain
+            if question.answers.count() == 0:
+                question.answered = False
+                question.save()
+
+            return JsonResponse({"success": True, "message": "Answer deleted successfully"})
+
+    except Answer.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Answer not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
