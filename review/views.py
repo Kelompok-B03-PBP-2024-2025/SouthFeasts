@@ -55,7 +55,6 @@ def all_reviews(request):
 #         return redirect('product:menu_detail', menu_item.id)
 
 #     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
-
 @csrf_exempt
 @login_required
 @require_POST
@@ -64,7 +63,7 @@ def create_review(request, item_id):
 
     review_text = request.POST.get("review_text")
     rating = request.POST.get("rating")
-    review_image = request.FILES.get("review_image")
+    image_url = request.POST.get("image_url")  # Retrieve image URL from POST data
     user = request.user
 
     # Create and save the new review entry
@@ -72,7 +71,7 @@ def create_review(request, item_id):
         menu_item=menu_item,
         review_text=review_text,
         rating=rating,
-        review_image=review_image,
+        image_url=image_url,  # Save image URL in the model
         user=user
     )
     new_review.save()
@@ -83,7 +82,7 @@ def create_review(request, item_id):
         "user": user.username,
         "review_text": new_review.review_text,
         "rating": new_review.rating,
-        "review_image": new_review.review_image.url if new_review.review_image else None
+        "image_url": new_review.image_url  # Return the image URL in the response
     })
 
 def review_detail(request, review_id):
@@ -182,8 +181,7 @@ def show_json(request):
         }
         for review in reviews_page
     ]
-    
-    
+
     response_data = {
         'reviews': reviews_data,
         'pagination': {
