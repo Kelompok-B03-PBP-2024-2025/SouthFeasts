@@ -147,27 +147,20 @@ def delete_review(request, review_id):
     
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
+@csrf_exempt
 @require_GET
 def show_json(request):
-    search_query = request.GET.get('search', '').strip()  # Mendapatkan query pencarian dari URL
+    search_query = request.GET.get('search', '')  # Ambil query pencarian dari parameter GET
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
+
+    # Filter review berdasarkan nama produk atau teks ulasan jika ada query pencarian
     if search_query:
         reviews = reviews.filter(
-            Q(menu_item__name__icontains=search_query) | 
-            Q(review_text__icontains=search_query)       
+            Q(menu_item__name__icontains=search_query) |  # Filter berdasarkan nama produk
+            Q(review_text__icontains=search_query)        # Filter berdasarkan teks ulasan
         )
     
-    page = request.GET.get('page', 1)
-    per_page = request.GET.get('per_page', 10) 
-    paginator = Paginator(reviews, per_page)
-    
-    try:
-        reviews_page = paginator.page(page)
-    except PageNotAnInteger:
-        reviews_page = paginator.page(1)
-    except EmptyPage:
-        reviews_page = paginator.page(paginator.num_pages)
-    
+    # Buat list of dictionaries dengan detail review
     reviews_data = [
         {
             'id': review.id,
@@ -175,62 +168,79 @@ def show_json(request):
             'user': review.user.username,
             'review_text': review.review_text,
             'rating': review.rating,
+            'image_url': review.image_url,  # Tambahkan image_url
             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            'updated_at': review.updated_at.strftime('%Y-%m-%d %H:%M:%S'),
         }
-        for review in reviews_page
+        for review in reviews
     ]
-
-    response_data = {
-        'reviews': reviews_data,
-        'pagination': {
-            'current_page': reviews_page.number,
-            'total_pages': paginator.num_pages,
-            'total_reviews': paginator.count,
-            'per_page': per_page,
-        }
-    }
     
-    return JsonResponse(response_data, status=200)
+    return JsonResponse(reviews_data, safe=False)  # safe=False untuk mengembalikan list
 
 @csrf_exempt
-@login_required  # Pastikan pengguna terautentikasi
-def create_review_flutter(request):
-    if request.method == 'POST':
+def create_review_flutter(request, item_id):
+    if request.method == "POST":
         try:
-            # Parsing JSON data
-            data = json.loads(request.body)
-            menu_item_id = data.get('menu_item')
-            rating = data.get('rating')
-            review_text = data.get('review_text', '')
+            # Parse JSON body
+            data = json.loads(request.body.decode("utf-8"))
+            
+            # Validate required fields
+            review_text = data.get("review_text")
+            rating = data.get("rating")
+            user_id = data.get("user_id")
+            image_url = data.get("image_url")  # Ambil image_url jika tersedia
+            
+            if not review_text or not rating or not user_id:
+                return JsonResponse({
+                    "success": False,
+                    "error": "Missing required fields: review_text, rating, or user_id"
+                }, status=400)
+            
+            # Retrieve menu_item and user
+            menu_item = MenuItem.objects.get(pk=item_id)
+            user = settings.AUTH_USER_MODEL.objects.get(pk=user_id)
 
-            # Validasi data
-            if not menu_item_id or not rating:
-                return JsonResponse({"status": "error", "message": "Missing required fields"}, status=400)
-
-            # Mendapatkan objek MenuItem
-            menu_item_obj = MenuItem.objects.get(pk=menu_item_id)
-
-            # Mengonversi rating ke float dan validasi
-            rating_value = float(rating)
-            if rating_value < 1.0 or rating_value > 5.0:
-                return JsonResponse({"status": "error", "message": "Rating must be between 1.0 and 5.0"}, status=400)
-
-            # Membuat objek ReviewEntry tanpa gambar
-            new_review = ReviewEntry.objects.create(
-                user=request.user,
-                menu_item=menu_item_obj,
-                rating=rating_value,
-                review_text=review_text
+            # Create and save the new review entry
+            new_review = ReviewEntry(
+                menu_item=menu_item,
+                review_text=review_text,
+                rating=rating,
+                user=user,
+                image_url=image_url  # Tambahkan image_url ke ReviewEntry
             )
+            new_review.save()
 
-            return JsonResponse({"status": "success"}, status=200)
-
+            return JsonResponse({
+                "success": True,
+                "message": "Review created successfully",
+                "data": {
+                    "id": new_review.id,
+                    "menu_item": new_review.menu_item.name,
+                    "user": new_review.user.username,
+                    "review_text": new_review.review_text,
+                    "rating": new_review.rating,
+                    "image_url": new_review.image_url,  # Sertakan image_url di respons
+                    "created_at": new_review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                }
+            })
         except MenuItem.DoesNotExist:
-            return JsonResponse({"status": "error", "message": "Menu item not found"}, status=404)
-        except ValueError as ve:
-            return JsonResponse({"status": "error", "message": str(ve)}, status=400)
+            return JsonResponse({
+                "success": False,
+                "error": "Menu item not found"
+            }, status=404)
+        except settings.AUTH_USER_MODEL.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "error": "User not found"
+            }, status=404)
         except Exception as e:
-            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=500)
     else:
-        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+        return JsonResponse({
+            "success": False,
+            "error": "Invalid HTTP method. Use POST."
+        }, status=405)
+
+
