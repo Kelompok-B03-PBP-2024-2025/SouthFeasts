@@ -183,6 +183,7 @@ def show_json(request):
         for review in reviews_page
     ]
     
+    
     response_data = {
         'reviews': reviews_data,
         'pagination': {
