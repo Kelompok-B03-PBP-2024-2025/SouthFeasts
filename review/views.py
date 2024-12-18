@@ -56,7 +56,6 @@ def all_reviews(request):
 
 #     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
 @csrf_exempt
-@login_required
 @require_POST
 def create_review(request, item_id):
     menu_item = get_object_or_404(MenuItem, pk=item_id)
