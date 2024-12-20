@@ -39,8 +39,7 @@ def remove_empty_restaurants():
     Restaurant.objects.annotate(menu_count=Count('menu_items')).filter(menu_count=0).delete()
 
 def show_json_restaurant(request):
-    # API endpoint untuk data restoran
-
+        # API endpoint untuk data restoran
     # Query restoran dengan statistik menu
     restaurants = Restaurant.objects.annotate(
         menu_count=Count('menu_items'),
@@ -77,16 +76,35 @@ def show_json_restaurant(request):
     page_obj = paginator.get_page(page_number)
     
     # Format data untuk response JSON
-    restaurants_data = [{
-        'id': restaurant.id,
-        'name': restaurant.resto_name,
-        'kecamatan': restaurant.kecamatan,
-        'location': restaurant.location,
-        'menu_count': restaurant.menu_count,
-        'min_price': restaurant.min_price,
-        'max_price': restaurant.max_price,
-        'image': restaurant.image,
-    } for restaurant in page_obj]
+    restaurants_data = []
+    for restaurant in page_obj:
+        stats = (MenuItem.objects
+                 .filter(restaurant=restaurant)
+                 .aggregate(
+                     menu_count=Count('id'),
+                     min_price=Min('price'),
+                     max_price=Max('price'),
+                     avg_price=Avg('price')
+                 ))
+        restaurants_data.append({
+            'id': restaurant.id,
+            'name': restaurant.resto_name,
+            'kecamatan': restaurant.kecamatan,
+            'location': restaurant.location,
+            'menu_count': stats['menu_count'],
+            'min_price': stats['min_price'],
+            'max_price': stats['max_price'],
+            'avg_price': stats['avg_price'],
+            'image': restaurant.image,
+            'menus': [{
+                'id': menu.id,
+                'name': menu.name,
+                'price': menu.price,
+                'image': menu.image,
+                'category': menu.category,
+                'description': menu.description,
+            } for menu in restaurant.menu_items.all()]
+        })
     
     # Tambahan informasi paginasi
     data = {
