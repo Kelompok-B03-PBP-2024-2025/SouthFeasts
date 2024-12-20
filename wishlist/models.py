@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from product.models import MenuItem
 from django.utils import timezone
 
+# buat per collection nya
 class WishlistCollection(models.Model):
     name = models.CharField(max_length=100)
     user = models.ForeignKey(
@@ -14,7 +15,7 @@ class WishlistCollection(models.Model):
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ['user', 'name']  # prevent duplicate collection names per user
+        unique_together = ['user', 'name']  
 
     def __str__(self):
         return f"{self.name} - {self.user.username}'s Collection"
@@ -42,7 +43,7 @@ class WishlistItem(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ['collection', 'menu_item']  # Prevent duplicate items in a collection
+        unique_together = ['collection', 'menu_item']
         ordering = ['-created_at']
 
     def __str__(self):
