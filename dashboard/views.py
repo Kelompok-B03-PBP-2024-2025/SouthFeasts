@@ -348,7 +348,8 @@ def show_json(request):
             'kecamatan': menu_item.restaurant.kecamatan,
             'image': menu_item.image,
             'restaurant_name': menu_item.restaurant.name,
-            'location': menu_item.restaurant.location
+            'location': menu_item.restaurant.location,
+            'restaurant_id': menu_item.restaurant.id
         } for menu_item in menu_items],
         'total_pages': total_pages,
         'current_page': page,
@@ -434,16 +435,33 @@ def show_json_restaurant(request):
     page_obj = paginator.get_page(page_number)
     
     # Format data untuk response JSON
-    restaurants_data = [{
-        'id': restaurant.id,
-        'name': restaurant.resto_name,
-        'kecamatan': restaurant.kecamatan,
-        'location': restaurant.location,
-        'menu_count': restaurant.menu_count,
-        'min_price': restaurant.min_price,
-        'max_price': restaurant.max_price,
-        'image': restaurant.image,
-    } for restaurant in page_obj]
+    restaurants_data = []
+    for restaurant in page_obj:
+        stats = (MenuItem.objects
+                 .filter(restaurant=restaurant)
+                 .aggregate(
+                     menu_count=Count('id'),
+                     min_price=Min('price'),
+                     max_price=Max('price'),
+                     avg_price=Avg('price')
+                 ))
+        restaurants_data.append({
+            'id': restaurant.id,
+            'name': restaurant.resto_name,
+            'kecamatan': restaurant.kecamatan,
+            'location': restaurant.location,
+            'menu_count': stats['menu_count'],
+            'min_price': stats['min_price'],
+            'max_price': stats['max_price'],
+            'avg_price': stats['avg_price'],
+            'image': restaurant.image,
+            'menus': [{
+                'id': menu.id,
+                'name': menu.name,
+                'price': menu.price,
+                'image': menu.image,
+            } for menu in restaurant.menu_items.all()]
+        })
     
     # Tambahan informasi paginasi
     data = {
@@ -574,3 +592,42 @@ def delete_makanan_flutter(request, id):
         "message": "Invalid request method"
     }, status=405)
 
+@csrf_exempt
+def edit_restaurant_flutter(request, resto_name):
+    if request.method == 'POST':
+        try:
+            restaurant = Restaurant.objects.get(name=resto_name)
+            data = json.loads(request.body)
+            
+            # Update restaurant fields
+            restaurant.name = data.get('name', restaurant.name)
+            restaurant.kecamatan = data.get('kecamatan', restaurant.kecamatan)
+            restaurant.location = data.get('location', restaurant.location)
+            restaurant.save()
+            
+            return JsonResponse({
+                "status": "success",
+                "message": "Restaurant updated successfully",
+                "data": {
+                    "name": restaurant.name,
+                    "kecamatan": restaurant.kecamatan,
+                    "location": restaurant.location
+                }
+            }, status=200)
+            
+        except Restaurant.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "Restaurant not found"
+            }, status=404)
+            
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=400)
+    
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=405)
