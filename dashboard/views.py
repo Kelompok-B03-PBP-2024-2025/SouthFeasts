@@ -459,6 +459,37 @@ def show_json_restaurant(request):
     
     return JsonResponse(data)
 
+def get_restaurant(request, pk):
+    # API endpoint untuk detail restoran
+    restaurant = get_object_or_404(Restaurant, pk=pk)
+    
+    # Ambil menu items untuk restoran ini
+    menus = restaurant.menu_items.all()
+    
+    menu_list = [{
+        'id': menu.id,
+        'name': menu.name,
+        'description': menu.description,
+        'price': menu.price,
+        'image': menu.image,
+        'category': menu.category
+    } for menu in menus]
+
+    data = {
+        'id': restaurant.id,
+        'name': restaurant.name,
+        'location': restaurant.location,
+        'kecamatan': restaurant.kecamatan,
+        'image': menus.first().image if menus else '',
+        'menu_count': menus.count(),
+        'min_price': menus.aggregate(Min('price'))['price__min'] or 0,
+        'max_price': menus.aggregate(Max('price'))['price__max'] or 0,
+        'avg_price': menus.aggregate(Avg('price'))['price__avg'] or 0,
+        'menus': menu_list
+    }
+    
+    return JsonResponse(data)
+
 @csrf_exempt
 def create_makanan_flutter(request):
     if request.method == 'POST':

@@ -16,4 +16,5 @@ urlpatterns = [
     path('<int:pk>/', views.restaurant_detail, name='restaurant_detail'),
     path('show-json-restaurant/', views.show_json_restaurant, name='show_json_restaurant'),
     path('show-json-rsvp/', views.show_json_reservations, name='show_json_reservations'),
+    path('get-restaurant/<int:pk>/', views.get_restaurant, name='get_restaurant'),
 ]
