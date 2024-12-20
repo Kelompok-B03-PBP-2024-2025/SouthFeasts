@@ -4,7 +4,7 @@ from dashboard.views import (makanan_list, makanan_create, makanan_delete,
                              makanan_update, show_json, initialize_admin, restaurant_list, 
                              restaurant_menu, restaurant_update, makanan_update_resto, 
                              get_reviews, delete_review, get_reviews_resto, show_json_restaurant,
-                             create_makanan_flutter, edit_makanan_flutter, delete_makanan_flutter)
+                             create_makanan_flutter, edit_makanan_flutter, delete_makanan_flutter, edit_restaurant_flutter)
 
 app_name = 'dashboard'
 
@@ -26,4 +26,5 @@ urlpatterns = [
     path('create-makanan-flutter/', create_makanan_flutter, name='create_makanan_flutter'),
     path('edit-makanan-flutter/<str:id>/', edit_makanan_flutter, name='edit_makanan_flutter'),
     path('delete-makanan-flutter/<str:id>/', delete_makanan_flutter, name='delete_makanan_flutter'),
+    path('edit-restaurant-flutter/<str:resto_name>/', edit_restaurant_flutter, name='edit_restaurant_flutter'),
 ]
