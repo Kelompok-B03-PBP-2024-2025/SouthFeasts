@@ -18,10 +18,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 @login_required(login_url='authentication:login')
 def collection_list(request):
-    # Get all collections except "All Wishlist"
     collections = WishlistCollection.objects.filter(user=request.user).exclude(name="All Wishlist")
     
-    # Cek apakah sudah ada koleksi default
     default_collection = collections.filter(is_default=True).first()
     if not default_collection:
         try:
@@ -29,14 +27,12 @@ def collection_list(request):
                 user=request.user,
                 name="My Wishlist"
             )
-            # Jika ada tapi bukan default, jadikan default
             if not default_collection.is_default:
                 with transaction.atomic():
                     WishlistCollection.objects.filter(user=request.user, is_default=True).update(is_default=False)
                     default_collection.is_default = True
                     default_collection.save()
         except WishlistCollection.DoesNotExist:
-            # Buat My Wishlist baru jika belum ada
             default_collection = WishlistCollection.objects.create(
                 user=request.user,
                 name="My Wishlist",
@@ -44,14 +40,11 @@ def collection_list(request):
                 is_default=True
             )
     
-    # Refresh collections dan urutkan items berdasarkan created_at
     collections = WishlistCollection.objects.filter(user=request.user).exclude(name="All Wishlist")
     
-    # Preload items dengan urutan terbaru
     for collection in collections:
         collection.sorted_items = collection.items.all().select_related('menu_item').order_by('-created_at')
     
-    # Hapus All Wishlist jika masih ada
     WishlistCollection.objects.filter(user=request.user, name="All Wishlist").delete()
     
     return render(request, 'collections.html', {
@@ -81,12 +74,10 @@ def collection_detail(request, collection_id):
     collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
     
     if collection.is_default:
-        # Get all items from all collections for this user, ordered by creation date
         items = WishlistItem.objects.filter(
             collection__user=request.user
         ).select_related('menu_item').distinct('menu_item').order_by('-created_at')
     else:
-        # For regular collections, order items by creation date
         items = collection.items.all().order_by('-created_at')
         
     return render(request, 'collection_detail.html', {
@@ -98,7 +89,6 @@ def collection_detail(request, collection_id):
 def collection_edit(request, collection_id):
     collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
     
-    # Prevent editing default collection
     if collection.is_default:
         return redirect('wishlist:collection-detail', collection_id=collection.id)
     
@@ -106,7 +96,7 @@ def collection_edit(request, collection_id):
         form = WishlistCollectionForm(request.POST, instance=collection, user=request.user)
         if form.is_valid():
             form.save()
-            return redirect('wishlist:collection-list')  # Diubah dari collection-detail ke collection-list
+            return redirect('wishlist:collection-list')  
     else:
         form = WishlistCollectionForm(instance=collection, user=request.user)
     
@@ -120,7 +110,6 @@ def collection_edit(request, collection_id):
 def collection_delete(request, collection_id):
     collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
     
-    # Prevent deletion of default collection
     if collection.is_default:
         messages.error(request, 'Cannot delete default collection')
         return redirect('wishlist:collection-detail', collection_id=collection.id)
@@ -134,13 +123,11 @@ def collection_set_default(request, collection_id):
     
     if request.method == 'POST':
         with transaction.atomic():
-            # Remove default status from other collections
             WishlistCollection.objects.filter(
                 user=request.user, 
                 is_default=True
             ).update(is_default=False)
             
-            # Set this collection as default
             collection.is_default = True
             collection.save()
         
@@ -181,7 +168,6 @@ def item_add(request, menu_item_id):
             
         menu_item = get_object_or_404(MenuItem, id=menu_item_id)
         
-        # Check if item already exists in collection
         if WishlistItem.objects.filter(collection=collection, menu_item=menu_item).exists():
             return JsonResponse({'status': 'exists'})
             
@@ -195,7 +181,6 @@ def item_move(request, item_id, collection_id):
         item = get_object_or_404(WishlistItem, id=item_id, collection__user=request.user)
         new_collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
         
-        # Don't allow moving to/from default collection
         if new_collection.is_default:
             return JsonResponse({
                 'status': 'error',
@@ -208,7 +193,6 @@ def item_move(request, item_id, collection_id):
                 'message': 'Cannot move items from default collection'
             }, status=400)
         
-        # Check if item already exists in target collection
         if not WishlistItem.objects.filter(
             collection=new_collection, 
             menu_item=item.menu_item
@@ -222,9 +206,8 @@ def item_move(request, item_id, collection_id):
 @login_required
 def item_remove(request, item_id):
     item = get_object_or_404(WishlistItem, id=item_id, collection__user=request.user)
-    collection_id = item.collection.id  # simpan id collection sebelum item dihapus
+    collection_id = item.collection.id  
     
-    # When removing from default collection, remove from all collections
     if item.collection.is_default:
         WishlistItem.objects.filter(
             collection__user=request.user,
@@ -245,7 +228,6 @@ def add_to_wishlist_from_menu(request):
         messages.error(request, 'No menu item ID provided.')
         return redirect(request.META.get('HTTP_REFERER', 'product:menu_catalog'))
         
-    # Get default collection
     default_collection = WishlistCollection.objects.filter(
         user=request.user,
         name="My Wishlist"
@@ -261,45 +243,37 @@ def add_to_wishlist_from_menu(request):
     
     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
     
-    # Check if item exists in any collection
     existing_item = WishlistItem.objects.filter(
         collection__user=request.user,
         menu_item=menu_item
     ).first()
     
     if existing_item:
-        # If item exists, remove it from all collections
         WishlistItem.objects.filter(
             collection__user=request.user,
             menu_item=menu_item
         ).delete()
        
     else:
-        # If item doesn't exist, add it to default collection
         WishlistItem.objects.create(
             collection=default_collection,
             menu_item=menu_item
         )
 
-    # Redirect back to the previous page
     return redirect(request.META.get('HTTP_REFERER', 'product:menu_catalog'))
 
-# views untuk fitur Add to
 @login_required
 def add_item_to_collection(request, item_id, collection_id):
     if request.method == 'POST':
-        # Get the item and target collection
         item = get_object_or_404(WishlistItem, id=item_id, collection__user=request.user)
         target_collection = get_object_or_404(WishlistCollection, id=collection_id, user=request.user)
         
-        # Don't allow adding to default collection
         if target_collection.is_default:
             return JsonResponse({
                 'status': 'error',
                 'message': 'Cannot add items to default collection'
             }, status=400)
             
-        # Check if item already exists in target collection
         existing_item = WishlistItem.objects.filter(
             collection=target_collection,
             menu_item=item.menu_item
@@ -311,7 +285,6 @@ def add_item_to_collection(request, item_id, collection_id):
                 'message': 'Item already exists in this collection'
             }, status=400)
             
-        # Create new item in target collection
         WishlistItem.objects.create(
             collection=target_collection,
             menu_item=item.menu_item
@@ -336,7 +309,6 @@ def create_collection_ajax(request):
         
         errors = {}
         
-        # Validate name
         if not name:
             errors['name'] = ["Collection name cannot be empty."]
         elif WishlistCollection.objects.filter(user=request.user, name=name).exists():
