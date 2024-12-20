@@ -77,33 +77,16 @@ def show_json_restaurant(request):
     page_obj = paginator.get_page(page_number)
     
     # Format data untuk response JSON
-    restaurants_data = []
-    for restaurant in page_obj:
-        stats = (MenuItem.objects
-                 .filter(restaurant=restaurant)
-                 .aggregate(
-                     menu_count=Count('id'),
-                     min_price=Min('price'),
-                     max_price=Max('price'),
-                     avg_price=Avg('price')
-                 ))
-        restaurants_data.append({
-            'id': restaurant.id,
-            'name': restaurant.resto_name,
-            'kecamatan': restaurant.kecamatan,
-            'location': restaurant.location,
-            'menu_count': stats['menu_count'],
-            'min_price': stats['min_price'],
-            'max_price': stats['max_price'],
-            'avg_price': stats['avg_price'],
-            'image': restaurant.image,
-            'menus': [{
-                'id': menu.id,
-                'name': menu.name,
-                'price': menu.price,
-                'image': menu.image,
-            } for menu in restaurant.menu_items.all()]
-        })
+    restaurants_data = [{
+        'id': restaurant.id,
+        'name': restaurant.resto_name,
+        'kecamatan': restaurant.kecamatan,
+        'location': restaurant.location,
+        'menu_count': restaurant.menu_count,
+        'min_price': restaurant.min_price,
+        'max_price': restaurant.max_price,
+        'image': restaurant.image,
+    } for restaurant in page_obj]
     
     # Tambahan informasi paginasi
     data = {
@@ -119,59 +102,36 @@ def show_json_restaurant(request):
     
     return JsonResponse(data)
 
-# def show_json_restaurant(request):
-#     restaurants = Restaurant.objects.annotate(
-#         menu_count=Count('menu_items'),
-#         min_price=Min('menu_items__price'),
-#         max_price=Max('menu_items__price'),
-#         image=Min('menu_items__image'),
-#         resto_name=F('name'),
-#     )
-#     remove_empty_restaurants()
+def get_restaurant(request, pk):
+    # API endpoint untuk detail restoran
+    restaurant = get_object_or_404(Restaurant, pk=pk)
     
-#     kecamatan = request.GET.get('kecamatan')
-#     search_query = request.GET.get('search', '').strip()
+    # Ambil menu items untuk restoran ini
+    menus = restaurant.menu_items.all()
     
-#     if kecamatan and kecamatan != 'all':
-#         restaurants = restaurants.filter(kecamatan__iexact=kecamatan)
+    menu_list = [{
+        'id': menu.id,
+        'name': menu.name,
+        'description': menu.description,
+        'price': menu.price,
+        'image': menu.image,
+        'category': menu.category
+    } for menu in menus]
+
+    data = {
+        'id': restaurant.id,
+        'name': restaurant.name,
+        'location': restaurant.location,
+        'kecamatan': restaurant.kecamatan,
+        'image': menus.first().image if menus else '',
+        'menu_count': menus.count(),
+        'min_price': menus.aggregate(Min('price'))['price__min'] or 0,
+        'max_price': menus.aggregate(Max('price'))['price__max'] or 0,
+        'avg_price': menus.aggregate(Avg('price'))['price__avg'] or 0,
+        'menus': menu_list
+    }
     
-#     if search_query:
-#         restaurants = restaurants.filter(name__icontains=search_query)
-    
-#     restaurants = restaurants.order_by('name')
-    
-#     kecamatans = (Restaurant.objects
-#                   .values_list('kecamatan', flat=True)
-#                   .distinct()
-#                   .order_by('kecamatan'))
-    
-#     paginator = Paginator(restaurants, 9)
-#     page_number = request.GET.get('page', 1)
-#     page_obj = paginator.get_page(page_number)
-    
-#     restaurants_data = [{
-#         'id': restaurant.id,
-#         'name': restaurant.resto_name,
-#         'kecamatan': restaurant.kecamatan,
-#         'location': restaurant.location,
-#         'menu_count': restaurant.menu_count,
-#         'min_price': restaurant.min_price,
-#         'max_price': restaurant.max_price,
-#         'image': restaurant.image,
-#     } for restaurant in page_obj]
-    
-#     data = {
-#         'restaurants': restaurants_data,
-#         'kecamatans': list(kecamatans),
-#         'selected_kecamatan': kecamatan,
-#         'search_query': search_query,
-#         'total_pages': paginator.num_pages,
-#         'current_page': page_obj.number,
-#         'has_previous': page_obj.has_previous(),
-#         'has_next': page_obj.has_next(),
-#     }
-    
-#     return JsonResponse(data)
+    return JsonResponse(data)
 
 def restaurant_detail(request, pk):
     restaurant = get_object_or_404(Restaurant, pk=pk)
