@@ -167,61 +167,63 @@ def show_json(request):
     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ReviewEntry
+import json
+import base64
+from django.core.files.base import ContentFile
+
 @csrf_exempt
-@login_required
-@require_POST
-def create_review_flutter(request):
-    """
-    Menerima JSON:
-    {
-      "menu_item_id": 42,
-      "review_text": "Mantap!",
-      "rating": "4.5",
-      "image": "<BASE64 STRING>" (opsional)
-    }
+def createreview(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            menu_item_id = data.get('menu_item_id')
+            review_text = data.get('review_text')
+            rating = data.get('rating')
+            image_base64 = data.get('image')
 
-    - Mencari MenuItem berdasarkan menu_item_id
-    - Jika ada 'image' di base64, decode lalu simpan ke review_image
-    - if new_review.pk => status: success
-    - else => status: error
-    """
-    body_unicode = request.body.decode('utf-8')
-    data = json.loads(body_unicode)
+            # Validasi data
+            if not menu_item_id or not review_text or not rating:
+                return JsonResponse({"status": "Missing fields"}, status=400)
 
-    # Pastikan menu_item_id ada
-    menu_item_id = data.get("menu_item_id")
-    if not menu_item_id:
-        return JsonResponse({"status": "error", "message": "No menu_item_id"}, status=401)
+            # Konversi rating ke float
+            try:
+                rating = float(rating)
+                if not (1 <= rating <= 5):
+                    return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
+            except ValueError:
+                return JsonResponse({"status": "Invalid rating"}, status=400)
 
-    # Cari menu item
-    menu_item = get_object_or_404(MenuItem, pk=menu_item_id)
+            # Proses gambar jika ada
+            if image_base64:
+                format, imgstr = image_base64.split(';base64,') 
+                ext = format.split('/')[-1] 
+                data_file = ContentFile(base64.b64decode(imgstr), name=f"review_image.{ext}")
+            else:
+                data_file = None
 
-    # Ambil data review
-    review_text = data.get("review_text", "")
-    rating = data.get("rating", "0")
-    base64_image = data.get("image", None)
+            # Buat entri review
+            review = ReviewEntry.objects.create(
+                menu_item_id=menu_item_id,
+                review_text=review_text,
+                rating=rating,
+                review_image=data_file
+            )
 
-    # Buat objek ReviewEntry
-    new_review = ReviewEntry(
-        menu_item=menu_item,
-        review_text=review_text,
-        rating=rating,
-        user=request.user,  # Asumsikan login_required
-    )
+            # Bangun URL absolut untuk gambar
+            if review.review_image:
+                image_url = request.build_absolute_uri(review.review_image.url)
+            else:
+                image_url = None
 
-    # Jika ada base64
-    if base64_image:
-        image_data = base64.b64decode(base64_image)
-        new_review.review_image.save(
-            "review_image.png",  # Nama default
-            ContentFile(image_data),
-            save=False
-        )
+            return JsonResponse({
+                "status": "success",
+                "review_image_url": image_url
+            }, status=200)
 
-    new_review.save()
-
-    # Cek pk
-    if new_review.pk:
-        return JsonResponse({"status": "success"}, status=200)
+        except Exception as e:
+            return JsonResponse({"status": f"Error: {str(e)}"}, status=400)
     else:
-        return JsonResponse({"status": "error"}, status=401)
+        return JsonResponse({"status": "Invalid request"}, status=400)
