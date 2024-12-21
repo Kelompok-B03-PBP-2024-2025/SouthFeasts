@@ -175,7 +175,7 @@ import base64
 from django.core.files.base import ContentFile
 
 @csrf_exempt
-def createreview(request):
+def create_review_flutter(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
