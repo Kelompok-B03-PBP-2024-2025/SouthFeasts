@@ -138,3 +138,42 @@ def show_json(request):
     ]
     
     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
+    
+@csrf_exempt
+@login_required
+@require_POST
+def create_review_flutter(request):
+    """
+    Contoh minimal pakai if–else yang mengembalikan status sukses atau error.
+    Tanpa try–except, jadi apabila terjadi error misal MenuItem tidak ditemukan,
+    Django akan langsung melempar 404.
+    """
+    # Cek data di POST
+    menu_item_id = request.POST.get('menu_item_id')
+    if not menu_item_id:
+        # Tidak ada menu_item_id, kembalikan error
+        return JsonResponse({"status": "error", "message": "No menu_item_id"}, status=401)
+
+    # Cari MenuItem berdasarkan ID
+    menu_item = get_object_or_404(MenuItem, pk=menu_item_id)
+
+    # Ambil data review
+    review_text = request.POST.get("review_text", "")
+    rating = request.POST.get("rating", "0")
+    review_image = request.FILES.get("review_image")
+
+    # Buat review
+    new_review = ReviewEntry(
+        menu_item=menu_item,
+        review_text=review_text,
+        rating=rating,
+        review_image=review_image,
+        user=request.user,
+    )
+    new_review.save()
+
+    # Jika berhasil disimpan, kembalikan success
+    if new_review.pk:  # pk akan terisi jika objek berhasil disimpan
+        return JsonResponse({"status": "success"}, status=200)
+    else:
+        return JsonResponse({"status": "error"}, status=401)

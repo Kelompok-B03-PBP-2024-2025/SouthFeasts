@@ -11,4 +11,6 @@ urlpatterns = [
     path('edit/<int:review_id>/', views.edit_review, name='edit_review'),
     path('json/', views.show_json, name='show_json'),
     path('delete/<int:review_id>/', views.delete_review, name='delete_review'),
+    path('createreview', views.create_review_flutter, name='create_reviiew_flutter'),
 ]
+
