@@ -13,7 +13,3 @@ urlpatterns = [
     path('delete/<int:review_id>/', views.delete_review, name='delete_review'),
     path('createreview/', views.create_review_flutter, name='create_review_flutter'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
