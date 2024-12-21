@@ -10,16 +10,6 @@ from review.forms import ReviewForm
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from django.http import JsonResponse
-from django.db.models import Q
-from review.models import ReviewEntry
-
-import json
-from django.http import JsonResponse
-from django.db.models import Q
-from django.views.decorators.http import require_GET
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 
 # View for displaying all reviews across products with search functionality
 def all_reviews(request):
@@ -55,14 +45,16 @@ def all_reviews(request):
 #         return redirect('product:menu_detail', menu_item.id)
 
 #     return render(request, 'create_review.html', {'form': form, 'menu_item': menu_item})
+
 @csrf_exempt
+@login_required
 @require_POST
 def create_review(request, item_id):
     menu_item = get_object_or_404(MenuItem, pk=item_id)
 
     review_text = request.POST.get("review_text")
     rating = request.POST.get("rating")
-    image_url = request.POST.get("image_url")  # Retrieve image URL from POST data
+    review_image = request.FILES.get("review_image")
     user = request.user
 
     # Create and save the new review entry
@@ -70,7 +62,7 @@ def create_review(request, item_id):
         menu_item=menu_item,
         review_text=review_text,
         rating=rating,
-        image_url=image_url,  # Save image URL in the model
+        review_image=review_image,
         user=user
     )
     new_review.save()
@@ -81,7 +73,7 @@ def create_review(request, item_id):
         "user": user.username,
         "review_text": new_review.review_text,
         "rating": new_review.rating,
-        "image_url": new_review.image_url  # Return the image URL in the response
+        "review_image": new_review.review_image.url if new_review.review_image else None
     })
 
 def review_detail(request, review_id):
@@ -120,47 +112,18 @@ def delete_review(request, review_id):
         else:
             return HttpResponseForbidden("You are not allowed to delete this review.")
 
-# def show_json(request):
-#     search_query = request.GET.get('search', '')  # Get search query from URL
-#     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
-    
-#     # Filter reviews based on product name or review content if a search query is provided
-#     if search_query:
-#         reviews = reviews.filter(
-#             Q(menu_item__name__icontains=search_query) |  # Search by product name
-#             Q(review_text__icontains=search_query)        # Search by review content
-#         )
-    
-#     # Create a list of dictionaries with review details
-#     reviews_data = [
-#         {
-#             'id': review.id,
-#             'menu_item': review.menu_item.name if review.menu_item else None,
-#             'user': review.user.username,
-#             'review_text': review.review_text,
-#             'rating': review.rating,
-#             'review_image': review.review_image.url if review.review_image else None,
-#             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-#         }
-#         for review in reviews
-#     ]
-    
-#     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
-
-@csrf_exempt
-@require_GET
 def show_json(request):
-    search_query = request.GET.get('search', '')  # Ambil query pencarian dari parameter GET
+    search_query = request.GET.get('search', '')  # Get search query from URL
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
-
-    # Filter review berdasarkan nama produk atau teks ulasan jika ada query pencarian
+    
+    # Filter reviews based on product name or review content if a search query is provided
     if search_query:
         reviews = reviews.filter(
-            Q(menu_item__name__icontains=search_query) |  # Filter berdasarkan nama produk
-            Q(review_text__icontains=search_query)        # Filter berdasarkan teks ulasan
+            Q(menu_item__name__icontains=search_query) |  # Search by product name
+            Q(review_text__icontains=search_query)        # Search by review content
         )
     
-    # Buat list of dictionaries dengan detail review
+    # Create a list of dictionaries with review details
     reviews_data = [
         {
             'id': review.id,
@@ -168,79 +131,10 @@ def show_json(request):
             'user': review.user.username,
             'review_text': review.review_text,
             'rating': review.rating,
-            'image_url': review.image_url,  # Tambahkan image_url
+            'review_image': review.review_image.url if review.review_image else None,
             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
         }
         for review in reviews
     ]
     
-    return JsonResponse(reviews_data, safe=False)  # safe=False untuk mengembalikan list
-
-@csrf_exempt
-def create_review_flutter(request, item_id):
-    if request.method == "POST":
-        try:
-            # Parse JSON body
-            data = json.loads(request.body.decode("utf-8"))
-            
-            # Validate required fields
-            review_text = data.get("review_text")
-            rating = data.get("rating")
-            user_id = data.get("user_id")
-            image_url = data.get("image_url")  # Ambil image_url jika tersedia
-            
-            if not review_text or not rating or not user_id:
-                return JsonResponse({
-                    "success": False,
-                    "error": "Missing required fields: review_text, rating, or user_id"
-                }, status=400)
-            
-            # Retrieve menu_item and user
-            menu_item = MenuItem.objects.get(pk=item_id)
-            user = settings.AUTH_USER_MODEL.objects.get(pk=user_id)
-
-            # Create and save the new review entry
-            new_review = ReviewEntry(
-                menu_item=menu_item,
-                review_text=review_text,
-                rating=rating,
-                user=user,
-                image_url=image_url  # Tambahkan image_url ke ReviewEntry
-            )
-            new_review.save()
-
-            return JsonResponse({
-                "success": True,
-                "message": "Review created successfully",
-                "data": {
-                    "id": new_review.id,
-                    "menu_item": new_review.menu_item.name,
-                    "user": new_review.user.username,
-                    "review_text": new_review.review_text,
-                    "rating": new_review.rating,
-                    "image_url": new_review.image_url,  # Sertakan image_url di respons
-                    "created_at": new_review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                }
-            })
-        except MenuItem.DoesNotExist:
-            return JsonResponse({
-                "success": False,
-                "error": "Menu item not found"
-            }, status=404)
-        except settings.AUTH_USER_MODEL.DoesNotExist:
-            return JsonResponse({
-                "success": False,
-                "error": "User not found"
-            }, status=404)
-        except Exception as e:
-            return JsonResponse({
-                "success": False,
-                "error": str(e)
-            }, status=500)
-    else:
-        return JsonResponse({
-            "success": False,
-            "error": "Invalid HTTP method. Use POST."
-        }, status=405)
-
-
+    return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list

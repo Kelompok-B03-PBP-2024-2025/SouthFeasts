@@ -12,7 +12,6 @@ class ReviewEntry(models.Model):
     )  # Allows decimal values between 1.0 and 5.0
     review_text = models.TextField()
     review_image = models.ImageField(upload_to='reviews/', null=True, blank=True)
-    image_url = models.URLField(max_length=500, null=True, blank=True)  # URL for the review image
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
