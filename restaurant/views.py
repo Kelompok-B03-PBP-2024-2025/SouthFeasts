@@ -7,6 +7,7 @@ from .models import Restaurant, Reservation
 from product.models import MenuItem
 from django.db.models import Q
 from django.db.models import Count, Min, Max, Avg, F
+from authentication.models import UserProfile
 
 def restaurant_list(request):
     restaurants = Restaurant.objects.all()
@@ -232,11 +233,16 @@ def cancel_reservation(request, reservation_id):
     
     return redirect('user-reservations')
 
-def show_json_reservations(request):
-    if not request.user.is_authenticated:
+def show_json_reservations(request, pk):
+    if pk == 0:
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
-    reservations = Reservation.objects.filter(user=request.user).select_related('restaurant')
+    try:
+        user_profile = UserProfile.objects.get(user__id=pk)  # Access the User via the `user` field
+    except UserProfile.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    
+    reservations = Reservation.objects.filter(user=user_profile).select_related('restaurant')
     
     reservations_data = [{
         'id': reservation.id,
