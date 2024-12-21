@@ -8,6 +8,8 @@ from django.db.models import Count
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 import json
+import base64
+from django.core.files.base import ContentFile
 
 def show_main(request):
     user = request.user
@@ -386,15 +388,16 @@ def show_json_qna(request):
 @csrf_exempt
 def article_flutter(request, article_id=None):
     try:
-        # CREATE
+ # CREATE
         if request.method == 'POST' and not article_id:
             if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
 
-            # Ambil data dari request.POST
+            # Ambil data dari request.body
             data = json.loads(request.body.decode('utf-8'))
             title = data.get('title')
             content = data.get('content')
+            thumbnail_base64 = data.get('thumbnail_base64')  # Gambar dalam Base64
 
             # Validasi input
             if not title or not content:
@@ -406,6 +409,16 @@ def article_flutter(request, article_id=None):
                 content=content,
                 user=request.user
             )
+
+            # Simpan gambar jika ada
+            if thumbnail_base64:
+                format, imgstr = thumbnail_base64.split(';base64,')
+                ext = format.split('/')[-1]  # Ekstensi file (jpg, png, dll.)
+                article.thumbnail_file.save(
+                    f"{article.id}.{ext}",
+                    ContentFile(base64.b64decode(imgstr)),
+                    save=True
+                )
 
             return JsonResponse({
                 "success": True,
@@ -427,16 +440,27 @@ def article_flutter(request, article_id=None):
             if request.user != article.user:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            # Ambil data dari request.POST
+            # Ambil data dari request.body
             data = json.loads(request.body.decode('utf-8'))
             title = data.get('title')
             content = data.get('content')
+            thumbnail_base64 = data.get('thumbnail_base64')  # Gambar dalam Base64
 
-            # Update data artikel jika ada
+            # Update data artikel
             if title:
                 article.title = title
             if content:
                 article.content = content
+
+            # Update gambar jika ada
+            if thumbnail_base64:
+                format, imgstr = thumbnail_base64.split(';base64,')
+                ext = format.split('/')[-1]
+                article.thumbnail_file.save(
+                    f"{article.id}.{ext}",
+                    ContentFile(base64.b64decode(imgstr)),
+                    save=True
+                )
 
             article.save()
 
