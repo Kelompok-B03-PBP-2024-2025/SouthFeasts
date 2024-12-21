@@ -295,7 +295,50 @@ def add_item_to_collection(request, item_id, collection_id):
     return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 
+# @login_required(login_url='authentication:login')
+# def create_collection_ajax(request):
+#     if not request.user.is_authenticated:
+#         return JsonResponse({
+#             'error': 'Authentication required',
+#             'login_url': reverse('authentication:login')
+#         }, status=401)
+
+#     if request.method == 'POST':
+#         name = request.POST.get('name', '').strip()
+#         description = request.POST.get('description', '').strip()
+        
+#         errors = {}
+        
+#         if not name:
+#             errors['name'] = ["Collection name cannot be empty."]
+#         elif WishlistCollection.objects.filter(user=request.user, name=name).exists():
+#             errors['name'] = ["A collection with this name already exists."]
+            
+#         if errors:
+#             return JsonResponse({"errors": errors}, status=400)
+            
+#         try:
+#             collection = WishlistCollection.objects.create(
+#                 user=request.user,
+#                 name=name,
+#                 description=description,
+#                 is_default=False
+#             )
+            
+#             return JsonResponse({
+#                 "message": "Collection created successfully",
+#                 "collection_id": collection.id,
+#                 "collection_name": collection.name
+#             }, status=201)
+            
+#         except Exception as e:
+#             return JsonResponse({
+#                 "errors": {"server": [str(e)]}
+#             }, status=500)
+            
+#     return JsonResponse({"errors": {"method": ["Invalid request method"]}}, status=405)
 @login_required(login_url='authentication:login')
+@csrf_exempt  # Tambahkan ini
 def create_collection_ajax(request):
     if not request.user.is_authenticated:
         return JsonResponse({
@@ -304,20 +347,27 @@ def create_collection_ajax(request):
         }, status=401)
 
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        description = request.POST.get('description', '').strip()
-        
-        errors = {}
-        
-        if not name:
-            errors['name'] = ["Collection name cannot be empty."]
-        elif WishlistCollection.objects.filter(user=request.user, name=name).exists():
-            errors['name'] = ["A collection with this name already exists."]
-            
-        if errors:
-            return JsonResponse({"errors": errors}, status=400)
-            
         try:
+            # Untuk handle request dari Flutter
+            if request.body:
+                data = json.loads(request.body)
+                name = data.get('name', '').strip()
+                description = data.get('description', '').strip()
+            # Untuk handle request dari web
+            else:
+                name = request.POST.get('name', '').strip()
+                description = request.POST.get('description', '').strip()
+            
+            errors = {}
+            
+            if not name:
+                errors['name'] = ["Collection name cannot be empty."]
+            elif WishlistCollection.objects.filter(user=request.user, name=name).exists():
+                errors['name'] = ["A collection with this name already exists."]
+                
+            if errors:
+                return JsonResponse({"errors": errors}, status=400)
+                
             collection = WishlistCollection.objects.create(
                 user=request.user,
                 name=name,
@@ -325,12 +375,25 @@ def create_collection_ajax(request):
                 is_default=False
             )
             
+            # Return format sesuai model WishlistCollection Flutter
             return JsonResponse({
-                "message": "Collection created successfully",
-                "collection_id": collection.id,
-                "collection_name": collection.name
+                'results': [{
+                    'id': collection.id,
+                    'name': collection.name,
+                    'description': collection.description,
+                    'is_default': collection.is_default,
+                    'items': [],
+                    'items_count': 0
+                }],
+                'total_pages': 1,
+                'current_page': 1,
+                'has_previous': False,
+                'has_next': False,
+                'total_items': 1,
+                'filter_type': 'all',
+                'search_query': ''
             }, status=201)
-            
+                
         except Exception as e:
             return JsonResponse({
                 "errors": {"server": [str(e)]}
@@ -520,6 +583,48 @@ def create_collection_flutter(request):
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+@login_required(login_url='authentication:login')
+@csrf_exempt
+@require_POST
+def create_collection_flutter(request):
+    """Membuat koleksi baru dari Flutter"""
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'error': 'Authentication required',
+            'login_url': reverse('authentication:login')
+        }, status=401)
+        
+    try:
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        
+        if not name:
+            return JsonResponse({'error': 'Collection name is required'}, status=400)
+            
+        if WishlistCollection.objects.filter(user=request.user, name=name).exists():
+            return JsonResponse({'error': 'Collection with this name already exists'}, status=400)
+            
+        collection = WishlistCollection.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            is_default=False
+        )
+        
+        # Return format sesuai dengan yang diharapkan Flutter
+        return JsonResponse({
+            'id': collection.id,
+            'name': collection.name,
+            'description': collection.description,
+            'is_default': collection.is_default,
+            'items': []
+        }, status=201)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @csrf_exempt
 @login_required
@@ -655,3 +760,39 @@ def move_item_flutter(request):
         
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    
+@login_required
+def get_default_collection(request):
+    default_collection_name = "All Items"
+    default_collection, created = WishlistCollection.objects.get_or_create(
+        user=request.user,
+        name=default_collection_name,
+        defaults={
+            'description': 'Default collection containing all items',
+            'is_default': True
+        }
+    )
+
+    all_items = WishlistItem.objects.filter(collection__user=request.user).select_related('menu_item')
+    default_collection.items.set(all_items)
+
+    items_data = [{
+        'id': item.id,
+        'menu_item': {
+            'id': item.menu_item.id,
+            'name': item.menu_item.name,
+            'price': str(item.menu_item.price),
+            'image': str(item.menu_item.image.url) if item.menu_item.image else None,
+        },
+        'created_at': item.created_at.isoformat()
+    } for item in all_items]
+
+    data = {
+        'id': default_collection.id,
+        'name': default_collection.name,
+        'description': default_collection.description,
+        'is_default': default_collection.is_default,
+        'items': items_data
+    }
+
+    return JsonResponse(data)
