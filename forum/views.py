@@ -390,18 +390,18 @@ def article_flutter(request, article_id=None):
         if request.method == 'POST' and not article_id:
             if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
-
+            
             title = request.POST.get('title')
             content = request.POST.get('content')
-            thumbnail = request.FILES.get('thumbnail')
-
+            thumbnail_img = request.POST.get('thumbnail_img')  # Tambahkan ini
+            
             article = Article.objects.create(
                 title=title,
                 content=content,
                 user=request.user,
-                thumbnail_file=thumbnail if thumbnail else None
+                thumbnail_img=thumbnail_img if thumbnail_img else None
             )
-
+            
             base_url = request.build_absolute_uri('/').rstrip('/')
             
             return JsonResponse({
@@ -411,7 +411,7 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": base_url + article.get_thumbnail(),
+                    "thumbnail_img": thumbnail_img if thumbnail_img else base_url + article.get_thumbnail(),
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
@@ -451,19 +451,29 @@ def article_flutter(request, article_id=None):
             })
 
         # DELETE
-        elif request.method == 'DELETE' and article_id:
-            article = Article.objects.get(pk=article_id)
-            
-            if request.user != article.user and not request.user.is_staff:
-                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+        elif request.method == 'POST' and article_id:
+            try:
+                article = Article.objects.get(pk=article_id)
 
-            article.delete()
-            return JsonResponse({"success": True, "message": "Article deleted successfully"})
+                if article.user != request.user and not request.user.is_staff:
+                    return JsonResponse({
+                        "status": "error",
+                        "message": "You don't have permission to delete this article"
+                    }, status=403)
+
+                article.delete()
+                return JsonResponse({
+                    "status": "success",
+                    "message": "Article deleted successfully"
+                })
+            except Article.DoesNotExist:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Article not found"
+                }, status=404)
 
         return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
         
-    except Article.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Article not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
@@ -517,21 +527,27 @@ def question_flutter(request, question_id=None):
             })
 
         # DELETE
-        elif request.method == 'DELETE' and question_id:
+        elif request.method == 'POST' and question_id and request.POST.get('action') == 'delete':
             question = Question.objects.get(pk=question_id)
-            
-            if request.user != question.user and not request.user.is_staff:
-                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+
+            if question.user != request.user and not request.user.username.lower() == 'admin':
+                return JsonResponse({
+                    "success": False,
+                    "message": "You don't have permission to delete this question"
+                }, status=403)
 
             question.delete()
-            return JsonResponse({"success": True, "message": "Question deleted successfully"})
+            return JsonResponse({
+                "success": True,
+                "message": "Question deleted successfully"
+            })
+
+        return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
     except Question.DoesNotExist:
         return JsonResponse({"success": False, "message": "Question not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
 
 @csrf_exempt
 def comment_flutter(request, comment_id=None):
@@ -563,21 +579,23 @@ def comment_flutter(request, comment_id=None):
             }, status=201)
 
         # DELETE
-        elif request.method == 'DELETE' and comment_id:
-            comment = Comment.objects.get(pk=comment_id)
-            
-            if request.user != comment.user and not request.user.is_staff:
-                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+        elif request.method == 'POST' and comment_id:
+            action = request.POST.get('action', '').lower()
+            if action == 'delete':
+                comment = Comment.objects.get(pk=comment_id)
+                
+                if request.user != comment.user and not request.user.is_staff:
+                    return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            comment.delete()
-            return JsonResponse({"success": True, "message": "Comment deleted successfully"})
+                comment.delete()
+                return JsonResponse({"success": True, "message": "Comment deleted successfully"})
+
+        return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
     except Comment.DoesNotExist:
         return JsonResponse({"success": False, "message": "Comment not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
 
 @csrf_exempt
 def answer_flutter(request, answer_id=None):
@@ -613,25 +631,27 @@ def answer_flutter(request, answer_id=None):
             }, status=201)
 
         # DELETE
-        elif request.method == 'DELETE' and answer_id:
-            answer = Answer.objects.get(pk=answer_id)
-            
-            if request.user != answer.user and not request.user.is_staff:
-                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+        elif request.method == 'POST' and answer_id:
+            action = request.POST.get('action', '').lower()
+            if action == 'delete':
+                answer = Answer.objects.get(pk=answer_id)
+                
+                if request.user != answer.user and not request.user.is_staff:
+                    return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            question = answer.question
-            answer.delete()
+                question = answer.question
+                answer.delete()
 
-            # Update question answered status if no answers remain
-            if question.answers.count() == 0:
-                question.answered = False
-                question.save()
+                # Update question answered status if no answers remain
+                if question.answers.count() == 0:
+                    question.answered = False
+                    question.save()
 
-            return JsonResponse({"success": True, "message": "Answer deleted successfully"})
+                return JsonResponse({"success": True, "message": "Answer deleted successfully"})
+
+        return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
     except Answer.DoesNotExist:
         return JsonResponse({"success": False, "message": "Answer not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
-
-    return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
