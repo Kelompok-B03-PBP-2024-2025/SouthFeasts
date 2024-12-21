@@ -548,44 +548,44 @@ def get_collections_flutter(request):
     
     return JsonResponse(data, safe=False)
 
-@csrf_exempt
-@login_required
-def create_collection_flutter(request):
-    """Membuat koleksi baru dari Flutter"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+# @csrf_exempt
+# @login_required
+# def create_collection_flutter(request):
+#     """Membuat koleksi baru dari Flutter"""
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Method not allowed'}, status=405)
         
-    try:
-        data = json.loads(request.body)
-        name = data.get('name', '').strip()
-        description = data.get('description', '').strip()
+#     try:
+#         data = json.loads(request.body)
+#         name = data.get('name', '').strip()
+#         description = data.get('description', '').strip()
         
-        if not name:
-            return JsonResponse({'error': 'Collection name is required'}, status=400)
+#         if not name:
+#             return JsonResponse({'error': 'Collection name is required'}, status=400)
             
-        if WishlistCollection.objects.filter(user=request.user, name=name).exists():
-            return JsonResponse({'error': 'Collection name already exists'}, status=400)
+#         if WishlistCollection.objects.filter(user=request.user, name=name).exists():
+#             return JsonResponse({'error': 'Collection name already exists'}, status=400)
             
-        collection = WishlistCollection.objects.create(
-            user=request.user,
-            name=name,
-            description=description,
-            is_default=False
-        )
+#         collection = WishlistCollection.objects.create(
+#             user=request.user,
+#             name=name,
+#             description=description,
+#             is_default=False
+#         )
         
-        return JsonResponse({
-            'id': collection.id,
-            'name': collection.name,
-            'description': collection.description,
-            'is_default': collection.is_default,
-            'items': []
-        }, status=201)
+#         return JsonResponse({
+#             'id': collection.id,
+#             'name': collection.name,
+#             'description': collection.description,
+#             'is_default': collection.is_default,
+#             'items': []
+#         }, status=201)
         
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON'}, status=400)
-@login_required(login_url='authentication:login')
+#     except json.JSONDecodeError:
+#         return JsonResponse({'error': 'Invalid JSON'}, status=400)
+# @login_required(login_url='authentication:login')
 @csrf_exempt
-@require_POST
+# @require_POST
 def create_collection_flutter(request):
     """Membuat koleksi baru dari Flutter"""
     if not request.user.is_authenticated:
