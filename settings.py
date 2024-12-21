@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'product',
     'restaurant',
     'dashboard',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Tambahkan ini di atas middleware lain
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'southfeast.urls'
