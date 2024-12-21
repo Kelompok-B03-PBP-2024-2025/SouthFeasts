@@ -139,48 +139,32 @@ def delete_review(request, review_id):
     
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
-from django.http import JsonResponse
-from django.db.models import Q
-
 def show_json(request):
-    # Ambil semua review dan lakukan select_related untuk optimasi
+    search_query = request.GET.get('search', '')  # Get search query from URL
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
     
-    # Ambil parameter query
-    menu_item_id = request.GET.get('menu_item_id')
-    search_query = request.GET.get('search')
-
-    # Filter berdasarkan menu_item_id jika diberikan
-    if menu_item_id:
-        reviews = reviews.filter(menu_item_id=menu_item_id)
-    
-    # Filter berdasarkan search_query jika diberikan (cari di review_text atau menu_item__name)
+    # Filter reviews based on product name or review content if a search query is provided
     if search_query:
         reviews = reviews.filter(
-            Q(review_text__icontains=search_query) |
-            Q(menu_item__name__icontains=search_query)
+            Q(menu_item__name__icontains=search_query) |  # Search by product name
+            Q(review_text__icontains=search_query)        # Search by review content
         )
     
-    # Siapkan data JSON
-    reviews_data = []
-    for review in reviews:
-        if review.review_image:
-            # Bangun URL absolut (host + path) 
-            image_url = request.build_absolute_uri(review.review_image.url)
-        else:
-            image_url = None
-
-        reviews_data.append({
+    # Create a list of dictionaries with review details
+    reviews_data = [
+        {
             'id': review.id,
             'menu_item': review.menu_item.name if review.menu_item else None,
             'user': review.user.username,
             'review_text': review.review_text,
             'rating': review.rating,
-            'review_image': image_url,  # Menggunakan URL absolut
+            'review_image': review.review_image.url if review.review_image else None,
             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        })
+        }
+        for review in reviews
+    ]
     
-    return JsonResponse(reviews_data, safe=False)
+    return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
 
 @csrf_exempt
