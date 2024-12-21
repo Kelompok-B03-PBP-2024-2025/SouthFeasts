@@ -112,6 +112,33 @@ def delete_review(request, review_id):
         else:
             return HttpResponseForbidden("You are not allowed to delete this review.")
 
+# def show_json(request):
+#     search_query = request.GET.get('search', '')  # Get search query from URL
+#     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
+    
+#     # Filter reviews based on product name or review content if a search query is provided
+#     if search_query:
+#         reviews = reviews.filter(
+#             Q(menu_item__name__icontains=search_query) |  # Search by product name
+#             Q(review_text__icontains=search_query)        # Search by review content
+#         )
+    
+#     # Create a list of dictionaries with review details
+#     reviews_data = [
+#         {
+#             'id': review.id,
+#             'menu_item': review.menu_item.name if review.menu_item else None,
+#             'user': review.user.username,
+#             'review_text': review.review_text,
+#             'rating': review.rating,
+#             'review_image': review.review_image.url if review.review_image else None,
+#             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+#         }
+#         for review in reviews
+#     ]
+    
+#     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
+
 def show_json(request):
     search_query = request.GET.get('search', '')  # Get search query from URL
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
@@ -138,42 +165,63 @@ def show_json(request):
     ]
     
     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
-    
+
+
 @csrf_exempt
 @login_required
 @require_POST
 def create_review_flutter(request):
     """
-    Contoh minimal pakai if–else yang mengembalikan status sukses atau error.
-    Tanpa try–except, jadi apabila terjadi error misal MenuItem tidak ditemukan,
-    Django akan langsung melempar 404.
+    Menerima JSON:
+    {
+      "menu_item_id": 42,
+      "review_text": "Mantap!",
+      "rating": "4.5",
+      "image": "<BASE64 STRING>" (opsional)
+    }
+
+    - Mencari MenuItem berdasarkan menu_item_id
+    - Jika ada 'image' di base64, decode lalu simpan ke review_image
+    - if new_review.pk => status: success
+    - else => status: error
     """
-    # Cek data di POST
-    menu_item_id = request.POST.get('menu_item_id')
+    body_unicode = request.body.decode('utf-8')
+    data = json.loads(body_unicode)
+
+    # Pastikan menu_item_id ada
+    menu_item_id = data.get("menu_item_id")
     if not menu_item_id:
-        # Tidak ada menu_item_id, kembalikan error
         return JsonResponse({"status": "error", "message": "No menu_item_id"}, status=401)
 
-    # Cari MenuItem berdasarkan ID
+    # Cari menu item
     menu_item = get_object_or_404(MenuItem, pk=menu_item_id)
 
     # Ambil data review
-    review_text = request.POST.get("review_text", "")
-    rating = request.POST.get("rating", "0")
-    review_image = request.FILES.get("review_image")
+    review_text = data.get("review_text", "")
+    rating = data.get("rating", "0")
+    base64_image = data.get("image", None)
 
-    # Buat review
+    # Buat objek ReviewEntry
     new_review = ReviewEntry(
         menu_item=menu_item,
         review_text=review_text,
         rating=rating,
-        review_image=review_image,
-        user=request.user,
+        user=request.user,  # Asumsikan login_required
     )
+
+    # Jika ada base64
+    if base64_image:
+        image_data = base64.b64decode(base64_image)
+        new_review.review_image.save(
+            "review_image.png",  # Nama default
+            ContentFile(image_data),
+            save=False
+        )
+
     new_review.save()
 
-    # Jika berhasil disimpan, kembalikan success
-    if new_review.pk:  # pk akan terisi jika objek berhasil disimpan
+    # Cek pk
+    if new_review.pk:
         return JsonResponse({"status": "success"}, status=200)
     else:
         return JsonResponse({"status": "error"}, status=401)

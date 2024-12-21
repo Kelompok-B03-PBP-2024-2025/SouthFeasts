@@ -8,6 +8,8 @@ from django.db.models import Count
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 import json
+import os
+from django.core.files.base import ContentFile
 
 def show_main(request):
     user = request.user
@@ -285,7 +287,8 @@ def show_json_article(request):
                 "author": article.user.username,
                 "created_at": article.created_at.isoformat(),  # Gunakan ISO format
                 "comments": comments,
-                "can_edit": request.user == article.user if request.user.is_authenticated else False
+                "can_edit": request.user == article.user if request.user.is_authenticated else False,
+                "is_staff": request.user.is_staff if request.user.is_authenticated else False
             }
         }
         articles.append(article_data)
@@ -314,6 +317,7 @@ def show_json_qna(request):
                     'author': answer.user.username,
                     'created_at': answer.created_at.strftime('%d %b, %Y'),
                     'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                 }
             } for answer in answers]
 
@@ -327,6 +331,7 @@ def show_json_qna(request):
                     'created_at': question.created_at.strftime('%d %b, %Y'),
                     'answered': question.answered,
                     'can_edit': request.user == question.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                     'answers': formatted_answers,
                     'total_answers': len(formatted_answers)
                 }
@@ -361,6 +366,7 @@ def show_json_qna(request):
             'answer_count': question.answer_count,
             'url': reverse('forum:question_detail', args=[question.id]),
             'can_edit': request.user == question.user if request.user.is_authenticated else False,
+            'is_staff': request.user.is_staff if request.user.is_authenticated else False,
             'answers': [{
                 'model': 'answer',
                 'pk': str(answer.id),
@@ -369,6 +375,7 @@ def show_json_qna(request):
                     'author': answer.user.username,
                     'created_at': answer.created_at.strftime('%d %b, %Y'),
                     'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                 }
             } for answer in question.answers.all()]
         }
@@ -394,21 +401,32 @@ def article_flutter(request, article_id=None):
             # Ambil data dari request.POST
             title = request.POST.get('title')
             content = request.POST.get('content')
-            thumbnail_img = request.POST.get('thumbnail_img')  # URL gambar (opsional)
+            image = request.FILES.get('image')  # Ambil file dari request.FILES
 
             # Validasi input
             if not title or not content:
                 return JsonResponse({"success": False, "message": "Title and content are required"}, status=400)
 
-            # Simpan artikel
+            # Validasi file gambar (jika ada)
+            if image:
+                allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                file_extension = os.path.splitext(image.name)[1].lower()
+                if file_extension not in allowed_extensions:
+                    return JsonResponse({
+                        "success": False,
+                        "message": f"Unsupported image format. Allowed formats: {', '.join(allowed_extensions)}."
+                    }, status=400)
+
+            # Simpan artikel baru
             article = Article.objects.create(
                 title=title,
                 content=content,
-                user=request.user,
-                thumbnail_file=thumbnail_img if thumbnail_img else None 
+                user=request.user
             )
 
-            base_url = request.build_absolute_uri('/').rstrip('/')
+            # Simpan gambar jika ada
+            if image:
+                article.thumbnail_file.save(image.name, image, save=True)
 
             return JsonResponse({
                 "success": True,
@@ -417,7 +435,8 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": article.get_thumbnail(), 
+                    "thumbnail_img": article.get_thumbnail(),
+                    "author": article.user.username,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
@@ -425,24 +444,24 @@ def article_flutter(request, article_id=None):
         # EDIT
         elif request.method == 'POST' and article_id:
             article = Article.objects.get(pk=article_id)
-            
-            if request.user != article.user:
+
+            if request.user != article.user and not request.user.is_staff:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
+            # Ambil data dari request.POST
             title = request.POST.get('title')
             content = request.POST.get('content')
-            thumbnail = request.FILES.get('thumbnail')
+            image = request.FILES.get('image')  # Ambil file dari request.FILES
 
+            # Update data artikel
             if title:
                 article.title = title
             if content:
                 article.content = content
-            if thumbnail:
-                article.thumbnail_file = thumbnail
-            
-            article.save()
+            if image:
+                article.thumbnail_file.save(image.name, image, save=True)
 
-            base_url = request.build_absolute_uri('/').rstrip('/')
+            article.save()
 
             return JsonResponse({
                 "success": True,
@@ -451,35 +470,30 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": base_url + article.get_thumbnail(),
+                    "thumbnail_img": article.get_thumbnail(),
+                    "author": article.user.username,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
-            })
+            }, status=200)
 
         # DELETE
-        elif request.method == 'POST' and article_id:
-            try:
-                article = Article.objects.get(pk=article_id)
+        elif request.method == 'DELETE' and article_id:
+            article = Article.objects.get(pk=article_id)
 
-                if article.user != request.user and not request.user.is_staff:
-                    return JsonResponse({
-                        "status": "error",
-                        "message": "You don't have permission to delete this article"
-                    }, status=403)
+            if article.user != request.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-                article.delete()
-                return JsonResponse({
-                    "status": "success",
-                    "message": "Article deleted successfully"
-                })
-            except Article.DoesNotExist:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Article not found"
-                }, status=404)
+            article.delete()
 
-        return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-        
+            return JsonResponse({
+                "success": True,
+                "message": "Article deleted successfully"
+            })
+
+        return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
+
+    except Article.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Article not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
@@ -533,25 +547,39 @@ def question_flutter(request, question_id=None):
             })
 
         # DELETE
-        elif request.method == 'POST' and question_id and request.POST.get('action') == 'delete':
-            question = Question.objects.get(pk=question_id)
+        elif request.method == 'DELETE' and question_id:
+            try:
+                # Ambil question berdasarkan ID
+                question = Question.objects.get(pk=question_id)
 
-            if question.user != request.user and not request.user.username.lower() == 'admin':
+                # Validasi hak akses
+                if request.user != question.user and not request.user.is_staff:
+                    return JsonResponse({
+                        "success": False,
+                        "message": "You don't have permission to delete this question"
+                    }, status=403)
+
+                # Hapus question
+                question.delete()
+
+                return JsonResponse({
+                    "success": True,
+                    "message": "Question deleted successfully"
+                }, status=200)
+
+            except Question.DoesNotExist:
                 return JsonResponse({
                     "success": False,
-                    "message": "You don't have permission to delete this question"
-                }, status=403)
+                    "message": "Question not found"
+                }, status=404)
 
-            question.delete()
-            return JsonResponse({
-                "success": True,
-                "message": "Question deleted successfully"
-            })
-
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": str(e)
+                }, status=400)
         return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
-    except Question.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Question not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
@@ -573,14 +601,15 @@ def comment_flutter(request, comment_id=None):
             )
 
             return JsonResponse({
-                "success": True,
-                "message": "Comment created successfully",
-                "comment": {
+                    "success": True,
+                    "message": "Comment created successfully",
+                    "comment": {
                     "id": comment.id,
                     "content": comment.content,
                     "author": comment.user.username,
                     "created_at": comment.created_at.strftime('%d %b, %Y'),
-                    "can_edit": True
+                    "can_edit": True,
+                    "is_staff": request.user.is_staff
                 }
             }, status=201)
 
@@ -632,7 +661,8 @@ def answer_flutter(request, answer_id=None):
                     "content": answer.content,
                     "author": answer.user.username,
                     "created_at": answer.created_at.strftime('%d %b, %Y'),
-                    "can_edit": True
+                    "can_edit": True,
+                    "is_staff": request.user.is_staff  # Tambahkan ini
                 }
             }, status=201)
 
