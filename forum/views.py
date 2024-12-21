@@ -392,9 +392,9 @@ def article_flutter(request, article_id=None):
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
 
             # Ambil data dari request.POST
-            title = request.POST.get('title')
-            content = request.POST.get('content')
-            thumbnail_img = request.POST.get('thumbnail_img')  # URL gambar (opsional)
+            data = json.loads(request.body.decode('utf-8'))
+            title = data.get('title')
+            content = data.get('content')
 
             # Validasi input
             if not title or not content:
@@ -404,11 +404,8 @@ def article_flutter(request, article_id=None):
             article = Article.objects.create(
                 title=title,
                 content=content,
-                user=request.user,
-                thumbnail_file=thumbnail_img if thumbnail_img else None 
+                user=request.user
             )
-
-            base_url = request.build_absolute_uri('/').rstrip('/')
 
             return JsonResponse({
                 "success": True,
@@ -417,7 +414,8 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": article.get_thumbnail(), 
+                    "thumbnail_img": article.get_thumbnail(),
+                    "author": article.user.username,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
@@ -425,24 +423,22 @@ def article_flutter(request, article_id=None):
         # EDIT
         elif request.method == 'POST' and article_id:
             article = Article.objects.get(pk=article_id)
-            
+
             if request.user != article.user:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            title = request.POST.get('title')
-            content = request.POST.get('content')
-            thumbnail = request.FILES.get('thumbnail')
+            # Ambil data dari request.POST
+            data = json.loads(request.body.decode('utf-8'))
+            title = data.get('title')
+            content = data.get('content')
 
+            # Update data artikel jika ada
             if title:
                 article.title = title
             if content:
                 article.content = content
-            if thumbnail:
-                article.thumbnail_file = thumbnail
-            
-            article.save()
 
-            base_url = request.build_absolute_uri('/').rstrip('/')
+            article.save()
 
             return JsonResponse({
                 "success": True,
@@ -451,35 +447,30 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": base_url + article.get_thumbnail(),
+                    "thumbnail_img": article.get_thumbnail(),
+                    "author": article.user.username,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
-            })
+            }, status=200)
 
         # DELETE
-        elif request.method == 'POST' and article_id:
-            try:
-                article = Article.objects.get(pk=article_id)
+        elif request.method == 'DELETE' and article_id:
+            article = Article.objects.get(pk=article_id)
 
-                if article.user != request.user and not request.user.is_staff:
-                    return JsonResponse({
-                        "status": "error",
-                        "message": "You don't have permission to delete this article"
-                    }, status=403)
+            if article.user != request.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-                article.delete()
-                return JsonResponse({
-                    "status": "success",
-                    "message": "Article deleted successfully"
-                })
-            except Article.DoesNotExist:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Article not found"
-                }, status=404)
+            article.delete()
 
-        return JsonResponse({"success": False, "message": "Invalid request method"}, status=405)
-        
+            return JsonResponse({
+                "success": True,
+                "message": "Article deleted successfully"
+            })
+
+        return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
+
+    except Article.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Article not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
@@ -533,25 +524,39 @@ def question_flutter(request, question_id=None):
             })
 
         # DELETE
-        elif request.method == 'POST' and question_id and request.POST.get('action') == 'delete':
-            question = Question.objects.get(pk=question_id)
+        elif request.method == 'DELETE' and question_id:
+            try:
+                # Ambil question berdasarkan ID
+                question = Question.objects.get(pk=question_id)
 
-            if question.user != request.user and not request.user.username.lower() == 'admin':
+                # Validasi hak akses
+                if question.user != request.user and not request.user.is_staff:
+                    return JsonResponse({
+                        "success": False,
+                        "message": "You don't have permission to delete this question"
+                    }, status=403)
+
+                # Hapus question
+                question.delete()
+
+                return JsonResponse({
+                    "success": True,
+                    "message": "Question deleted successfully"
+                }, status=200)
+
+            except Question.DoesNotExist:
                 return JsonResponse({
                     "success": False,
-                    "message": "You don't have permission to delete this question"
-                }, status=403)
+                    "message": "Question not found"
+                }, status=404)
 
-            question.delete()
-            return JsonResponse({
-                "success": True,
-                "message": "Question deleted successfully"
-            })
-
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": str(e)
+                }, status=400)
         return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
-    except Question.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Question not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
