@@ -373,6 +373,25 @@ def get_reviews(request, menu_item_id):
     }
     return render(request, 'review_list.html', context)
 
+def get_reviews_flutter(request, menu_item_id):
+    menu_item = get_object_or_404(MenuItem, id=menu_item_id)
+    reviews = ReviewEntry.objects.filter(menu_item=menu_item).select_related('user')
+    review_data = []
+    for review in reviews:
+        review_data.append({
+            "id": review.id,
+            "user": review.user.username if review.user else "Anonymous",
+            "content": review.review_text,  # Changed here
+            "rating": review.rating,
+            "image": review.review_image.url if review.review_image else None,
+            "created_at": review.created_at.isoformat(),
+        })
+    return JsonResponse({
+        "status": "success",
+        "menu_item_id": menu_item_id,
+        "reviews": review_data,
+    })
+
 def get_reviews_resto(request, menu_item_id):
     # Tampilkan review untuk menu dari halaman restoran
     menu_item = get_object_or_404(MenuItem, id=menu_item_id)
@@ -391,6 +410,31 @@ def delete_review(request, review_id):
     menu_item_id = review.menu_item.id
     review.delete()
     return redirect('dashboard:menu_item_reviews', menu_item_id=menu_item_id)
+
+@csrf_exempt
+def delete_review_flutter(request, review_id):
+    if request.method == 'GET':
+        try:
+            review = get_object_or_404(ReviewEntry, pk=review_id)
+            review.delete()
+            return JsonResponse({
+                "status": "success",
+                "message": "Review deleted successfully"
+            }, status=200)
+        except ReviewEntry.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "Review not found"
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            }, status=400)
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method"
+    }, status=405)
 
 def remove_empty_restaurants():
     # Hapus restoran tanpa menu
