@@ -134,9 +134,9 @@
                 <input type="number" name="rating" id="rating" class="w-full px-4 py-2 border rounded-md" min="1" max="5" step="0.1" placeholder="Rating (1-5)" required>
             </div>
             <div class="mb-4">
-                <label for="image_url" class="block text-lg font-semibold text-gray-700">Add Image URL</label>
-                <input type="url" name="image_url" id="image_url" class="w-full px-4 py-2 border rounded-md" placeholder="Enter image URL">
-            </div>            
+                <label for="review_image" class="block text-lg font-semibold text-gray-700">Add Photo</label>
+                <input type="file" name="review_image" id="review_image" class="w-full">
+            </div>
             <div class="text-right">
                 <button type="submit" class="bg-blue-600 text-white py-2 px-4 rounded-lg uppercase hover:bg-blue-700 transition duration-300">Submit</button>
             </div>
@@ -156,36 +156,26 @@
         document.getElementById(modalId).classList.add('hidden');
     }
 
-    document.getElementById("reviewForm").addEventListener("submit", async function (e) {
+    // AJAX submission for the review form
+    document.getElementById("reviewForm").addEventListener("submit", async function(e) {
         e.preventDefault();
-
-        // Gather form data
-        const reviewText = document.getElementById("review_text").value;
-        const rating = document.getElementById("rating").value;
-        const imageUrl = document.getElementById("image_url").value;
-
-        const formData = {
-            review_text: reviewText,
-            rating: rating,
-            image_url: imageUrl,
-        };
+        const formData = new FormData(this);
 
         try {
             const response = await fetch("{% url 'review:create_review' menu_item.id %}", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
                     "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
                 },
-                body: JSON.stringify(formData),
+                body: formData
             });
 
             const data = await response.json();
 
             if (data.success) {
-                const reviewsList = document.getElementById("reviews-list");
-                const newReviewDiv = document.createElement("div");
-                newReviewDiv.className = "border-t pt-4";
+                const reviewsList = document.getElementById('reviews-list');
+                const newReviewDiv = document.createElement('div');
+                newReviewDiv.className = 'border-t pt-4';
                 newReviewDiv.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
                         <div>
@@ -195,20 +185,19 @@
                         <p class="text-gray-700 font-semibold">${data.rating}/5</p>
                     </div>
                     <p class="text-gray-700">${data.review_text}</p>
-                    ${data.image_url ? `<img src="${data.image_url}" alt="Review image" class="mt-4 rounded-lg w-full h-48 object-cover">` : ""}
+                    ${data.review_image ? `<img src="${data.review_image}" alt="Review image" class="mt-4 rounded-lg w-full h-48 object-cover">` : ""}
                 `;
                 reviewsList.prepend(newReviewDiv);
 
                 document.getElementById("reviewForm").reset();
                 closeModal("reviewFormModal");
             } else {
-                alert("Failed to submit review. Please check your input.");
+                alert('Failed to submit review. Please check your input.');
             }
         } catch (error) {
-            console.error("Error:", error);
-            alert("An error occurred while adding the review.");
+            console.error('Error:', error);
+            alert('An error occurred while adding the review.');
         }
     });
-
 </script>
 {% endblock %}
