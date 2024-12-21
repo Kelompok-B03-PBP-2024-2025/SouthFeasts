@@ -390,20 +390,26 @@ def article_flutter(request, article_id=None):
         if request.method == 'POST' and not article_id:
             if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
-            
+
+            # Ambil data dari request.POST
             title = request.POST.get('title')
             content = request.POST.get('content')
-            thumbnail_img = request.POST.get('thumbnail_img')  # Tambahkan ini
-            
+            thumbnail_img = request.POST.get('thumbnail_img')  # URL gambar (opsional)
+
+            # Validasi input
+            if not title or not content:
+                return JsonResponse({"success": False, "message": "Title and content are required"}, status=400)
+
+            # Simpan artikel
             article = Article.objects.create(
                 title=title,
                 content=content,
                 user=request.user,
-                thumbnail_img=thumbnail_img if thumbnail_img else None
+                thumbnail_file=thumbnail_img if thumbnail_img else None 
             )
-            
+
             base_url = request.build_absolute_uri('/').rstrip('/')
-            
+
             return JsonResponse({
                 "success": True,
                 "message": "Article created successfully",
@@ -411,7 +417,7 @@ def article_flutter(request, article_id=None):
                     "id": article.id,
                     "title": article.title,
                     "content": article.content,
-                    "thumbnail_img": thumbnail_img if thumbnail_img else base_url + article.get_thumbnail(),
+                    "thumbnail_img": article.get_thumbnail(), 
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
