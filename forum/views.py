@@ -8,7 +8,7 @@ from django.db.models import Count
 from django.core.paginator import Paginator
 from django.views.decorators.csrf import csrf_exempt
 import json
-import base64
+import os
 from django.core.files.base import ContentFile
 
 def show_main(request):
@@ -287,7 +287,8 @@ def show_json_article(request):
                 "author": article.user.username,
                 "created_at": article.created_at.isoformat(),  # Gunakan ISO format
                 "comments": comments,
-                "can_edit": request.user == article.user if request.user.is_authenticated else False
+                "can_edit": request.user == article.user if request.user.is_authenticated else False,
+                "is_staff": request.user.is_staff if request.user.is_authenticated else False
             }
         }
         articles.append(article_data)
@@ -316,6 +317,7 @@ def show_json_qna(request):
                     'author': answer.user.username,
                     'created_at': answer.created_at.strftime('%d %b, %Y'),
                     'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                 }
             } for answer in answers]
 
@@ -329,6 +331,7 @@ def show_json_qna(request):
                     'created_at': question.created_at.strftime('%d %b, %Y'),
                     'answered': question.answered,
                     'can_edit': request.user == question.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                     'answers': formatted_answers,
                     'total_answers': len(formatted_answers)
                 }
@@ -363,6 +366,7 @@ def show_json_qna(request):
             'answer_count': question.answer_count,
             'url': reverse('forum:question_detail', args=[question.id]),
             'can_edit': request.user == question.user if request.user.is_authenticated else False,
+            'is_staff': request.user.is_staff if request.user.is_authenticated else False,
             'answers': [{
                 'model': 'answer',
                 'pk': str(answer.id),
@@ -371,6 +375,7 @@ def show_json_qna(request):
                     'author': answer.user.username,
                     'created_at': answer.created_at.strftime('%d %b, %Y'),
                     'can_edit': request.user == answer.user if request.user.is_authenticated else False,
+                    'is_staff': request.user.is_staff if request.user.is_authenticated else False,
                 }
             } for answer in question.answers.all()]
         }
@@ -388,22 +393,31 @@ def show_json_qna(request):
 @csrf_exempt
 def article_flutter(request, article_id=None):
     try:
- # CREATE
+        # CREATE
         if request.method == 'POST' and not article_id:
             if not request.user.is_authenticated:
                 return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
 
-            # Ambil data dari request.body
-            data = json.loads(request.body.decode('utf-8'))
-            title = data.get('title')
-            content = data.get('content')
-            thumbnail_base64 = data.get('thumbnail_base64')  # Gambar dalam Base64
+            # Ambil data dari request.POST
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            image = request.FILES.get('image')  # Ambil file dari request.FILES
 
             # Validasi input
             if not title or not content:
                 return JsonResponse({"success": False, "message": "Title and content are required"}, status=400)
 
-            # Simpan artikel
+            # Validasi file gambar (jika ada)
+            if image:
+                allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                file_extension = os.path.splitext(image.name)[1].lower()
+                if file_extension not in allowed_extensions:
+                    return JsonResponse({
+                        "success": False,
+                        "message": f"Unsupported image format. Allowed formats: {', '.join(allowed_extensions)}."
+                    }, status=400)
+
+            # Simpan artikel baru
             article = Article.objects.create(
                 title=title,
                 content=content,
@@ -411,14 +425,8 @@ def article_flutter(request, article_id=None):
             )
 
             # Simpan gambar jika ada
-            if thumbnail_base64:
-                format, imgstr = thumbnail_base64.split(';base64,')
-                ext = format.split('/')[-1]  # Ekstensi file (jpg, png, dll.)
-                article.thumbnail_file.save(
-                    f"{article.id}.{ext}",
-                    ContentFile(base64.b64decode(imgstr)),
-                    save=True
-                )
+            if image:
+                article.thumbnail_file.save(image.name, image, save=True)
 
             return JsonResponse({
                 "success": True,
@@ -437,30 +445,21 @@ def article_flutter(request, article_id=None):
         elif request.method == 'POST' and article_id:
             article = Article.objects.get(pk=article_id)
 
-            if request.user != article.user:
+            if request.user != article.user and not request.user.is_staff:
                 return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            # Ambil data dari request.body
-            data = json.loads(request.body.decode('utf-8'))
-            title = data.get('title')
-            content = data.get('content')
-            thumbnail_base64 = data.get('thumbnail_base64')  # Gambar dalam Base64
+            # Ambil data dari request.POST
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            image = request.FILES.get('image')  # Ambil file dari request.FILES
 
             # Update data artikel
             if title:
                 article.title = title
             if content:
                 article.content = content
-
-            # Update gambar jika ada
-            if thumbnail_base64:
-                format, imgstr = thumbnail_base64.split(';base64,')
-                ext = format.split('/')[-1]
-                article.thumbnail_file.save(
-                    f"{article.id}.{ext}",
-                    ContentFile(base64.b64decode(imgstr)),
-                    save=True
-                )
+            if image:
+                article.thumbnail_file.save(image.name, image, save=True)
 
             article.save()
 
@@ -554,7 +553,7 @@ def question_flutter(request, question_id=None):
                 question = Question.objects.get(pk=question_id)
 
                 # Validasi hak akses
-                if question.user != request.user and not request.user.is_staff:
+                if request.user != question.user and not request.user.is_staff:
                     return JsonResponse({
                         "success": False,
                         "message": "You don't have permission to delete this question"
@@ -602,14 +601,15 @@ def comment_flutter(request, comment_id=None):
             )
 
             return JsonResponse({
-                "success": True,
-                "message": "Comment created successfully",
-                "comment": {
+                    "success": True,
+                    "message": "Comment created successfully",
+                    "comment": {
                     "id": comment.id,
                     "content": comment.content,
                     "author": comment.user.username,
                     "created_at": comment.created_at.strftime('%d %b, %Y'),
-                    "can_edit": True
+                    "can_edit": True,
+                    "is_staff": request.user.is_staff
                 }
             }, status=201)
 
@@ -661,7 +661,8 @@ def answer_flutter(request, answer_id=None):
                     "content": answer.content,
                     "author": answer.user.username,
                     "created_at": answer.created_at.strftime('%d %b, %Y'),
-                    "can_edit": True
+                    "can_edit": True,
+                    "is_staff": request.user.is_staff  # Tambahkan ini
                 }
             }, status=201)
 
