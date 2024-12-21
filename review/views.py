@@ -139,9 +139,29 @@ def delete_review(request, review_id):
     
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
+from django.http import JsonResponse
+from django.db.models import Q
+
 def show_json(request):
+    # Ambil semua review dan lakukan select_related untuk optimasi
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
     
+    # Ambil parameter query
+    menu_item_id = request.GET.get('menu_item_id')
+    search_query = request.GET.get('search')
+
+    # Filter berdasarkan menu_item_id jika diberikan
+    if menu_item_id:
+        reviews = reviews.filter(menu_item_id=menu_item_id)
+    
+    # Filter berdasarkan search_query jika diberikan (cari di review_text atau menu_item__name)
+    if search_query:
+        reviews = reviews.filter(
+            Q(review_text__icontains=search_query) |
+            Q(menu_item__name__icontains=search_query)
+        )
+    
+    # Siapkan data JSON
     reviews_data = []
     for review in reviews:
         if review.review_image:
@@ -156,7 +176,7 @@ def show_json(request):
             'user': review.user.username,
             'review_text': review.review_text,
             'rating': review.rating,
-            'review_image': image_url,  # <-- pakai URL absolut
+            'review_image': image_url,  # Menggunakan URL absolut
             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
         })
     
