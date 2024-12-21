@@ -140,27 +140,31 @@ def delete_review(request, review_id):
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
 def show_json(request):
+    search_query = request.GET.get('search', '')  # Get search query from URL
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
     
-    reviews_data = []
-    for review in reviews:
-        if review.review_image:
-            # Bangun URL absolut (host + path) 
-            image_url = request.build_absolute_uri(review.review_image.url)
-        else:
-            image_url = None
-
-        reviews_data.append({
+    # Filter reviews based on product name or review content if a search query is provided
+    if search_query:
+        reviews = reviews.filter(
+            Q(menu_item__name__icontains=search_query) |  # Search by product name
+            Q(review_text__icontains=search_query)        # Search by review content
+        )
+    
+    # Create a list of dictionaries with review details
+    reviews_data = [
+        {
             'id': review.id,
             'menu_item': review.menu_item.name if review.menu_item else None,
             'user': review.user.username,
             'review_text': review.review_text,
             'rating': review.rating,
-            'review_image': image_url,  # <-- pakai URL absolut
+            'review_image': review.review_image.url if review.review_image else None,
             'created_at': review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        })
+        }
+        for review in reviews
+    ]
     
-    return JsonResponse(reviews_data, safe=False)
+    return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
 
 @csrf_exempt
