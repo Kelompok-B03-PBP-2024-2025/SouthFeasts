@@ -304,7 +304,6 @@ from django.contrib.auth.decorators import login_required
 import json
 
 @csrf_exempt
-@login_required
 def edit_review_flutter(request, review_id):
     if request.method != 'POST':
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
@@ -341,7 +340,7 @@ def edit_review_flutter(request, review_id):
 
         return JsonResponse({
             "status": "success",
-            "user": review.user.username,
+            "user": request.user.username,
             "rating": review.rating,
             "review_text": review.review_text,
             "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
