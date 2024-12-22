@@ -304,11 +304,16 @@ from django.contrib.auth.decorators import login_required
 import json
 
 @csrf_exempt
+@login_required
 def edit_review_flutter(request, review_id):
     if request.method != 'POST':
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
     try:
+        # Pastikan 'review_id' diterima
+        if not review_id:
+            return JsonResponse({"status": "error", "message": "Review ID is missing"}, status=400)
+
         data = json.loads(request.body)
         review_text = data.get('review_text')
         rating = data.get('rating')
@@ -316,31 +321,24 @@ def edit_review_flutter(request, review_id):
         if not review_text or not rating:
             return JsonResponse({"status": "error", "message": "Missing fields: review_text or rating"}, status=400)
 
-        try:
-            rating = float(rating)
-            if not (1 <= rating <= 5):
-                return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
-        except ValueError:
-            return JsonResponse({"status": "error", "message": "Invalid rating format"}, status=400)
+        rating = float(rating)
+        if not (1 <= rating <= 5):
+            return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
 
+        # Cari review berdasarkan ID
         try:
             review = ReviewEntry.objects.get(id=review_id, user=request.user)
         except ReviewEntry.DoesNotExist:
             return JsonResponse({"status": "error", "message": "Review not found"}, status=404)
 
-        # Optional: Validate length of review_text if necessary
-        max_length = ReviewEntry._meta.get_field('review_text').max_length
-        if len(review_text) > max_length:
-            return JsonResponse({"status": "error", "message": f"Review text exceeds {max_length} characters"}, status=400)
-
-        # Update review
+        # Perbarui data review
         review.review_text = review_text
         review.rating = rating
         review.save()
 
         return JsonResponse({
             "status": "success",
-            "user": request.user.username,
+            "user": review.user.username,
             "rating": review.rating,
             "review_text": review.review_text,
             "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
@@ -348,9 +346,7 @@ def edit_review_flutter(request, review_id):
 
     except json.JSONDecodeError:
         return JsonResponse({"status": "error", "message": "Invalid JSON format"}, status=400)
-    except ValidationError as ve:
-        return JsonResponse({"status": "error", "message": f"Validation error: {str(ve)}"}, status=400)
     except Exception as e:
-        # Log the error for debugging
         print(f"Error editing review: {str(e)}")
         return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
+
