@@ -11,5 +11,4 @@ urlpatterns = [
     path('show-json-rsvp/<int:pk>', views.show_json_reservations, name='show_json_reservations'),
     path('get-restaurant/<int:pk>/', views.get_restaurant, name='get_restaurant'),
     path('create-reservation/<int:restaurant_id>/', views.create_reservation, name='create_reservation'),
-    path('api/reservations/create/', views.create_reservation_api, name='create-reservation-api'),
 ]
