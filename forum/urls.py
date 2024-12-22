@@ -28,4 +28,6 @@ urlpatterns = [
     path('api/comment/delete/<int:comment_id>/', comment_flutter, name='delete_comment_flutter'),
     path('api/answer/create/', answer_flutter, name='create_answer_flutter'),
     path('api/answer/delete/<int:answer_id>/', answer_flutter, name='delete_answer_flutter'),
+    path('api/article/delete-flutter/<int:article_id>/', delete_article_flutter, name='delete_article_flutter'),
+    path('api/question/delete-flutter/<int:question_id>/', delete_question_flutter, name='delete_question_flutter'),
 ]
