@@ -10,6 +10,17 @@ from review.forms import ReviewForm
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
+from django.http import JsonResponse
+from django.db.models import Q
+from .models import ReviewEntry
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ReviewEntry, MenuItem
+import json
+import base64
+from django.core.files.base import ContentFile
+import logging
 
 # View for displaying all reviews across products with search functionality
 def all_reviews(request):
@@ -139,24 +150,20 @@ def delete_review(request, review_id):
     
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
-from django.http import JsonResponse
-from django.db.models import Q
 
-from django.http import JsonResponse
-from django.db.models import Q
-from .models import ReviewEntry
 
 def show_json(request):
     search_query = request.GET.get('search', '')  # Get search query from URL
     my_reviews = request.GET.get('my_reviews', 'false') == 'true'
     print(f"search_query: {search_query}, my_reviews: {my_reviews}, user: {request.user}")
-    reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
-    
-    # Filter reviews if my_reviews is true
+
+    # Filter reviews based on my_reviews and user authentication
     if my_reviews and request.user.is_authenticated:
-        reviews = reviews.filter(user=request.user)
-    
-    # Filter reviews based on search query
+        reviews = ReviewEntry.objects.filter(user=request.user).select_related('menu_item', 'user')
+    else:
+        reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
+
+    # Apply search query filter
     if search_query:
         reviews = reviews.filter(
             Q(menu_item__name__icontains=search_query) |
@@ -176,18 +183,10 @@ def show_json(request):
         }
         for review in reviews
     ]
-    
+
     return JsonResponse(reviews_data, safe=False)
 
 
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import ReviewEntry, MenuItem
-import json
-import base64
-from django.core.files.base import ContentFile
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -306,43 +305,53 @@ import json
 
 @csrf_exempt
 @login_required
-def edit_review(request, review_id):
-    if request.method == 'POST':
+def edit_review_flutter(request, review_id):
+    if request.method != 'POST':
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        review_text = data.get('review_text')
+        rating = data.get('rating')
+
+        if not review_text or not rating:
+            return JsonResponse({"status": "error", "message": "Missing fields: review_text or rating"}, status=400)
+
         try:
-            data = json.loads(request.body)
-            review_text = data.get('review_text')
-            rating = data.get('rating')
+            rating = float(rating)
+            if not (1 <= rating <= 5):
+                return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
+        except ValueError:
+            return JsonResponse({"status": "error", "message": "Invalid rating format"}, status=400)
 
-            if not review_text or not rating:
-                return JsonResponse({"status": "Missing fields"}, status=400)
+        try:
+            review = ReviewEntry.objects.get(id=review_id, user=request.user)
+        except ReviewEntry.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Review not found"}, status=404)
 
-            try:
-                rating = float(rating)
-                if not (1 <= rating <= 5):
-                    return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
-            except ValueError:
-                return JsonResponse({"status": "Invalid rating"}, status=400)
+        # Optional: Validate length of review_text if necessary
+        max_length = ReviewEntry._meta.get_field('review_text').max_length
+        if len(review_text) > max_length:
+            return JsonResponse({"status": "error", "message": f"Review text exceeds {max_length} characters"}, status=400)
 
-            try:
-                review = ReviewEntry.objects.get(id=review_id, user=request.user)
-            except ReviewEntry.DoesNotExist:
-                return JsonResponse({"status": "Review not found"}, status=404)
+        # Update review
+        review.review_text = review_text
+        review.rating = rating
+        review.save()
 
-            review.review_text = review_text
-            review.rating = rating
-            review.save()
+        return JsonResponse({
+            "status": "success",
+            "user": review.user.username,
+            "rating": review.rating,
+            "review_text": review.review_text,
+            "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+        }, status=200)
 
-            return JsonResponse({
-                "status": "success",
-                "user": review.user.username,
-                "rating": review.rating,
-                "review_text": review.review_text,
-                "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            }, status=200)
-
-        except json.JSONDecodeError:
-            return JsonResponse({"status": "Invalid JSON"}, status=400)
-        except Exception as e:
-            return JsonResponse({"status": f"Error: {str(e)}"}, status=500)
-    else:
-        return JsonResponse({"status": "Invalid request"}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Invalid JSON format"}, status=400)
+    except ValidationError as ve:
+        return JsonResponse({"status": "error", "message": f"Validation error: {str(ve)}"}, status=400)
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error editing review: {str(e)}")
+        return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
