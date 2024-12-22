@@ -139,15 +139,28 @@ def delete_review(request, review_id):
     
 #     return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
 
+from django.http import JsonResponse
+from django.db.models import Q
+
+from django.http import JsonResponse
+from django.db.models import Q
+from .models import ReviewEntry
+
 def show_json(request):
     search_query = request.GET.get('search', '')  # Get search query from URL
+    my_reviews = request.GET.get('my_reviews', 'false') == 'true'
+    print(f"search_query: {search_query}, my_reviews: {my_reviews}, user: {request.user}")
     reviews = ReviewEntry.objects.all().select_related('menu_item', 'user')
     
-    # Filter reviews based on product name or review content if a search query is provided
+    # Filter reviews if my_reviews is true
+    if my_reviews and request.user.is_authenticated:
+        reviews = reviews.filter(user=request.user)
+    
+    # Filter reviews based on search query
     if search_query:
         reviews = reviews.filter(
-            Q(menu_item__name__icontains=search_query) |  # Search by product name
-            Q(review_text__icontains=search_query)        # Search by review content
+            Q(menu_item__name__icontains=search_query) |
+            Q(review_text__icontains=search_query)
         )
     
     # Create a list of dictionaries with review details
@@ -164,7 +177,9 @@ def show_json(request):
         for review in reviews
     ]
     
-    return JsonResponse(reviews_data, safe=False)  # Set safe=False for returning a list
+    return JsonResponse(reviews_data, safe=False)
+
+
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -267,4 +282,67 @@ def create_review_flutter(request):
             return JsonResponse({"status": f"Error: {str(e)}"}, status=400)
     else:
         logger.error("Invalid request method")
+        return JsonResponse({"status": "Invalid request"}, status=400)
+
+# review/views.py
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ReviewEntry, MenuItem
+from django.contrib.auth.decorators import login_required
+import json
+import base64
+from django.core.files.base import ContentFile
+import logging
+
+logger = logging.getLogger(__name__)
+# views.py
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ReviewEntry
+from django.contrib.auth.decorators import login_required
+import json
+
+@csrf_exempt
+@login_required
+def edit_review(request, review_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            review_text = data.get('review_text')
+            rating = data.get('rating')
+
+            if not review_text or not rating:
+                return JsonResponse({"status": "Missing fields"}, status=400)
+
+            try:
+                rating = float(rating)
+                if not (1 <= rating <= 5):
+                    return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
+            except ValueError:
+                return JsonResponse({"status": "Invalid rating"}, status=400)
+
+            try:
+                review = ReviewEntry.objects.get(id=review_id, user=request.user)
+            except ReviewEntry.DoesNotExist:
+                return JsonResponse({"status": "Review not found"}, status=404)
+
+            review.review_text = review_text
+            review.rating = rating
+            review.save()
+
+            return JsonResponse({
+                "status": "success",
+                "user": review.user.username,
+                "rating": review.rating,
+                "review_text": review.review_text,
+                "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": f"Error: {str(e)}"}, status=500)
+    else:
         return JsonResponse({"status": "Invalid request"}, status=400)
