@@ -437,6 +437,7 @@ def article_flutter(request, article_id=None):
                     "content": article.content,
                     "thumbnail_img": article.get_thumbnail(),
                     "author": article.user.username,
+                    "can_edit": True,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=201)
@@ -472,28 +473,47 @@ def article_flutter(request, article_id=None):
                     "content": article.content,
                     "thumbnail_img": article.get_thumbnail(),
                     "author": article.user.username,
+                    "can_edit": True,
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=200)
 
         # DELETE
         elif request.method == 'DELETE' and article_id:
-            article = Article.objects.get(pk=article_id)
+            try:
+                article = Article.objects.get(pk=article_id)
 
-            if article.user != request.user and not request.user.is_staff:
-                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+                if article.user != request.user and not request.user.is_staff:
+                    return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
 
-            article.delete()
+                article.delete()
 
-            return JsonResponse({
-                "success": True,
-                "message": "Article deleted successfully"
-            })
+                # Verify deletion
+                try:
+                    Article.objects.get(pk=article_id)
+                    return JsonResponse({
+                        "success": False,
+                        "message": "Article deletion failed"
+                    }, status=500)
+                except Article.DoesNotExist:
+                    return JsonResponse({
+                        "success": True,
+                        "message": "Article deleted successfully"
+                    })
+
+            except Article.DoesNotExist:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Article not found"
+                }, status=404)
+            except Exception as e:
+                return JsonResponse({
+                    "success": False,
+                    "message": str(e)
+                }, status=500)
 
         return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
-    except Article.DoesNotExist:
-        return JsonResponse({"success": False, "message": "Article not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
 
