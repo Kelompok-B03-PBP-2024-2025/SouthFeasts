@@ -303,38 +303,54 @@ from .models import ReviewEntry
 from django.contrib.auth.decorators import login_required
 import json
 
+
 @csrf_exempt
 @login_required
 def edit_review_flutter(request, review_id):
     if request.method != 'POST':
+        logger.error("Invalid request method")
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
     try:
         # Pastikan 'review_id' diterima
         if not review_id:
+            logger.error("Review ID is missing")
             return JsonResponse({"status": "error", "message": "Review ID is missing"}, status=400)
 
         data = json.loads(request.body)
         review_text = data.get('review_text')
         rating = data.get('rating')
 
+        # Log data yang diterima
+        logger.debug(f"Received data for editing: review_id={review_id}, review_text={review_text}, rating={rating}")
+
+        # Validasi input
         if not review_text or not rating:
+            logger.error("Missing fields in request data")
             return JsonResponse({"status": "error", "message": "Missing fields: review_text or rating"}, status=400)
 
-        rating = float(rating)
-        if not (1 <= rating <= 5):
-            return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
+        try:
+            rating = float(rating)
+            if not (1 <= rating <= 5):
+                logger.error("Rating out of bounds")
+                return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
+        except ValueError:
+            logger.error("Invalid rating value")
+            return JsonResponse({"status": "error", "message": "Invalid rating"}, status=400)
 
         # Cari review berdasarkan ID
         try:
             review = ReviewEntry.objects.get(id=review_id, user=request.user)
         except ReviewEntry.DoesNotExist:
+            logger.error(f"Review with id {review_id} not found")
             return JsonResponse({"status": "error", "message": "Review not found"}, status=404)
 
         # Perbarui data review
         review.review_text = review_text
         review.rating = rating
         review.save()
+
+        logger.debug(f"Review with id {review_id} updated successfully")
 
         return JsonResponse({
             "status": "success",
@@ -345,8 +361,8 @@ def edit_review_flutter(request, review_id):
         }, status=200)
 
     except json.JSONDecodeError:
+        logger.exception("JSON decode error")
         return JsonResponse({"status": "error", "message": "Invalid JSON format"}, status=400)
     except Exception as e:
-        print(f"Error editing review: {str(e)}")
-        return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
-
+        logger.exception(f"Unexpected error: {str(e)}")
+        return JsonResponse({"status": "error", "message": f"An unexpected error occurred: {str(e)}"}, status=500)
