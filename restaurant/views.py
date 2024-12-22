@@ -8,6 +8,9 @@ from product.models import MenuItem
 from django.db.models import Q
 from django.db.models import Count, Min, Max, Avg, F
 from authentication.models import UserProfile
+from django.views.decorators.csrf import csrf_exempt
+import json
+from datetime import datetime
 
 def restaurant_list(request):
     restaurants = Restaurant.objects.all()
@@ -238,20 +241,61 @@ def show_json_reservations(request, pk):
         return JsonResponse({'error': 'Unauthorized'}, status=401)
     
     try:
-        user_profile = UserProfile.objects.get(user__id=pk)  # Access the User via the `user` field
+        user_profile = UserProfile.objects.get(user__id=pk)
     except UserProfile.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
     
-    reservations = Reservation.objects.filter(user=user_profile).select_related('restaurant')
+    reservations = Reservation.objects.filter(user=user_profile.user).select_related('restaurant')
     
-    reservations_data = [{
-        'id': reservation.id,
-        'restaurant_name': reservation.restaurant.name,
-        'restaurant_location': reservation.restaurant.location,
-        'date': reservation.date.isoformat(),
-        'created': reservation.created.isoformat(),
-    } for reservation in reservations]
+    reservations_data = []
+    for reservation in reservations:
+        reservations_data.append({
+            'id': reservation.id,
+            'restaurant': {
+                'id': reservation.restaurant.id,
+                'name': reservation.restaurant.name,
+                'location': reservation.restaurant.location,
+                'kecamatan': reservation.restaurant.kecamatan
+            },
+            'reservation_date': reservation.reservation_date.strftime('%Y-%m-%d'),
+            'reservation_time': reservation.reservation_time.strftime('%H:%M'),
+            'number_of_people': reservation.number_of_people,
+            'created_at': reservation.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        })
     
     return JsonResponse({
         'reservations': reservations_data
     })
+
+
+@csrf_exempt
+def create_reservation_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
+    
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+        restaurant = get_object_or_404(Restaurant, pk=data.get('restaurant_id'))
+        
+        reservation = Reservation.objects.create(
+            restaurant=restaurant,
+            user=request.user,
+            reservation_date=data.get('reservation_date'),
+            reservation_time=data.get('reservation_time'),
+            number_of_people=data.get('number_of_people', 1)
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'reservation_id': reservation.id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except KeyError as e:
+        return JsonResponse({'error': f'Missing field: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

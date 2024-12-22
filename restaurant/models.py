@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 class Restaurant(models.Model):
     KECAMATAN_CHOICE = [
@@ -34,5 +35,7 @@ class Restaurant(models.Model):
 class Reservation(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
-    date = models.DateTimeField()
+    reservation_date = models.DateField(null=True)
+    reservation_time = models.TimeField(null=True)
+    number_of_people = models.IntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
