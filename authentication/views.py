@@ -1,4 +1,3 @@
-
 from .forms import UserRegistrationForm
 from .models import UserProfile
 from django.shortcuts import render, redirect
@@ -41,6 +40,7 @@ def api_register(request):
         user.save()
         
         return JsonResponse({
+            "id": user.id,
             "username": user.username,
             "status": 'success',
             "message": "User created successfully!"
@@ -62,6 +62,7 @@ def api_login(request):
             auth_login(request, user)
             # Status login sukses.
             return JsonResponse({
+                "id": user.id,
                 "username": user.username,
                 "is_staff": user.is_staff,
                 "status": True,
@@ -88,6 +89,7 @@ def api_logout(request):
     try:
         auth_logout(request)
         return JsonResponse({
+            "id": request.user.id,
             "username": username,
             "status": True,
             "message": "Logout berhasil!"
