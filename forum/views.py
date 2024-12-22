@@ -390,6 +390,25 @@ def show_json_qna(request):
         'filter_type': filter_type
     }, json_dumps_params={'ensure_ascii': False})
 
+
+def delete_article_flutter(request, article_id=None):
+    if request.method == 'GET' and article_id:
+        try:
+            article = Article.objects.get(pk=article_id)
+            if article.user != request.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+            article.delete()
+            try:
+                Article.objects.get(pk=article_id)
+                return JsonResponse({"success": False, "message": "Article deletion failed"}, status=500)
+            except Article.DoesNotExist:
+                return JsonResponse({"success": True, "message": "Article deleted successfully"})
+        except Article.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Article not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+    return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
+
 @csrf_exempt
 def article_flutter(request, article_id=None):
     try:
@@ -477,40 +496,6 @@ def article_flutter(request, article_id=None):
                     "created_at": article.created_at.strftime('%d %b, %Y')
                 }
             }, status=200)
-
-        # DELETE
-        elif request.method == 'DELETE' and article_id:
-            try:
-                article = Article.objects.get(pk=article_id)
-
-                if article.user != request.user and not request.user.is_staff:
-                    return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
-
-                article.delete()
-
-                # Verify deletion
-                try:
-                    Article.objects.get(pk=article_id)
-                    return JsonResponse({
-                        "success": False,
-                        "message": "Article deletion failed"
-                    }, status=500)
-                except Article.DoesNotExist:
-                    return JsonResponse({
-                        "success": True,
-                        "message": "Article deleted successfully"
-                    })
-
-            except Article.DoesNotExist:
-                return JsonResponse({
-                    "success": False,
-                    "message": "Article not found"
-                }, status=404)
-            except Exception as e:
-                return JsonResponse({
-                    "success": False,
-                    "message": str(e)
-                }, status=500)
 
         return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
 
@@ -711,3 +696,22 @@ def answer_flutter(request, answer_id=None):
         return JsonResponse({"success": False, "message": "Answer not found"}, status=404)
     except Exception as e:
         return JsonResponse({"success": False, "message": str(e)}, status=400)
+
+@csrf_exempt
+def delete_question_flutter(request, question_id=None):
+    if request.method == 'GET' and question_id:
+        try:
+            question = Question.objects.get(pk=question_id)
+            if question.user != request.user and not request.user.is_staff:
+                return JsonResponse({"success": False, "message": "Unauthorized"}, status=403)
+            question.delete()
+            try:
+                Question.objects.get(pk=question_id)
+                return JsonResponse({"success": False, "message": "Question deletion failed"}, status=500)
+            except Question.DoesNotExist:
+                return JsonResponse({"success": True, "message": "Question deleted successfully"})
+        except Question.DoesNotExist:
+            return JsonResponse({"success": False, "message": "Question not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"success": False, "message": str(e)}, status=500)
+    return JsonResponse({"success": False, "message": "Invalid request method or action"}, status=405)
