@@ -305,7 +305,6 @@ import json
 
 
 @csrf_exempt
-@login_required
 def edit_review_flutter(request, review_id):
     if request.method != 'POST':
         logger.error("Invalid request method")
