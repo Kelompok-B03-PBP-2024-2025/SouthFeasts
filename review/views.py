@@ -186,182 +186,308 @@ def show_json(request):
 
     return JsonResponse(reviews_data, safe=False)
 
-
+import logging
+import json
+import base64
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import ReviewEntry, MenuItem
+from django.core.files.base import ContentFile
+from django.contrib.auth.decorators import login_required
 
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
-def create_review_flutter(request):
-    if request.method == 'POST':
-        try:
+def manage_review_flutter(request, review_id=None):
+    try:
+        # CREATE
+        if request.method == 'POST' and not review_id:
+            if not request.user.is_authenticated:
+                return JsonResponse({"success": False, "message": "User not authenticated"}, status=403)
+
             data = json.loads(request.body)
             menu_item_id = data.get('menu_item_id')
             review_text = data.get('review_text')
             rating = data.get('rating')
             image_base64 = data.get('image')
 
-            # Log data yang diterima
-            logger.debug(f"Received data: menu_item_id={menu_item_id}, review_text={review_text}, rating={rating}, image_present={bool(image_base64)}")
-
-            # Validasi data
+            # Validasi input
             if not menu_item_id or not review_text or rating is None:
-                logger.error("Missing fields in request data")
                 return JsonResponse({"status": "Missing fields"}, status=400)
 
-            # Validasi menu_item_id
             try:
                 menu_item = MenuItem.objects.get(id=menu_item_id)
             except MenuItem.DoesNotExist:
-                logger.error(f"MenuItem with id {menu_item_id} does not exist")
                 return JsonResponse({"status": "Invalid menu_item_id"}, status=400)
 
-            # Konversi rating ke float
             try:
                 rating = float(rating)
                 if not (1 <= rating <= 5):
-                    logger.error("Rating out of bounds")
                     return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
             except ValueError:
-                logger.error("Invalid rating value")
                 return JsonResponse({"status": "Invalid rating"}, status=400)
 
             # Proses gambar jika ada
+            data_file = None
             if image_base64:
                 try:
-                    # Coba split dengan ';base64,'
                     format, imgstr = image_base64.split(';base64,')
                     ext = format.split('/')[-1]
-                except ValueError:
-                    # Jika tidak ada prefix, gunakan default
-                    logger.warning("Image data does not contain ';base64,' prefix. Using default 'jpeg' extension.")
-                    imgstr = image_base64
-                    ext = 'jpeg'  # atau 'png', tergantung kebutuhan
-
-                try:
                     data_file = ContentFile(base64.b64decode(imgstr), name=f"review_image.{ext}")
                 except Exception as e:
-                    logger.error(f"Invalid image data: {str(e)}")
                     return JsonResponse({"status": f"Invalid image data: {str(e)}"}, status=400)
-            else:
-                data_file = None
 
-            # Buat entri review
+            # Buat review baru
             review = ReviewEntry.objects.create(
                 menu_item=menu_item,
                 review_text=review_text,
                 rating=rating,
                 review_image=data_file,
-                user=request.user  # Pastikan user sudah autentikasi
+                user=request.user
             )
 
-            # Bangun URL absolut untuk gambar
-            if review.review_image:
-                image_url = request.build_absolute_uri(review.review_image.url)
-            else:
-                image_url = None
-
-            logger.debug(f"Review created successfully with id={review.id}")
-
-            # Sesuaikan respons
-            response_data = {
+            image_url = request.build_absolute_uri(review.review_image.url) if review.review_image else None
+            return JsonResponse({
                 "status": "success",
-                "review_image_url": image_url,
-                "menu_item_id": review.menu_item.id,
-                "review_text": review.review_text,
-                "rating": review.rating
-            }
+                "message": "Review created successfully",
+                "review": {
+                    "id": review.id,
+                    "menu_item_id": review.menu_item.id,
+                    "review_text": review.review_text,
+                    "rating": review.rating,
+                    "review_image_url": image_url
+                }
+            }, status=201)
 
-            return JsonResponse(response_data, status=200)
+        # EDIT
+        elif request.method == 'POST' and review_id:
+            try:
+                review = ReviewEntry.objects.get(id=review_id, user=request.user)
+            except ReviewEntry.DoesNotExist:
+                return JsonResponse({"status": "Review not found"}, status=404)
 
-        except json.JSONDecodeError:
-            logger.exception("JSON decode error")
-            return JsonResponse({"status": "Invalid JSON"}, status=400)
-        except Exception as e:
-            logger.exception(f"Unexpected error: {str(e)}")
-            return JsonResponse({"status": f"Error: {str(e)}"}, status=400)
-    else:
-        logger.error("Invalid request method")
+            data = json.loads(request.body)
+            review_text = data.get('review_text', review.review_text)
+            rating = data.get('rating', review.rating)
+
+            try:
+                rating = float(rating)
+                if not (1 <= rating <= 5):
+                    return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
+            except ValueError:
+                return JsonResponse({"status": "Invalid rating"}, status=400)
+
+            # Update review
+            review.review_text = review_text
+            review.rating = rating
+            review.save()
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Review updated successfully",
+                "review": {
+                    "id": review.id,
+                    "menu_item_id": review.menu_item.id,
+                    "review_text": review.review_text,
+                    "rating": review.rating
+                }
+            }, status=200)
+
+        # DELETE
+        elif request.method == 'DELETE' and review_id:
+            try:
+                review = ReviewEntry.objects.get(id=review_id, user=request.user)
+                review.delete()
+                return JsonResponse({
+                    "status": "success",
+                    "message": "Review deleted successfully"
+                }, status=200)
+            except ReviewEntry.DoesNotExist:
+                return JsonResponse({"status": "Review not found"}, status=404)
+
         return JsonResponse({"status": "Invalid request"}, status=400)
 
-# review/views.py
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import ReviewEntry, MenuItem
-from django.contrib.auth.decorators import login_required
-import json
-import base64
-from django.core.files.base import ContentFile
-import logging
-
-logger = logging.getLogger(__name__)
-# views.py
-
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import ReviewEntry
-from django.contrib.auth.decorators import login_required
-import json
-
-
-@csrf_exempt
-def edit_review_flutter(request, review_id):
-    if request.method != 'POST':
-        logger.error("Invalid request method")
-        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
-
-    try:
-        # Pastikan 'review_id' diterima
-        if not review_id:
-            logger.error("Review ID is missing")
-            return JsonResponse({"status": "error", "message": "Review ID is missing"}, status=400)
-
-        data = json.loads(request.body)
-        review_text = data.get('review_text')
-        rating = data.get('rating')
-
-        # Log data yang diterima
-        logger.debug(f"Received data for editing: review_id={review_id}, review_text={review_text}, rating={rating}")
-
-        # Validasi input
-        if not review_text or not rating:
-            logger.error("Missing fields in request data")
-            return JsonResponse({"status": "error", "message": "Missing fields: review_text or rating"}, status=400)
-
-        try:
-            rating = float(rating)
-            if not (1 <= rating <= 5):
-                logger.error("Rating out of bounds")
-                return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
-        except ValueError:
-            logger.error("Invalid rating value")
-            return JsonResponse({"status": "error", "message": "Invalid rating"}, status=400)
-
-        # Cari review berdasarkan ID
-        try:
-            review = ReviewEntry.objects.get(id=review_id, user=request.user)
-        except ReviewEntry.DoesNotExist:
-            logger.error(f"Review with id {review_id} not found")
-            return JsonResponse({"status": "error", "message": "Review not found"}, status=404)
-
-        # Perbarui data review
-        review.review_text = review_text
-        review.rating = rating
-        review.save()
-
-        logger.debug(f"Review with id {review_id} updated successfully")
-
-        return JsonResponse({
-            "status": "success",
-            "user": review.user.username,
-            "rating": review.rating,
-            "review_text": review.review_text,
-            "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        }, status=200)
-
     except json.JSONDecodeError:
-        logger.exception("JSON decode error")
-        return JsonResponse({"status": "error", "message": "Invalid JSON format"}, status=400)
+        return JsonResponse({"status": "Invalid JSON"}, status=400)
     except Exception as e:
         logger.exception(f"Unexpected error: {str(e)}")
-        return JsonResponse({"status": "error", "message": f"An unexpected error occurred: {str(e)}"}, status=500)
+        return JsonResponse({"status": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+
+
+# logger = logging.getLogger(__name__)
+
+# @csrf_exempt
+# def create_review_flutter(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             menu_item_id = data.get('menu_item_id')
+#             review_text = data.get('review_text')
+#             rating = data.get('rating')
+#             image_base64 = data.get('image')
+
+#             # Log data yang diterima
+#             logger.debug(f"Received data: menu_item_id={menu_item_id}, review_text={review_text}, rating={rating}, image_present={bool(image_base64)}")
+
+#             # Validasi data
+#             if not menu_item_id or not review_text or rating is None:
+#                 logger.error("Missing fields in request data")
+#                 return JsonResponse({"status": "Missing fields"}, status=400)
+
+#             # Validasi menu_item_id
+#             try:
+#                 menu_item = MenuItem.objects.get(id=menu_item_id)
+#             except MenuItem.DoesNotExist:
+#                 logger.error(f"MenuItem with id {menu_item_id} does not exist")
+#                 return JsonResponse({"status": "Invalid menu_item_id"}, status=400)
+
+#             # Konversi rating ke float
+#             try:
+#                 rating = float(rating)
+#                 if not (1 <= rating <= 5):
+#                     logger.error("Rating out of bounds")
+#                     return JsonResponse({"status": "Rating must be between 1 and 5"}, status=400)
+#             except ValueError:
+#                 logger.error("Invalid rating value")
+#                 return JsonResponse({"status": "Invalid rating"}, status=400)
+
+#             # Proses gambar jika ada
+#             if image_base64:
+#                 try:
+#                     # Coba split dengan ';base64,'
+#                     format, imgstr = image_base64.split(';base64,')
+#                     ext = format.split('/')[-1]
+#                 except ValueError:
+#                     # Jika tidak ada prefix, gunakan default
+#                     logger.warning("Image data does not contain ';base64,' prefix. Using default 'jpeg' extension.")
+#                     imgstr = image_base64
+#                     ext = 'jpeg'  # atau 'png', tergantung kebutuhan
+
+#                 try:
+#                     data_file = ContentFile(base64.b64decode(imgstr), name=f"review_image.{ext}")
+#                 except Exception as e:
+#                     logger.error(f"Invalid image data: {str(e)}")
+#                     return JsonResponse({"status": f"Invalid image data: {str(e)}"}, status=400)
+#             else:
+#                 data_file = None
+
+#             # Buat entri review
+#             review = ReviewEntry.objects.create(
+#                 menu_item=menu_item,
+#                 review_text=review_text,
+#                 rating=rating,
+#                 review_image=data_file,
+#                 user=request.user  # Pastikan user sudah autentikasi
+#             )
+
+#             # Bangun URL absolut untuk gambar
+#             if review.review_image:
+#                 image_url = request.build_absolute_uri(review.review_image.url)
+#             else:
+#                 image_url = None
+
+#             logger.debug(f"Review created successfully with id={review.id}")
+
+#             # Sesuaikan respons
+#             response_data = {
+#                 "status": "success",
+#                 "review_image_url": image_url,
+#                 "menu_item_id": review.menu_item.id,
+#                 "review_text": review.review_text,
+#                 "rating": review.rating
+#             }
+
+#             return JsonResponse(response_data, status=200)
+
+#         except json.JSONDecodeError:
+#             logger.exception("JSON decode error")
+#             return JsonResponse({"status": "Invalid JSON"}, status=400)
+#         except Exception as e:
+#             logger.exception(f"Unexpected error: {str(e)}")
+#             return JsonResponse({"status": f"Error: {str(e)}"}, status=400)
+#     else:
+#         logger.error("Invalid request method")
+#         return JsonResponse({"status": "Invalid request"}, status=400)
+
+# # review/views.py
+
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from .models import ReviewEntry, MenuItem
+# from django.contrib.auth.decorators import login_required
+# import json
+# import base64
+# from django.core.files.base import ContentFile
+# import logging
+
+# logger = logging.getLogger(__name__)
+# # views.py
+
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from .models import ReviewEntry
+# from django.contrib.auth.decorators import login_required
+# import json
+
+# @csrf_exempt
+# def edit_review_flutter(request, review_id):
+#     if request.method != 'POST':
+#         logger.error("Invalid request method")
+#         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+#     try:
+#         # Pastikan 'review_id' diterima
+#         if not review_id:
+#             logger.error("Review ID is missing")
+#             return JsonResponse({"status": "error", "message": "Review ID is missing"}, status=400)
+
+#         data = json.loads(request.body)
+#         review_text = data.get('review_text')
+#         rating = data.get('rating')
+
+#         # Log data yang diterima
+#         logger.debug(f"Received data for editing: review_id={review_id}, review_text={review_text}, rating={rating}")
+
+#         # Validasi input
+#         if not review_text or not rating:
+#             logger.error("Missing fields in request data")
+#             return JsonResponse({"status": "error", "message": "Missing fields: review_text or rating"}, status=400)
+
+#         try:
+#             rating = float(rating)
+#             if not (1 <= rating <= 5):
+#                 logger.error("Rating out of bounds")
+#                 return JsonResponse({"status": "error", "message": "Rating must be between 1 and 5"}, status=400)
+#         except ValueError:
+#             logger.error("Invalid rating value")
+#             return JsonResponse({"status": "error", "message": "Invalid rating"}, status=400)
+
+#         # Cari review berdasarkan ID
+#         try:
+#             review = ReviewEntry.objects.get(id=review_id, user=request.user)
+#         except ReviewEntry.DoesNotExist:
+#             logger.error(f"Review with id {review_id} not found")
+#             return JsonResponse({"status": "error", "message": "Review not found"}, status=404)
+
+#         # Perbarui data review
+#         review.review_text = review_text
+#         review.rating = rating
+#         review.save()
+
+#         logger.debug(f"Review with id {review_id} updated successfully")
+
+#         return JsonResponse({
+#             "status": "success",
+#             "user": review.user.username,
+#             "rating": review.rating,
+#             "review_text": review.review_text,
+#             "created_at": review.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+#         }, status=200)
+
+#     except json.JSONDecodeError:
+#         logger.exception("JSON decode error")
+#         return JsonResponse({"status": "error", "message": "Invalid JSON format"}, status=400)
+#     except Exception as e:
+#         logger.exception(f"Unexpected error: {str(e)}")
+#         return JsonResponse({"status": "error", "message": f"An unexpected error occurred: {str(e)}"}, status=500)
